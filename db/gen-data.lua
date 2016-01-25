@@ -1,8 +1,8 @@
-local numAccounts = 500
-local numAeps = 25
+local numAccounts = 2500
+local numAeps = 45
 local tokensPerAccount = 10
 local agentsPerAccount = 50
-local connectionsPerAgent = 100
+local connectionsPerAgent = 200
 
 local getUUID = require('./uuid4').getUUID
 
@@ -45,10 +45,10 @@ for i = 1, numAccounts do
   end
 end
 print("\\.")
-
-print("COPY connection (aep_id, agent_id, connect, disconnect) FROM STDIN;")
+local uv = require('uv')
 local time = 2451187
 for i = 1, numAccounts do
+  print("COPY connection (aep_id, agent_id, connect, disconnect) FROM STDIN;")
   for j = 1, agentsPerAccount do
     local agentId = agents[(i - 1) * agentsPerAccount + j]
     for k = 1, connectionsPerAgent do
@@ -58,8 +58,9 @@ for i = 1, numAccounts do
       time = next
     end
   end
+  print("\\.")
+  uv.run() -- flush stdout since luvit likes to buffer on some platforms.
 end
-print("\\.")
 
 -- print("INSERT INTO connection (aep_id, agent_id, connect)" ..
   -- " VALUES('" .. aepID .. "', '" .. agentId .. "', 'J" .. time .. "');")
