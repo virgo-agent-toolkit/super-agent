@@ -28,4 +28,11 @@ CREATE TABLE connection (
     connect timestamp without time zone DEFAULT now() NOT NULL,
     disconnect timestamp without time zone
 );
+
+-- This index makes it fast to find the latest connection for a particular agent.
+-- The order here matters a lot!  I tried with connect first and it's super slow on most queries.
 CREATE INDEX agent_connection_idx ON connection (agent_id, connect DESC);
+
+-- These indexes makes it fast to look up all tokens/agents for a particular account.
+CREATE INDEX agent_account_idx ON agent (account_id);
+CREATE INDEX token_account_idx ON token (account_id);
