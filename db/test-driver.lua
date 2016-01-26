@@ -16,9 +16,16 @@ coroutine.wrap(function ()
   write(formatter.StartupMessage({user=user,database=user}))
 
   print("Reading response through decoder")
+  local buffer = ""
   for chunk in read do
-    p(chunk)
-    p(decode(chunk))
+    buffer = buffer .. chunk
+    repeat
+      local offset, response, extra = decode(buffer)
+      p(offset, response, extra)
+      if offset then
+        buffer = buffer:sub(offset)
+      end
+    until not offset
   end
 
 end)()
