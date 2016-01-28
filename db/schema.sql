@@ -20,20 +20,16 @@ CREATE TABLE token (
 CREATE TABLE agent (
     id uuid PRIMARY KEY,
     account_id uuid REFERENCES account(id) ON DELETE CASCADE NOT NULL,
-    description text NOT NULL
+    name text NOT NULL,
+    aep_id uuid REFERENCES aep(id) ON DELETE SET NULL,
+    token uuid REFERENCES token(id) ON DELETE SET NULL
 );
-CREATE TABLE connection (
-    aep_id uuid REFERENCES aep(id) ON DELETE CASCADE NOT NULL,
-    agent_id uuid REFERENCES agent(id) ON DELETE CASCADE NOT NULL,
-    token uuid REFERENCES token(id) ON DELETE CASCADE NOT NULL,
-    connect timestamp without time zone DEFAULT now() NOT NULL,
-    disconnect timestamp without time zone
+CREATE TABLE events (
+    "timestamp" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    event json NOT NULL
 );
 
--- This index makes it fast to find the latest connection for a particular agent.
--- The order here matters a lot!  I tried with connect first and it's super slow on most queries.
-CREATE INDEX agent_connection_idx ON connection (agent_id, connect DESC);
-CREATE INDEX token_connection_idx ON connection (token, connect DESC);
+CREATE INDEX event_idx ON events ("timestamp" DESC);
 
 -- These indexes makes it fast to look up all tokens/agents for a particular account.
 CREATE INDEX agent_account_idx ON agent (account_id);
