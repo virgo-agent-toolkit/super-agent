@@ -27,5 +27,7 @@ coroutine.wrap(function ()
       end
     until not offset
   end
+  -- Close the connection when done.
+  write()
 
 end)()
