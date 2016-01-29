@@ -35,7 +35,7 @@ app.use(require('weblit-static')("/Users/adam9500/workspace/super-agent/www"))
 app.websocket({
   path = "/:cols/:rows/:program:",
   protocol = "xterm"
-}, require('/Users/adam9500/workspace/super-agent/TTY/pipes'))
+}, require('./pipes'))
 
 
 --p(require('/Users/adam9500/workspace/super-agent/TTY/pipes'))
