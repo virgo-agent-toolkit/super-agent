@@ -344,8 +344,6 @@ local function decode (buffer)
   return handler(buffer)
 end
 
-
-
 return {
   decode = decode,
   formatter = formatter
