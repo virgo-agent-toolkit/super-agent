@@ -344,43 +344,9 @@ local function decode (buffer)
   return handler(buffer)
 end
 
-local function connection(args)
 
-end
 
 return {
   decode = decode,
   formatter = formatter
 }
-
-
-
-
---[[function Connection(args) {
-  if (typeof args === 'string') {
-    args = url.parse(args);
-    args.database = args.pathname.substr(1);
-    args.auth = args.auth.split(":");
-    args.username = args.auth[0];
-    args.password = args.auth[1];
-  }
-  var started, conn, connection, events, query_queue, row_description, query_callback, results, readyState, closeState;
-
-  // Default to port 5432
-  args.port = args.port || 5432;
-
-  // Default to host 127.0.0.1
-  args.hostname = args.hostname || "127.0.0.1";
-
-
-  connection = net.createConnection(args.port, args.hostname);
-  events = new process.EventEmitter();
-  query_queue = [];
-  readyState = false;
-  closeState = false;
-  started = false;
-  conn = this;
-
-  // Disable the idle timeout on the connection
-  connection.setTimeout(0);
-]]
