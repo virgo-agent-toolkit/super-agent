@@ -6,7 +6,7 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 CREATE TABLE aep (
     id uuid PRIMARY KEY,
-    address text NOT NULL
+    hostname text NOT NULL
 );
 CREATE TABLE account (
     id uuid PRIMARY KEY,
@@ -24,7 +24,7 @@ CREATE TABLE agent (
     aep_id uuid REFERENCES aep(id) ON DELETE SET NULL,
     token uuid REFERENCES token(id) ON DELETE SET NULL
 );
-CREATE TABLE events (
+CREATE TABLE event (
     "timestamp" TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     event json NOT NULL
 );
