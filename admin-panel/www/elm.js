@@ -10109,14 +10109,11 @@ Elm.SuperAgent.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm);
    var _op = {};
    var Event = F2(function (a,b) {    return {timestamp: a,event: b};});
-   var Token = F3(function (a,b,c) {    return {id: a,account_id: b,description: c};});
-   var Agent = F5(function (a,b,c,d,e) {    return {id: a,account_id: b,name: c,aep_id: d,token: e};});
-   var Account = F2(function (a,b) {    return {id: a,name: b};});
-   var Aep = F2(function (a,b) {    return {id: a,hostname: b};});
-   var fromId = function (_p0) {    var _p1 = _p0;return _p1._0;};
-   var Id = function (a) {    return {ctor: "Id",_0: a};};
-   var toId = function (str) {    return $Result.Ok(Id(str));};
-   return _elm.SuperAgent.values = {_op: _op,toId: toId,fromId: fromId,Aep: Aep,Account: Account,Agent: Agent,Token: Token,Event: Event};
+   var Token = F2(function (a,b) {    return {account_id: a,description: b};});
+   var Agent = F4(function (a,b,c,d) {    return {account_id: a,name: b,aep_id: c,token: d};});
+   var Account = function (a) {    return {name: a};};
+   var Aep = function (a) {    return {hostname: a};};
+   return _elm.SuperAgent.values = {_op: _op,Aep: Aep,Account: Account,Agent: Agent,Token: Token,Event: Event};
 };
 Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
@@ -10148,6 +10145,16 @@ Elm.Main.make = function (_elm) {
    var Loading = {ctor: "Loading"};
    var model = Loading;
    var Listing = function (a) {    return {ctor: "Listing",_0: a};};
+   var location = Elm.Native.Port.make(_elm).inboundSignal("location",
+   "String",
+   function (v) {
+      return typeof v === "string" || typeof v === "object" && v instanceof String ? v : _U.badPort("a string",v);
+   });
+   var initialLocation = Elm.Native.Port.make(_elm).inbound("initialLocation",
+   "String",
+   function (v) {
+      return typeof v === "string" || typeof v === "object" && v instanceof String ? v : _U.badPort("a string",v);
+   });
    var main = $StartApp$Simple.start({model: model,view: view,update: update});
    return _elm.Main.values = {_op: _op
                              ,main: main

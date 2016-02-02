@@ -7,11 +7,15 @@ main: Signal Html.Html
 main =
   StartApp.start { model = model, view = view, update = update }
 
+-- PORTS
+
+port initialLocation : String -- incoming
+port location : Signal String -- outgoing
+
 -- MODEL
 
-
 type Listing a = Listing
-  { entries: List a
+  { entries: List (String, a)
   , filter: String
   , offset: Int
   , limit: Int
