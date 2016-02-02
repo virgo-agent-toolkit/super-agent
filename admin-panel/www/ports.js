@@ -1,0 +1,1 @@
+Elm.fullscreen(Elm.Main);
