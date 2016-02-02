@@ -221,7 +221,9 @@ local function multicstring(buffer, offset)
     repeat
       offset = offset + 1
     until byte(buffer, offset) == 0
+
     stringList[i] = sub(buffer, start, offset-1)
+    offset = offset + 1
     i = i + 1
   end
   return offset, stringList
@@ -235,17 +237,28 @@ local responses = {
     if not authType then error('Unknown auth type: ' .. authCode) end
 
     if authType == "AuthenticationMD5Password" then
-      local salt = readInt32(buffer, 10)
+      local salt = char(
+        byte(buffer, 10),
+        byte(buffer, 11),
+        byte(buffer, 12),
+        byte(buffer, 13))
+      -- why are we returning 14? because the authtype
+      -- takes up 10 bytes and the salt takes up 4?
       return 14, authType, salt
     end
 
     return 10, authType
   end,
   [byte('E', 1)] = function (buffer)
+    p(buffer)
     local offset, list = multicstring(buffer, 6)
 
-    return offset, 'ErrorResponse', list
+    local returnValues = {}
+    for i = 1, #list do
+      returnValues[sub(list[i], 1, 1)] = sub(list[i], 2)
+    end
 
+    return offset, 'ErrorResponse', returnValues
   end,
   [byte('S', 1)] = function (buffer)
     error("TODO: parse me:\t" .. buffer)
