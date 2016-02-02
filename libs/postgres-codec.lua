@@ -45,6 +45,13 @@ local function readInt32(buffer, offset)
   )
 end
 
+local function readInt16(buffer, offset)
+  return bor(
+    lshift(byte(buffer, offset), 8),
+    lshift(byte(buffer, offset+1), 0)
+  )
+end
+
 
 
 --[[
@@ -221,12 +228,20 @@ local function multicstring(buffer, offset)
     repeat
       offset = offset + 1
     until byte(buffer, offset) == 0
-
     stringList[i] = sub(buffer, start, offset-1)
-    offset = offset + 1
     i = i + 1
+    offset = offset + 1
   end
-  return offset, stringList
+  return offset+1, stringList
+end
+
+local function readString(buffer, offset)
+  local start = offset
+  while byte(buffer, offset) > 0 do
+    offset = offset+1
+  end
+
+  return offset, sub(buffer, start, offset)
 end
 
 -- return format: offset, type, extra arguments
@@ -250,7 +265,6 @@ local responses = {
     return 10, authType
   end,
   [byte('E', 1)] = function (buffer)
-    p(buffer)
     local offset, list = multicstring(buffer, 6)
 
     local returnValues = {}
@@ -261,25 +275,70 @@ local responses = {
     return offset, 'ErrorResponse', returnValues
   end,
   [byte('S', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    -- but we only have a buffer not a reader
+    p(buffer)
+    local offset, list = multicstring(buffer, 6)
+    return offset, 'ParameterStatus', list
   end,
   [byte('K', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+
+    return 14, 'BackendKeyData', readInt32(buffer, 6), readInt32(buffer, 10)
   end,
   [byte('Z', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    local offset, list = multicstring(buffer, 6)
+    return offset, 'ReadyForQuery', list
   end,
   [byte('T', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    local offset, data = 6, {}
+    local num_fields = buffer.readInt16(buffer, offset)
+    offset = offset + 2
+    local i = 0
+    while num_fields > i do
+      local fieldString
+      offset, fieldString = readString(buffer, offset)
+      data[i] = {
+        field = fieldString,
+        table_id = readInt32(buffer, offset),
+        column_id = readInt32(buffer, offset + 4),
+        type_id = readInt32(buffer, offset + 8),
+        type_size = readInt16(buffer, offset + 12),
+        type_modifier = readInt32(buffer, offset + 14),
+        format_code = readInt16(buffer, offset + 18)
+      }
+
+      offset = offset + 20
+    end
+
+    return offset, 'RowDescription', data
   end,
   [byte('D', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    local i, offset, data = 1, 6, {} -- offset could be set to 8
+    local num_fields = readInt16(buffer)
+    offset = offset + 2
+
+    while num_fields > i do
+      local size = readInt32(buffer)
+      offset = offset + 4
+      if size == -1 then
+        data[i] = nil
+      end
+
+      if size ~= -1 then
+        data[i] = sub(buffer, offset, size)
+      end
+
+      i = i + 1
+    end
+    return offset, 'DataRow', data
   end,
   [byte('C', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    local offset, returnString = readString(buffer, 6)
+    return offset, 'CommandComplete', returnString
   end,
   [byte('N', 1)] = function (buffer)
-    error("TODO: parse me:\t" .. buffer)
+    local offset, data = 6
+    offset, data = multicstring(buffer, offset)
+    return offset, 'NoticeResponse', data
   end
 }
 

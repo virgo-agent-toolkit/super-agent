@@ -41,8 +41,9 @@ end
 coroutine.wrap(function ()
   -- Assume a local server with $USER as username and database.
 
-  local user = require('os').getenv("USER")
+  local user = require('os').getenv('USER')
   local password = os.getenv('PASSWORD')
+  local database = os.getenv('DATABASE') or os.getenv('USER')
   local read, write = assert(connect({
     host = "127.0.0.1",
     port = 5432
@@ -51,8 +52,9 @@ coroutine.wrap(function ()
   read = coroWrapper.reader(read, decode)
   write = coroWrapper.writer(write, encode)
 
+  p(database)
   print("Connected to server, sending startup message")
-  write({'StartupMessage', {user=user,database=user}})
+  write({'StartupMessage', {user=user,database=database}})
 
   print("Reading response through decoder")
   local message = read()
@@ -76,6 +78,7 @@ coroutine.wrap(function ()
       error('no user set')
     end
     local salt = message[2]
+    p(salt)
     -- lua way to access environment variables
     -- If the wrong password is provided this fails with a list concatination error
     write({'PasswordMessage',
@@ -134,7 +137,7 @@ coroutine.wrap(function ()
   message = read()
 
   if message[1] == 'ErrorResponse' then
-    p(message[2])
+    p(message)
     write()
     error('Authentication error: '..message[2].M) -- error throws so nothing happens after this.
   end
@@ -150,10 +153,14 @@ coroutine.wrap(function ()
   ----------
 
 
+  -- send a 'Query' message to the will contain a SQL command (String)
+  --
+  write({'Query', 'SELECT * FROM account;'})
 
-
-
-
+  for message in read do
+    p(message)
+  end
+  --message = read()
   --[[for message in read do
     p(message)
   end]]
