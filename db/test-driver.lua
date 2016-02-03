@@ -2,169 +2,121 @@
 --    lit install creationix/coro-net
 local connect = require('coro-net').connect
 local coroWrapper = require('coro-wrapper')
-local formatterMap = require('postgres-codec').formatter
-local decodeRaw = require('postgres-codec').decode
+local encode = require('postgres-codec').encode
+local decode = require('postgres-codec').decode
 local digest = require('openssl').digest.digest
+local os = require('os')
 
--- we need our encoder/decoder to have a certain shape for coro-wrapper to work
--- we only have a formatter without an encoder right now
---
+-- Input is read/write pair for raw data stream and options table
+-- Output is query function for sending queries
+local function postgresWrap(read, write, options)
+  assert(options.username, "options.username is required")
+  assert(options.database, "options.database is required")
 
--- encoder: return a function that takes an item and encode it
+  -- Apply the codec to the stream
+  read = coroWrapper.reader(read, decode)
+  write = coroWrapper.writer(write, encode)
 
--- decoder: return a function that takes a chunk and returns
--- the decoded chunk plus the leftovers
+  -- Send the StartupMessage
+  write {'StartupMessage', {
+    user = options.username,
+    database = options.database
+  }}
 
-local function encode(message)
-  -- message is a table with two values
-  local request, data = message[1], message[2]
-  local formatter = formatterMap[request]
+  -- Handle authentication state machine using a simple loop
+  while true do
+    local message = read()
+    if message[1] == 'AuthenticationOk' then
+      break
+    elseif message[1] == 'AuthenticationMD5Password' then
+      assert(options.password, "options.password is needed")
 
-  if not formatter then
-    error('No such request: ' .. request)
+      local salt = message[2]
+      local inner = digest('md5', options.password .. options.user)
+      write { 'PasswordMessage',
+        'md5'.. digest('md5', inner .. salt)
+      }
+    elseif message[1] == 'AuthenticationCleartextPassword' then
+      write {'PasswordMessage', options.password}
+
+    elseif message[1] == 'AuthenticationKerberosV5' then
+      error("TODO: Implement AuthenticationKerberosV5 authentication")
+    elseif message[1] == 'AuthenticationSCMCredential' then
+      -- only possible for local unix domain connections
+      error("TODO: Implement AuthenticationSCMCredential authentication")
+    elseif message[1] == 'AuthenticationGSS' then
+      -- frontend initiates GSSAPI negotiation
+      error("TODO: Implement AuthenticationGSS authentication")
+      -- write({'PasswordMessage', ''--[[First part of GSSAPI data stream]]})
+    elseif message[1] == 'AuthenticationSSPI' then
+      -- frontend has to initiate a SSPI negotiation
+      error("TODO: Implement AuthenticationSSPI authentication")
+      -- write({'PasswordMessage', ''--[[First part of SSPI data stream]]})
+    elseif message[1] == 'AuthenticationGSSContinue' then
+      -- continuation of SSPI and GSS or a previous GSSContinue...
+      error("TODO: Implement AuthenticationGSSContinue authentication")
+      -- repeat
+      --   --[[
+      --   message contains response from previous step
+      --
+      --   if the message indications more data is needed to complete
+      --   the authentication, then the frontend must sund that data
+      --   as another PasswordMessage
+      --   ]]
+      --   write({'PasswordMessage', ''--[[more of this stream]]})
+      --   message = read()
+      -- until message[1] ~= 'AuthenticationGSSContinue'
+    elseif message[1] == 'ErrorResponse' then
+      p(message)
+      error("Authentication error:" .. message[2].M)
+    else
+      error("Unexpected response type: " .. message[1])
+    end
   end
 
-  return formatter(data)
-end
+  local waiting
 
-local function decode (chunk)
-  local offset, response, extra = decodeRaw(chunk)
-  -- use offset to chop up chunk
-  if not offset then
-    return
+  coroutine.wrap(function ()
+    for message in read do
+      p(message)
+    end
+  end)()
+
+  local function query(sql)
+    write {'Query', sql}
+    waiting = coroutine.running()
+    return coroutine.yield()
   end
 
-  return {response, extra}, string.sub(chunk, offset)
+  return {
+    query = query,
+  }
 end
 
 
 coroutine.wrap(function ()
-  -- Assume a local server with $USER as username and database.
+  -- Use environment variables to configure test connection
+  -- Should work out of the box for Postgres.app
+  local options = {
+    username = os.getenv('USER'),
+    database = os.getenv('DATABASE') or os.getenv('USER'),
+    password = os.getenv('PASSWORD')
+  }
 
-  local user = require('os').getenv('USER')
-  local password = os.getenv('PASSWORD')
-  local database = os.getenv('DATABASE') or os.getenv('USER')
   local read, write = assert(connect({
     host = "127.0.0.1",
     port = 5432
   }))
-  -- read/write are raw tcp versions of them
-  read = coroWrapper.reader(read, decode)
-  write = coroWrapper.writer(write, encode)
 
-  p(database)
   print("Connected to server, sending startup message")
-  write({'StartupMessage', {user=user,database=database}})
+  local psql = postgresWrap(read, write, options)
+  p("psql", psql)
 
-  print("Reading response through decoder")
-  local message = read()
-  p(message)
-
-
-
+  print("Authenticated, sending query")
+  local result = psql.query("SELECT * FROM account")
+  p("result", result)
 
 
-  -----------
-  -- section 1
-  -----------
-  -- password will be a parameter passed in
-  -- will also need a setUser
-  if message[1] == 'AuthenticationMD5Password' then
-    if not password then
-      error('no password set')
-    end
-
-    if not user then
-      error('no user set')
-    end
-    local salt = message[2]
-    p(salt)
-    -- lua way to access environment variables
-    -- If the wrong password is provided this fails with a list concatination error
-    write({'PasswordMessage',
-      'md5'..digest('md5',
-        digest('md5', password..user)..
-      salt)})
-    -- make sure get AuthenticationOk. On error
-  end
-
-  if message[1] == 'AuthenticationKerberosV5' then
-    write()
-    error("Kerberos Dialog authentication not supported")
-  end
-
-  if message[1] == 'AuthenticationCleartextPassword' then
-    write({'PasswordMessage', password})
-  end
-
-  if message[1] == 'AuthenticationSCMCredential' then
-    -- only possible for local unix domain connections
-  end
-
-
-  if message[1] == 'AuthenticationGSS' then
-    -- frontend initiates GSSAPI negotiation
-    write({'PasswordMessage', ''--[[First part of GSSAPI data stream]]})
-    message = read()
-  end
-
-  if message[1] == 'AuthenticationSSPI' then
-    -- frontend has to initiate a SSPI negotiation
-    write({'PasswordMessage', ''--[[First part of SSPI data stream]]})
-
-    message = read()
-  end
-
-  -- continuation of SSPI and GSS or a previous GSSContinue...
-  -- so this portion will be in its own loop.
-  if message[1] == 'AuthenticationGSSContinue' then
-    repeat
-      --[[
-      message contains response from previous step
-
-      if the message indications more data is needed to complete
-      the authentication, then the frontend must sund that data
-      as another PasswordMessage
-      ]]
-      write({'PasswordMessage', ''--[[more of this stream]]})
-      message = read()
-    until message[1] ~= 'AuthenticationGSSContinue'
-  end
-
-
-
-
-  message = read()
-
-  if message[1] == 'ErrorResponse' then
-    p(message)
-    write()
-    error('Authentication error: '..message[2].M) -- error throws so nothing happens after this.
-  end
-
-  if message[1] == 'AuthenticationOk' then
-    p('Authenticated successfully')
-  end
-
-  p(message)
-
-  ----------
-  -- end of section 1 (authentication)
-  ----------
-
-
-  -- send a 'Query' message to the will contain a SQL command (String)
-  --
-  write({'Query', 'SELECT * FROM account;'})
-
-  for message in read do
-    p(message)
-  end
-  --message = read()
-  --[[for message in read do
-    p(message)
-  end]]
-  -- Close the connection when done.
+  print("Closing the connection")
   write()
-
 end)()

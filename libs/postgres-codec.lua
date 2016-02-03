@@ -1,209 +1,113 @@
---[[
-I am really not sure what the equivalent lua packages are for these
+-- Include binary encoding/decoding helpers
+local bodec = require('./bodec')
 
-local crypto = require('crypto'),
-    net = require("net"),
-    sys = require("sys"),
-    sqllib = require('./sql'),
-    url = require('url');
-require('./buffer_extras');
-]]
-local bit = require('bit')
-
---[[
-So the tricky part of a decoder is that we are going to have to deal with Partial
-messages. TCP reframes everything
-
-
-network is big endian ... generally! So we can try big endian and if that doesnt
-work
-
-
-
-The simple way is that we have a bunch of function that we hand a number and return a string
-Just regular flat functions.
-
-local int32Write
-]]
-
-local rshift = bit.rshift
-local band = bit.band
-local bor = bit.bor
-local lshift = bit.lshift
-
-local concat = table.concat
-
+-- Create local aliases for common functions for performance gains.
+local writeCstring = bodec.writeCstring
+local writeHash = bodec.writeHash
+local writeUint16 = bodec.writeUint16
+local writeUint32 = bodec.writeUint32
+local writeUint32List = bodec.writeUint32List
+local readCString = bodec.readCString
+local readCStringList = bodec.readCStringList
+local readUint16 = bodec.readUint16
+local readUint32 = bodec.readUint32
+local readInt32 = bodec.readInt32
+local concat = table.contat
+local sub = string.sub
 local byte = string.byte
-local char = string.char
 
-local function readInt32(buffer, offset)
-  return bor(
-    lshift(byte(buffer, offset), 24),
-    lshift(byte(buffer, offset+1), 16),
-    lshift(byte(buffer, offset+2), 8),
-    lshift(byte(buffer, offset+3), 0)
-  )
-end
-
-local function readInt16(buffer, offset)
-  return bor(
-    lshift(byte(buffer, offset), 8),
-    lshift(byte(buffer, offset+1), 0)
-  )
-end
-
-
-
---[[
-returns a big endian non signed 32 int
-]]
-local function fromInt32 (number)
-  -- so we are just returning a byte string
-  return char(
-    band(rshift(number, 24), 0xFF),
-    band(rshift(number, 16), 0xFF),
-    band(rshift(number, 8), 0xFF),
-    band(rshift(number, 0), 0xFF)
-    )
-end
-
-local function fromInt16 (number)
-  -- so we are just returning a byte string
-  return char(
-    band(rshift(number, 8), 0xFF),
-    band(rshift(number, 0), 0xFF)
-    )
-end
-
---[[
-utf8 encode this and then append a null byte
-ignore utf8 encoding because we just assume that is the case
-
-in js strings are 16 bit code points. encoding is something like ucs-16?
-Most unicode can fit in 16 bit. node and js will translate a lot of utf8 and unicode
-
-in lua we just assume everything is utf8
-]]
-local function toCstring (string)
-  return string.."\0"
-end
-
---[[
-header + length of message + length  + message
-
-we always know that length is an integer hence + 4
-
-]]
-local integerSize = 4
 local function frame (header, body)
-  return header .. fromInt32(#body + integerSize) .. body-- length of body
+  -- +4 is because the length header includes it's own space.
+  return header .. writeUint32(#body + 4) .. body
 end
-
-local function fromHash (input)
-  local tempTable = {}
-  local i = 0
-  for key,value in pairs(input) do
-    i = i + 1
-    tempTable[i] = toCstring(key) .. toCstring(value)
-  end
-  return concat(tempTable)..'\0'
-end
-
-local function fromInt32List (input)
-  local tempTable = {}
-  for i = 1, #input do
-    tempTable[i] = fromInt32(input[i])
-  end
-  return concat(tempTable)
-end
-
-
-
-
 
 -- http://www.postgresql.org/docs/8.3/static/protocol-message-formats.html
-local formatter = {
-  CopyData = function ()
-    -- TODO: implement
-  end,
-  CopyDone = function ()
-    -- TODO: implement
-  end,
-  Describe = function (name, type)
-    return frame ('D',
-      type ..
-      toCstring(name)
-    )
-  end,
-  Execute = function (name, max_rows)
-    return frame ('E',
-      toCstring(name)..
-      fromInt32(max_rows)
-    )
-  end,
-  Flush = function ()
-    return frame('H', "")
-  end,
-  FunctionCall = function ()
-    -- TODO: implement
-  end,
-  Parse = function (name, query, var_types)
-    assert(type(var_types) == "table")
-    assert(type(name) == "string")
-    assert(type(query) == "string")
-    return frame('P',
-      toCstring(name) ..
-      toCstring(query) ..
-      fromInt16(#var_types) ..
-      fromInt32List(var_types)
-    )
-  end,
-  PasswordMessage = function (password)
-    assert(type(password) == "string")
-    return frame('p',
-      toCstring(password)
-    )
-  end,
-  Query = function (query)
-    return frame('Q', toCstring(query))
-  end,
-  SSLRequest = function ()
-    return frame('', fromInt32(80877103))
-  end,
-  StartupMessage = function (options)
-    -- Protocol version number 3
-    return frame('',
-      fromInt32(196608) ..
-      fromHash(options)
-    )
-  end,
-  Sync = function ()
-    return frame('S', '')
-  end,
-  Terminate = function ()
-    return frame('X', '')
+local encoders = {}
+
+function encoders.CopyData()
+  -- TODO: implement
+end
+
+function encoders.CopyDone()
+  -- TODO: implement
+end
+
+function encoders.Describe(name, type)
+  return frame('D',
+    type ..
+    writeCstring(name)
+  )
+end
+
+function encoders.Execute(name, max_rows)
+  return frame('E',
+    writeCstring(name)..
+    writeUint32(max_rows)
+  )
+end
+
+function encoders.Flush()
+  return frame('H', "")
+end
+
+function encoders.FunctionCall()
+  -- TODO: implement
+end
+
+function encoders.Parse(name, query, var_types)
+  assert(type(var_types) == "table")
+  assert(type(name) == "string")
+  assert(type(query) == "string")
+  return frame('P', concat(
+    writeCstring(name),
+    writeCstring(query),
+    writeUint16(#var_types),
+    writeUint32List(var_types)
+  ))
+end
+
+function encoders.PasswordMessage(password)
+  assert(type(password) == "string")
+  return frame('p',
+    writeCstring(password)
+  )
+end
+
+function encoders.Query(query)
+  return frame('Q', writeCstring(query))
+end
+
+function encoders.SSLRequest()
+  return frame('', writeUint32(80877103))
+end
+
+function encoders.StartupMessage(options)
+  -- Protocol version number 3
+  return frame('',
+    writeUint32(196608) ..
+    writeHash(options)
+  )
+end
+
+function encoders.Sync()
+  return frame('S', '')
+end
+
+function encoders.Terminate()
+  return frame('X', '')
+end
+
+local function encode(message)
+  -- message is a table with two values
+  local request, data = message[1], message[2]
+  local formatter = encoders[request]
+
+  if not formatter then
+    error('No such request type: ' .. request)
   end
-}
 
-
---[[have a function that takes the current buffer. We don know how manay messages we have
-first thingw e do is find out if there is enough data to read one message. As fast as possible
-If not enough data for a message return nothing. We are done. Signals to the consumer to wait for more data
-and concatinate things together until we have a full message.
-
-Lets us ignore whether or not we have a full message.
-
-So once we parse it then we get two things. The full message and probably a partial message.
-
-]]
-
-
--- Parse response streams from the server
-
---we are going to assume that the server has given us good data
--- we can fix this with a table
-
--- use this to get the string from the number and then a single if for things that need extra data
+  return formatter(data)
+end
 
 
 local authRequests = {
@@ -217,145 +121,120 @@ local authRequests = {
   [8] = "AuthenticationGSSContinue",
   [9] = "AuthenticationSSPI"
 }
-local sub = string.sub
 
-local function multicstring(buffer, offset)
-  local stringList = {}
-  local i = 1
-  while byte(buffer, offset) > 0 do
-    -- read one or more bytes... scan for next 0
-    local start = offset
-    repeat
-      offset = offset + 1
-    until byte(buffer, offset) == 0
-    stringList[i] = sub(buffer, start, offset-1)
-    i = i + 1
-    offset = offset + 1
-  end
-  return offset+1, stringList
-end
+-- Input is (string, index) where index is the first byte to start reading at.
+-- Output is (type, data...)
+local parsers = {
 
-local function readString(buffer, offset)
-  local start = offset
-  while byte(buffer, offset) > 0 do
-    offset = offset+1
-  end
-
-  return offset, sub(buffer, start, offset)
-end
-
--- return format: offset, type, extra arguments
-local responses = {
-  [byte('R', 1)] = function (buffer)
-    local authCode = readInt32(buffer, 6)
+  -- Parse the various Authentication* responses
+  [byte('R', 1)] = function (string)
+    local authCode = readUint32(string, 1)
     local authType = authRequests[authCode]
-    if not authType then error('Unknown auth type: ' .. authCode) end
-
+    if not authType then
+      error('Unknown auth code: ' .. authCode)
+    end
     if authType == "AuthenticationMD5Password" then
-      local salt = char(
-        byte(buffer, 10),
-        byte(buffer, 11),
-        byte(buffer, 12),
-        byte(buffer, 13))
-      -- why are we returning 14? because the authtype
-      -- takes up 10 bytes and the salt takes up 4?
-      return 14, authType, salt
+      local salt = sub(string, 5, 8)
+      return authType, salt
     end
-
-    return 10, authType
+    return authType
   end,
-  [byte('E', 1)] = function (buffer)
-    local offset, list = multicstring(buffer, 6)
 
-    local returnValues = {}
+  -- Parse an ErrorResponse
+  [byte('E', 1)] = function (string)
+    local list = readCStringList(string, 1)
+    local map = {}
     for i = 1, #list do
-      returnValues[sub(list[i], 1, 1)] = sub(list[i], 2)
+      map[sub(list[i], 1, 1)] = sub(list[i], 2)
     end
-
-    return offset, 'ErrorResponse', returnValues
+    return 'ErrorResponse', map
   end,
-  [byte('S', 1)] = function (buffer)
-    -- but we only have a buffer not a reader
-    p(buffer)
-    local offset, list = multicstring(buffer, 6)
-    return offset, 'ParameterStatus', list
+
+  -- Parse a ParameterStatus message
+  [byte('S', 1)] = function (string)
+    return "ParameterStatus", readCStringList(string, 1)
   end,
-  [byte('K', 1)] = function (buffer)
 
-    return 14, 'BackendKeyData', readInt32(buffer, 6), readInt32(buffer, 10)
+  -- Parse a BackendKeyData message
+  [byte('K', 1)] = function (string)
+    return 'BackendKeyData', readUint32(string, 1), readUint32(string, 5)
   end,
-  [byte('Z', 1)] = function (buffer)
-    local offset, list = multicstring(buffer, 6)
-    return offset, 'ReadyForQuery', list
+
+  -- Parse a ReadyForQuery message
+  [byte('Z', 1)] = function (string)
+    return 'ReadyForQuery', readCStringList(string, 1)
   end,
-  [byte('T', 1)] = function (buffer)
-    local offset, data = 6, {}
-    local num_fields = buffer.readInt16(buffer, offset)
-    offset = offset + 2
-    local i = 0
-    while num_fields > i do
-      local fieldString
-      offset, fieldString = readString(buffer, offset)
-      data[i] = {
-        field = fieldString,
-        table_id = readInt32(buffer, offset),
-        column_id = readInt32(buffer, offset + 4),
-        type_id = readInt32(buffer, offset + 8),
-        type_size = readInt16(buffer, offset + 12),
-        type_modifier = readInt32(buffer, offset + 14),
-        format_code = readInt16(buffer, offset + 18)
-      }
 
-      offset = offset + 20
-    end
-
-    return offset, 'RowDescription', data
-  end,
-  [byte('D', 1)] = function (buffer)
-    local i, offset, data = 1, 6, {} -- offset could be set to 8
-    local num_fields = readInt16(buffer)
-    offset = offset + 2
-
-    while num_fields > i do
-      local size = readInt32(buffer)
-      offset = offset + 4
-      if size == -1 then
-        data[i] = nil
-      end
-
-      if size ~= -1 then
-        data[i] = sub(buffer, offset, size)
-      end
-
+  -- Parse a RowDescription message
+  [byte('T', 1)] = function (string)
+    local numFields, index = readUint16(string, 1)
+    local data = {}
+    local i = 1
+    while i <= numFields do
+      local entry = {}
+      data[i] = entry
+      entry.field, index = readCString(string, index)
+      entry.tableId, index = readUint32(string, index)
+      entry.columnId, index = readUint32(string, index)
+      entry.typeId, index = readUint32(string, index)
+      entry.typeSize, index = readUint16(string, index)
+      entry.typeModifier, index = readUint32(string, index)
+      entry.formatCode, index = readUint16(string, index)
       i = i + 1
     end
-    return offset, 'DataRow', data
+    return 'RowDescription', data
   end,
-  [byte('C', 1)] = function (buffer)
-    local offset, returnString = readString(buffer, 6)
-    return offset, 'CommandComplete', returnString
+
+  -- Parse a DataRow message
+  [byte('D', 1)] = function (string)
+    local numFields, index = readUint16(string, 1)
+    local data = {}
+    local i = 1
+    while i <= numFields do
+      local size
+      size, index = readInt32(string, index)
+      -- negative size is null record.
+      if size > 0 then
+        local start = index
+        index = index + size -- TODO: check if this size includes the 4 bytes for size itself
+        data[i] = sub(string, start, index - 11)
+      end
+      i = i + 1
+    end
+    return 'DataRow', data
   end,
-  [byte('N', 1)] = function (buffer)
-    local offset, data = 6
-    offset, data = multicstring(buffer, offset)
-    return offset, 'NoticeResponse', data
+
+  -- Parse a CommandComplete message
+  [byte('C', 1)] = function (string)
+    return 'CommandComplete', readCString(string, 1)
+  end,
+
+  -- Parse a NoticeResponse message
+  [byte('N', 1)] = function (string)
+    return 'NoticeResponse', readCStringList(string, 1)
   end
 }
 
-local function decode (buffer)
-  if #buffer < 5 then return end
+local function decode (string)
+  if #string < 5 then return end
   -- read bytes 2-5 decode as an integer and that will tell us the length
-  local len = readInt32(buffer, 2)
-  if #buffer < len+1 then return end
+  local len, index = readUint32(string, 2)
+  if #string < len + 1 then return end
 
   --grab the first value. Which tells us which table/thing we are doing
-  local handler = responses[byte(buffer, 1)]
-  if not handler then error('unhandled response code: ' .. buffer:sub(1,1)) end
+  local parse = parsers[byte(string, 1)]
+  if not parse then
+    error('Unhandled response code: ' .. sub(string, 1, 1))
+  end
 
-  return handler(buffer)
+  local data = sub(string, index, index + len - 4) .. "\0"
+  local extra = sub(string, index + len - 4 + 1)
+
+  return {parse(data)}, extra
 end
 
 return {
   decode = decode,
-  formatter = formatter
+  encode = encode,
+  encoders = encoders
 }
