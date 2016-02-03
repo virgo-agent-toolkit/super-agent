@@ -73,11 +73,14 @@ local function readCString(string, index)
     index = index + 1
   end
 
-  return sub(string, start, index), index + 1
+  return sub(string, start, index - 1), index + 1
 end
 
 -- Consume many null-terminated strings till an extra empty null is found.
 local function readCStringList(string, index)
+  if byte(string, index) == 0 then
+    return {}, index + 1
+  end
   local list = {}
   local i = 1
   while byte(string, index) > 0 do
@@ -95,8 +98,14 @@ local function readUint16(string, index)
   ), index + 2
 end
 
--- Consume a big-endian uint32_t
-local function readUint32(string, index)
+-- Consume a big-endian int16_t
+local function readInt16(string, index)
+  local raw = readUint16(string, index)
+  return raw >= 0x8000 and raw - 0x10000 or raw, index + 2
+end
+
+-- Consume a big-endian int32_t
+local function readInt32(string, index)
   return bor(
     lshift(byte(string, index), 24),
     lshift(byte(string, index + 1), 16),
@@ -105,9 +114,12 @@ local function readUint32(string, index)
   ), index + 4
 end
 
-local function readInt32(string, index)
-  return tobit(readUint32(string, index)), index + 4
+-- Consume a big-endian uint32_t
+local function readUint32(string, index)
+  local raw = readInt32(string, index)
+  return raw < 0 and raw + 0x100000000 or raw, index + 4
 end
+
 
 -- Export all functions as module
 return {
@@ -116,10 +128,11 @@ return {
   writeUint16 = writeUint16,
   writeUint32 = writeUint32,
   writeUint32List = writeUint32List,
-  
+
   readCString = readCString,
   readCStringList = readCStringList,
   readUint16 = readUint16,
+  readInt16 = readInt16,
   readUint32 = readUint32,
   readInt32 = readInt32,
 }

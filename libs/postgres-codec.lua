@@ -10,6 +10,7 @@ local writeUint32List = bodec.writeUint32List
 local readCString = bodec.readCString
 local readCStringList = bodec.readCStringList
 local readUint16 = bodec.readUint16
+local readInt16 = bodec.readInt16
 local readUint32 = bodec.readUint32
 local readInt32 = bodec.readInt32
 local concat = table.contat
@@ -152,17 +153,17 @@ local parsers = {
 
   -- Parse a ParameterStatus message
   [byte('S', 1)] = function (string)
-    return "ParameterStatus", readCStringList(string, 1)
+    return "ParameterStatus", (readCStringList(string, 1))
   end,
 
   -- Parse a BackendKeyData message
   [byte('K', 1)] = function (string)
-    return 'BackendKeyData', readUint32(string, 1), readUint32(string, 5)
+    return 'BackendKeyData', readUint32(string, 1), (readUint32(string, 5))
   end,
 
   -- Parse a ReadyForQuery message
   [byte('Z', 1)] = function (string)
-    return 'ReadyForQuery', readCStringList(string, 1)
+    return 'ReadyForQuery', sub(string, 1, 1)
   end,
 
   -- Parse a RowDescription message
@@ -174,12 +175,12 @@ local parsers = {
       local entry = {}
       data[i] = entry
       entry.field, index = readCString(string, index)
-      entry.tableId, index = readUint32(string, index)
-      entry.columnId, index = readUint32(string, index)
-      entry.typeId, index = readUint32(string, index)
-      entry.typeSize, index = readUint16(string, index)
-      entry.typeModifier, index = readUint32(string, index)
-      entry.formatCode, index = readUint16(string, index)
+      entry.tableId, index = readInt32(string, index)
+      entry.columnId, index = readInt16(string, index)
+      entry.typeId, index = readInt32(string, index)
+      entry.typeSize, index = readInt16(string, index)
+      entry.typeModifier, index = readInt32(string, index)
+      entry.formatCode, index = readInt16(string, index)
       i = i + 1
     end
     return 'RowDescription', data
@@ -206,12 +207,12 @@ local parsers = {
 
   -- Parse a CommandComplete message
   [byte('C', 1)] = function (string)
-    return 'CommandComplete', readCString(string, 1)
+    return 'CommandComplete', (readCString(string, 1))
   end,
 
   -- Parse a NoticeResponse message
   [byte('N', 1)] = function (string)
-    return 'NoticeResponse', readCStringList(string, 1)
+    return 'NoticeResponse', (readCStringList(string, 1))
   end
 }
 
@@ -220,6 +221,7 @@ local function decode (string)
   -- read bytes 2-5 decode as an integer and that will tell us the length
   local len, index = readUint32(string, 2)
   if #string < len + 1 then return end
+  len = len - 4
 
   --grab the first value. Which tells us which table/thing we are doing
   local parse = parsers[byte(string, 1)]
@@ -227,8 +229,8 @@ local function decode (string)
     error('Unhandled response code: ' .. sub(string, 1, 1))
   end
 
-  local data = sub(string, index, index + len - 4) .. "\0"
-  local extra = sub(string, index + len - 4 + 1)
+  local data = sub(string, index, index + len - 1) .. "\0"
+  local extra = sub(string, index + len)
 
   return {parse(data)}, extra
 end

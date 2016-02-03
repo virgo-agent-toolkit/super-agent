@@ -74,6 +74,26 @@ local function postgresWrap(read, write, options)
     end
   end
 
+  local params = {}
+
+  while true do
+    local message = read()
+    if message[1] == 'ReadyForQuery' then
+      break
+    elseif message[1] == 'ParameterStatus' then
+      params[ message[2][1] ] = message[2][2]
+    elseif message[1] == 'BackendKeyData' then
+      params.backend_key_data = {
+        pid = message[2],
+        secret = message[3]
+      }
+    else
+      p(message)
+      error("Unexpected message: " .. message[1])
+    end
+  end
+
+
   local waiting
 
   coroutine.wrap(function ()
@@ -89,6 +109,7 @@ local function postgresWrap(read, write, options)
   end
 
   return {
+    params = params,
     query = query,
   }
 end
