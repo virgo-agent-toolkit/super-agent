@@ -97,8 +97,36 @@ local function postgresWrap(read, write, options)
   local waiting
 
   coroutine.wrap(function ()
+    local description
+    local rows
+    local summary
     for message in read do
-      p(message)
+      if message[1] == "ErrorResponse" then
+        p(message)
+        error("Server Error: " .. message[2].M)
+      elseif message[1] == "RowDescription" then
+        description = message[2]
+        rows = {}
+      elseif message[1] == "DataRow" then
+        local row = {}
+        rows[#rows + 1] = row
+        for i = 1, #description do
+          local column = description[i]
+          local field = column.field
+          local value = message[2][i]
+          -- TODO: do type conversions so not everything is strings
+          row[field] = value
+        end
+      elseif message[1] == "CommandComplete" then
+        summary = message[2]
+      elseif message[1] == "ReadyForQuery" and waiting then
+        local thread = waiting
+        waiting = nil
+        assert(coroutine.resume(thread, rows, description, summary))
+      else
+        p(message)
+        error("Unexpected message from server: " .. message[1])
+      end
     end
   end)()
 
@@ -134,8 +162,7 @@ coroutine.wrap(function ()
   p("psql", psql)
 
   print("Authenticated, sending query")
-  local result = psql.query("SELECT * FROM account")
-  p("result", result)
+  p(psql.query("SELECT * FROM account"))
 
 
   print("Closing the connection")

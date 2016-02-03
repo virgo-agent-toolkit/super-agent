@@ -188,7 +188,6 @@ local parsers = {
 
   -- Parse a DataRow message
   [byte('D', 1)] = function (string)
-    p("string: ", string)
     local numFields, index = readUint16(string, 1)
     local data = {}
     local i = 1
@@ -203,7 +202,6 @@ local parsers = {
       end
       i = i + 1
     end
-    p(data)
     return 'DataRow', data
   end,
 
