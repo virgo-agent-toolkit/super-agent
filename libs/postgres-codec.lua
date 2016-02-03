@@ -188,6 +188,7 @@ local parsers = {
 
   -- Parse a DataRow message
   [byte('D', 1)] = function (string)
+    p("string: ", string)
     local numFields, index = readUint16(string, 1)
     local data = {}
     local i = 1
@@ -198,10 +199,11 @@ local parsers = {
       if size > 0 then
         local start = index
         index = index + size -- TODO: check if this size includes the 4 bytes for size itself
-        data[i] = sub(string, start, index - 11)
+        data[i] = sub(string, start, index - 1)
       end
       i = i + 1
     end
+    p(data)
     return 'DataRow', data
   end,
 
