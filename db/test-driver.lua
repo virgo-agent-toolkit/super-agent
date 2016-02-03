@@ -32,7 +32,7 @@ local function postgresWrap(read, write, options)
       assert(options.password, "options.password is needed")
 
       local salt = message[2]
-      local inner = digest('md5', options.password .. options.user)
+      local inner = digest('md5', options.password .. options.username)
       write { 'PasswordMessage',
         'md5'.. digest('md5', inner .. salt)
       }
