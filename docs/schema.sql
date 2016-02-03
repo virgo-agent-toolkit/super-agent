@@ -29,7 +29,7 @@ CREATE TABLE event (
     event json NOT NULL
 );
 
-CREATE INDEX event_idx ON events ("timestamp" DESC);
+CREATE INDEX event_idx ON event ("timestamp" DESC);
 
 -- These indexes makes it fast to look up all tokens/agents for a particular account.
 CREATE INDEX agent_account_idx ON agent (account_id);
