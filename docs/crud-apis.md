@@ -3,7 +3,7 @@
 
 - create({hostname})
 - read(uuid)
-- update(uuid, {hostname})
+- update({uuid,hostname})
 - delete(uuid)
 - query({pattern}, {limit,offset})
 
@@ -12,7 +12,7 @@
 
 - create({name})
 - read(uuid)
-- update(uuid, {name})
+- update({uuid,name})
 - delete(uuid)
 - query({pattern}, {limit,offset})
 
@@ -20,7 +20,7 @@
 
 - create({description})
 - read(uuid)
-- update(uuid, {description})
+- update({uuid,description})
 - delete(uuid)
 - query({account_id,pattern}, {limit,offset})
 
@@ -28,7 +28,7 @@
 
 - create({name})
 - read(uuid)
-- update(uuid, {name})
+- update({uuid,name})
 - delete(uuid)
 - list({limit,offset})
 - query({account_id,pattern}, {limit,offset})
