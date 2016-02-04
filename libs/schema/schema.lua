@@ -324,6 +324,17 @@ addSchema = assert(addSchema("addSchema",
   Function,
   addSchema))
 
+local function makeAlias(name, typ)
+  typ = checkType(typ)
+  local copy = {}
+  for k, v in pairs(typ) do
+    copy[k] = v
+  end
+  setmetatable(copy, getmetatable(typ))
+  copy.alias = name
+  return copy
+end
+
 return {
   Any = Any,
   Truthy = Truthy,
@@ -338,4 +349,5 @@ return {
   Type = Type,
   checkType = checkType,
   addSchema = addSchema,
+  makeAlias = makeAlias,
 }

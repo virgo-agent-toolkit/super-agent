@@ -9,12 +9,11 @@ local alias = registry.alias
 local getUUID = require('uuid4').getUUID
 
 
-local Aep = alias("Aep", {id=Uuid,hostname=String}, [[
-This alias is for existing AEP entries that have an ID.
-]])
-local AepWithoutId = alias("AepWithoutId", {hostname=String}, [[
-This alias is for creating new AEP entries that don't have an ID yet
-]])
+local Aep = alias("Aep", {id=Uuid,hostname=String},
+  "This alias is for existing AEP entries that have an ID.")
+
+local AepWithoutId = alias("AepWithoutId", {hostname=String},
+  "This alias is for creating new AEP entries that don't have an ID yet")
 
 assert(register("create", [[
 

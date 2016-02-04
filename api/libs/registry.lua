@@ -1,5 +1,7 @@
-local addSchema = require('schema').addSchema
-local checkType = require('schema').checkType
+local schema = require 'schema'
+local addSchema = schema.addSchema
+local checkType = schema.checkType
+local makeAlias = schema.makeAlias
 
 -- Custom type for database UUIDs
 local Uuid = setmetatable({}, {
@@ -51,9 +53,8 @@ end
 local function alias(name, typ, docs)
   typ = checkType(typ)
   local full = tostring(typ)
-  typ.alias = name
   aliases[name] = {docs:match "^%s*(.-)%s*$", full}
-  return typ
+  return makeAlias(name, typ)
 end
 
 local function dump()
