@@ -55,10 +55,24 @@ function: 0x05f31020
 > add = addSchema("add",{{"a",Int},{"b",Int}},Int,add)
 > tostring(add)
 'add(a: Int, b: Int): Int'
+```
+
+The new function works just like the old one, except it checks types and returns
+`nil, error` in case of problems.  Make sure to use `assert` if you want this
+to raise an error.
+
+```lua
 > add(1, 2)
 3
 > add("one", "two")
 nil	'add(a: Int, b: Int): Int - expects a to be Int, but it was String.'
+> assert(add(1, "two"))
+add(a: Int, b: Int): Int - expects b to be Int, but it was String.
+stack traceback:
+	[builtin#2]: at 0x01030b64c0
+	[C]: in function 'xpcall'
+	[string "bundle:deps/repl.lua"]:92: in function 'evaluateLine'
+	[string "bundle:deps/repl.lua"]:176: in function <[string "bundle:deps/repl.lua"]:174>
 ```
 
 The `__tostring` is used internally to generate the nice error messages, but it
