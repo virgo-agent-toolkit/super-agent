@@ -6,6 +6,30 @@ end
 
 --------------------------------------
 
+local Any = setmetatable({}, {
+  __tostring = function (_)
+    return "Any"
+  end,
+  __call = function (_, name, value)
+    if value == nil then
+      return name, "Any", "Nil"
+    end
+    return name, "Any"
+  end
+})
+
+local Truthy = setmetatable({}, {
+  __tostring = function (_)
+    return "Truthy"
+  end,
+  __call = function (_, name, value)
+    if not value then
+      return name, "Truthy", capitalize(type(value))
+    end
+    return name, "Truthy"
+  end
+})
+
 -- Ensure a value is an integer
 local Int = setmetatable({}, {
   __tostring = function (_)
@@ -110,7 +134,7 @@ local tupleMeta = {
     for i = 1, #self.list do
       parts[i] = tostring(self.list[i])
     end
-    return "[" .. concat(parts, ", ") .. "]"
+    return "(" .. concat(parts, ", ") .. ")"
   end,
   __call = function (self, name, value)
     local t = type(value)
@@ -139,7 +163,7 @@ local function Tuple(list)
   return setmetatable({list = list}, tupleMeta)
 end
 
-local function checkRecord(value)
+local function checkType(value)
   if getmetatable(value) then
     return value
   elseif type(value) == "table" then
@@ -160,7 +184,6 @@ local function checkRecord(value)
       return Tuple(value)
     end
   end
-  p(value)
   error("Invalid schema type, record, or tuple: ", type(value))
 end
 
@@ -188,58 +211,93 @@ local arrayMeta = {
   end
 }
 local function Array(subType)
-  return setmetatable({subType = checkRecord(subType)}, arrayMeta)
+  return setmetatable({subType = checkType(subType)}, arrayMeta)
 end
 
-
-local function test(shouldPass, typ, value)
-  typ = checkRecord(typ)
-  local name, expected, actual = typ("arg", value)
-  -- p(unpack{name, expected, value, actual})
-  if shouldPass then
-    if actual then
-      error("Should pass, but did not: " .. tostring(typ))
-    -- else
-    --   print("Should pass and did: " .. tostring(typ))
+local Type = setmetatable({}, {
+  __tostring = function (_)
+    return "Type"
+  end,
+  __call = function (_, name, value)
+    local t = type(value)
+    local meta = getmetatable(value)
+    if t ~= "table" or not (meta.__tostring and meta.__call) then
+      return name, "Type", capitalize(t)
     end
-  else
-    if not actual then
-      error("Should not pass, but did: " .. tostring(typ))
-    -- else
-    --   print("Should not pass and did not: " .. tostring(typ))
-    end
+    return name, "Type"
   end
+})
+
+local schemaMeta = {
+  __tostring = function (self)
+    local parts = {}
+    for i = 1, #self.inputs do
+      local name, typ = unpack(self.inputs[i])
+      parts[i] = name .. ": " .. tostring(typ)
+    end
+    return string.format("%s(%s): %s",
+      self.name,
+      concat(parts, ", "),
+      tostring(self.output)
+    )
+  end,
+  __call = function (self, ...)
+    local argc = select("#", ...)
+    if argc ~= #self.inputs then
+      return nil,
+        string.format("%s - expects %d arguments, but %d %s sent.",
+          tostring(self),
+          #self.inputs,
+          argc,
+          argc == 1 and "was" or "were")
+    end
+    local args = {...}
+    for i = 1, argc do
+      local arg, typ = unpack(self.inputs[i])
+      local name, expected, actual = typ(arg, args[i])
+      if actual then
+        return nil,
+          string.format("%s - expects %s to be %s, but it was %s.",
+            tostring(self),
+            name, expected, actual)
+      end
+    end
+    local ret = self.fn(...)
+    local name, expected, actual = self.output("return value", ret)
+    if actual then
+      return nil,
+        string.format("%s - expects %s to be %s, but it was %s.",
+          tostring(self),
+          name, expected, actual)
+    end
+    return ret
+  end
+}
+local function addSchema(name, inputs, output, fn)
+  local newInputs = {}
+  for i = 1, #inputs do
+    newInputs[i] = {
+      inputs[i][1],
+      checkType(inputs[i][2])
+    }
+  end
+  return setmetatable({
+    name = name,
+    inputs = newInputs,
+    output = checkType(output),
+    fn = fn,
+  }, schemaMeta)
 end
 
--- Inline unit tests
-test(true, Int, 4)
-test(false, Int, 4.5)
-test(true, Number, 4.5)
-test(false, Number, false)
-test(true, String, "Hello")
-test(false, String, 100)
-test(true, Bool, true)
-test(false, Bool, 0)
-test(true, Array(Int), {})
-test(true, Array(Int), {1,2})
-test(false, Array(Int), {1, false})
-test(false, Array(Int), {name="Tim"})
-test(false, Array(Int), 42)
-test(true, {String,Int}, {"Hello",42})
-test(false, {String,Int}, {"Hello",false})
-test(false, {String,Int}, {"Hello",100,true})
-test(true, {}, {})
-test(true, {name=String,age=Int}, {name="Tim",age=33,isProgrammer=true})
-test(true, Array({name=String}), {{name="Tim",age=33}})
-test(false, Array({name=String}), {{name="Tim",age=33}, 10})
-test(false, {name=String,age=Int}, {name="Tim",age="old"})
-test(false, {name=String,age=Int}, {1,2,3})
-test(false, {name=String,age=Int}, 757)
-test(true, Function, print)
-test(true, Function, Function)
-test(false, Function, "Bye")
+-- Make addSchema typecheck itself.
+addSchema = assert(addSchema("addSchema",
+  {{"name",String},{"inputs", Array({String,Type})},{"output",Type}, {"fn",Function}},
+  Function,
+  addSchema))
 
 return {
+  Any = Any,
+  Truthy = Truthy,
   Int = Int,
   Number = Number,
   String = String,
@@ -247,5 +305,8 @@ return {
   Function = Function,
   Array = Array,
   Record = Record,
-  checkRecord = checkRecord,
+  Tuple = Tuple,
+  Type = Type,
+  checkType = checkType,
+  addSchema = addSchema,
 }
