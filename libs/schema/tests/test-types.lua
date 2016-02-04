@@ -1,19 +1,19 @@
-local types = require('./types')
+local schema = require('../init')
 local p = require('pretty-print').prettyPrint
 
-local Any = types.Any
-local Truthy = types.Truthy
-local Int = types.Int
-local Number = types.Number
-local String = types.String
-local Bool = types.Bool
-local Function = types.Function
-local Array = types.Array
-local Record = types.Record
-local Tuple = types.Tuple
-local Type = types.Type
-local checkType = types.checkType
-local addSchema = types.addSchema
+local Any = schema.Any
+local Truthy = schema.Truthy
+local Int = schema.Int
+local Number = schema.Number
+local String = schema.String
+local Bool = schema.Bool
+local Function = schema.Function
+local Array = schema.Array
+local Record = schema.Record
+local Tuple = schema.Tuple
+local Type = schema.Type
+local checkType = schema.checkType
+local addSchema = schema.addSchema
 
 local function test(shouldPass, typ, value)
   typ = checkType(typ)
