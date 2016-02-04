@@ -34,8 +34,8 @@ end
 --------------------------------------
 
 local Any = setmetatable({}, {
-  __tostring = function (_)
-    return "Any"
+  __tostring = function (self)
+    return self.alias or "Any"
   end,
   __call = function (_, name, value)
     if value == nil then
@@ -46,8 +46,8 @@ local Any = setmetatable({}, {
 })
 
 local Truthy = setmetatable({}, {
-  __tostring = function (_)
-    return "Truthy"
+  __tostring = function (self)
+    return self.alias or "Truthy"
   end,
   __call = function (_, name, value)
     if not value then
@@ -59,8 +59,8 @@ local Truthy = setmetatable({}, {
 
 -- Ensure a value is an integer
 local Int = setmetatable({}, {
-  __tostring = function (_)
-    return "Int"
+  __tostring = function (self)
+    return self.alias or "Int"
   end,
   __call = function (_, name, value)
     local t = type(value)
@@ -75,8 +75,8 @@ local Int = setmetatable({}, {
 })
 
 local Number = setmetatable({}, {
-  __tostring = function(_)
-    return "Number"
+  __tostring = function(self)
+    return self.alias or "Number"
   end,
   __call = function (_, name, value)
     local t = type(value)
@@ -88,8 +88,8 @@ local Number = setmetatable({}, {
 })
 
 local String = setmetatable({}, {
-  __tostring = function(_)
-    return "String"
+  __tostring = function(self)
+    return self.alias or "String"
   end,
   __call = function (_, name, value)
     local t = type(value)
@@ -101,8 +101,8 @@ local String = setmetatable({}, {
 })
 
 local Bool = setmetatable({}, {
-  __tostring = function(_)
-    return "Bool"
+  __tostring = function(self)
+    return self.alias or "Bool"
   end,
   __call = function (_, name, value)
     local t = type(value)
@@ -114,8 +114,8 @@ local Bool = setmetatable({}, {
 })
 
 local Function = setmetatable({}, {
-  __tostring = function(_)
-    return "Function"
+  __tostring = function(self)
+    return self.alias or "Function"
   end,
   __call = function (_, name, value)
     local t = type(value)
@@ -128,6 +128,7 @@ local Function = setmetatable({}, {
 
 local recordMeta = {
   __tostring = function (self)
+    if self.alias then return self.alias end
     local parts = {}
     local i = 1
     for k, v in pairs(self.struct) do
@@ -157,6 +158,7 @@ end
 
 local tupleMeta = {
   __tostring = function (self)
+    if self.alias then return self.alias end
     local parts = {}
     for i = 1, #self.list do
       parts[i] = tostring(self.list[i])
@@ -206,7 +208,7 @@ end
 
 local arrayMeta = {
   __tostring = function (self)
-    return "Array<" .. tostring(self.subType) .. ">"
+    return self.alias or "Array<" .. tostring(self.subType) .. ">"
   end,
   __call = function (self, name, value)
     local t = type(value)

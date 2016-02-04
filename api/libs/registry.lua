@@ -1,4 +1,5 @@
 local addSchema = require('schema').addSchema
+local checkType = require('schema').checkType
 
 -- Custom type for database UUIDs
 local Uuid = setmetatable({}, {
@@ -18,20 +19,21 @@ local Uuid = setmetatable({}, {
 
 
 local fns = {}
+local aliases = {}
 
 local function register(name, docs, args, output, fn)
-  if not args then -- Allow creating prefixed groups
-    return function (newName, ...)
-      return register(name .. newName, ...)
-    end
-  end
-
   local err
   fn, err = addSchema(name, args, output, fn)
   if not fn then return nil, err end
   fn.docs = docs:match "^%s*(.-)%s*$"
   fns[name] = fn
   return tostring(fn)
+end
+
+local function section(prefix)
+  return function (name, ...)
+    return register(prefix .. name, ...)
+  end
 end
 
 local function call(name, args)
@@ -46,6 +48,14 @@ local function call(name, args)
   return result
 end
 
+local function alias(name, typ, docs)
+  typ = checkType(typ)
+  local full = tostring(typ)
+  typ.alias = name
+  aliases[name] = {docs:match "^%s*(.-)%s*$", full}
+  return typ
+end
+
 local function dump()
   local defs = {}
   for key in pairs(fns) do
@@ -55,13 +65,25 @@ local function dump()
   for i = 1, #defs do
     local key = defs[i]
     local fn = fns[key]
-    defs[i] = "## " .. tostring(fn) .. "\n\n" .. fn.docs
+    defs[i] = "### " .. tostring(fn) .. "\n\n" .. fn.docs
   end
-  return defs
+  local typs = {}
+  for key in pairs(aliases) do
+    typs[#typs + 1] = key
+  end
+  table.sort(typs)
+  for i = 1, #typs do
+    local key = typs[i]
+    local docs, full = unpack(aliases[key])
+    typs[i] = "### " .. key .. " = " .. full .. "\n\n" .. docs
+  end
+  return defs, typs
 end
 
 return {
   Uuid = Uuid,
+  alias = alias,
+  section = section,
   register = register,
   call = call,
   dump = dump,

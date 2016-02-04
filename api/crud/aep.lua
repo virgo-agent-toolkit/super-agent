@@ -4,15 +4,24 @@ local String = schema.String
 local Array = schema.Array
 local registry = require 'registry'
 local Uuid = registry.Uuid
-local register = registry.register("aep.")
+local register = registry.section("aep.")
+local alias = registry.alias
 local getUUID = require('uuid4').getUUID
+
+
+local Aep = alias("Aep", {id=Uuid,hostname=String}, [[
+This alias is for existing AEP entries that have an ID.
+]])
+local AepWithoutId = alias("AepWithoutId", {hostname=String}, [[
+This alias is for creating new AEP entries that don't have an ID yet
+]])
 
 assert(register("create", [[
 
 This function creates a new AEP entry in the database.  It will return
 the randomly generated UUID so you can reference the AEP.
 
-]], {{"aep", {hostname=String}}}, Uuid, function (aep)
+]], {{"aep", AepWithoutId}}, Uuid, function (aep)
   local id = getUUID()
   -- TODO: Implement
   return id
@@ -22,7 +31,7 @@ assert(register("read", [[
 
 TODO: document me
 
-]], {{"id", Uuid}}, {id=Uuid,hostname=String}, function (id)
+]], {{"id", Uuid}}, Aep, function (id)
   -- TODO: Implement
 end))
 
@@ -30,7 +39,7 @@ assert(register("update", [[
 
 TODO: document me
 
-]], {{"aep", {id=Uuid,hostname=String}}}, Uuid, function (id)
+]], {{"aep", Aep}}, Uuid, function (id)
   -- TODO: Implement
 end))
 
