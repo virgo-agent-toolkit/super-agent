@@ -41,9 +41,28 @@ add = assert(addSchema(
 ))
 ```
 
-You can then use `add` as before, except if the input or output values don't
-match the declared types the wrapper function with return with `nil, errorMessage`
-explaining in detail where the mismatch happened.
+The `add` function has now been replaced with a schema checked function.  This
+is actually a table with custom `__tostring` and `__call` metamethods.  But you
+can think of it as a function.
+
+Running `tostring(add)` will render a nice annotated type signature for the
+function as seen in this luvit repl session:
+
+```lua
+> add = function(a,b) return a + b end
+> add
+function: 0x05f31020
+> add = addSchema("add",{{"a",Int},{"b",Int}},Int,add)
+> tostring(add)
+'add(a: Int, b: Int): Int'
+> add(1, 2)
+3
+> add("one", "two")
+nil	'add(a: Int, b: Int): Int - expects a to be Int, but it was String.'
+```
+
+The `__tostring` is used internally to generate the nice error messages, but it
+can also be used to generate API docs for your service when using `creationix/schema` to typecheck your public interfaces.
 
 ## Built-in Types
 
@@ -102,3 +121,16 @@ addSchema = assert(addSchema(
   addSchema
 ))
 ```
+
+## Custom Types
+
+This system is designed to allow for custom types to be implemented outside
+itself.  All you have to do is follow the same interface as the built-in types
+and they will interoperate.
+
+The types themselves are tables with `__tostring` and `__call` metamethods (much
+like the schema checked functions returned by `addSchema`.)  This internal
+interface is still under design and may change.  You can create custom types,
+but you'll likely have to update them in the near future.  Once the type
+interface is solid, it will be documented here with examples of creating custom
+types.
