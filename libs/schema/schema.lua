@@ -16,6 +16,21 @@ local function capitalize(name)
   return (name:gsub("^%l", string.upper))
 end
 
+
+local function guessType(value)
+  local isRecord = true
+  local isTuple = true
+  local i = 0
+  for k in pairs(value) do
+    if k ~= i then
+      isTuple = false
+    elseif type(k) ~= "string" then
+      isRecord = false
+    end
+    i = i + 1
+  end
+  return isRecord, isTuple
+end
 --------------------------------------
 
 local Any = setmetatable({}, {
@@ -179,17 +194,7 @@ local function checkType(value)
   if getmetatable(value) then
     return value
   elseif type(value) == "table" then
-    local i = 1
-    local isRecord = true
-    local isTuple = true
-    for k in pairs(value) do
-      if k ~= i then
-        isTuple = false
-      elseif type(k) ~= "string" then
-        isRecord = false
-      end
-      i = i + 1
-    end
+    local isRecord, isTuple = guessType(value)
     if isRecord then
       return Record(value)
     elseif isTuple then
@@ -231,12 +236,22 @@ local Type = setmetatable({}, {
     return "Type"
   end,
   __call = function (_, name, value)
+    -- Ensure it's a table
     local t = type(value)
-    local meta = getmetatable(value)
-    if t ~= "table" or not (meta.__tostring and meta.__call) then
+    if t ~= "table" then
       return name, "Type", capitalize(t)
     end
-    return name, "Type"
+    -- Check for pre-compiled types
+    local meta = getmetatable(value)
+    if meta and meta.__tostring and meta.__call then
+      return name, "Type"
+    end
+    -- Check for record or tuple shaped tables
+    local isRecord, isTuple = guessType(value)
+    if isRecord or isTuple then
+      return name, "Type"
+    end
+    return name, "Type", capitalize(t)
   end
 })
 
