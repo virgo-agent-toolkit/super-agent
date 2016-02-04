@@ -20,11 +20,12 @@ end
 local function guessType(value)
   local isRecord = true
   local isTuple = true
-  local i = 0
+  local i = 1
   for k in pairs(value) do
     if k ~= i then
       isTuple = false
-    elseif type(k) ~= "string" then
+    end
+    if type(k) ~= "string" then
       isRecord = false
     end
     i = i + 1

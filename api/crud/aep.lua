@@ -15,6 +15,11 @@ local Aep = alias("Aep", {id=Uuid,hostname=String},
 local AepWithoutId = alias("AepWithoutId", {hostname=String},
   "This alias is for creating new AEP entries that don't have an ID yet")
 
+local Query = alias("Query", {pattern=String},
+  "Structure for valid query parameters")
+local Page = alias("Page", {Int,Int},
+  "This alias is s tuple of `limit` and `offset` for tracking position when paginating")
+
 assert(register("create", [[
 
 This function creates a new AEP entry in the database.  It will return
@@ -55,11 +60,11 @@ assert(register("query", [[
 TODO: document me
 
 ]], {
-  {"query", {pattern=String,limit=Int,offset=Int}}
+  {"query", Query},
+  {"page", Page},
 }, {
-  results = Array({id = Uuid, hostname = String}),
-  limit = Int,
-  offset = Int,
+  Array(Aep),
+  Page
 }, function (query)
   -- TODO: Implement
 end))

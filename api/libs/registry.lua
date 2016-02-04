@@ -20,7 +20,7 @@ local Uuid = setmetatable({}, {
 })
 
 
-local fns = {}
+local functions = {}
 local aliases = {}
 
 local function register(name, docs, args, output, fn)
@@ -28,7 +28,7 @@ local function register(name, docs, args, output, fn)
   fn, err = addSchema(name, args, output, fn)
   if not fn then return nil, err end
   fn.docs = docs:match "^%s*(.-)%s*$"
-  fns[name] = fn
+  functions[name] = fn
   return tostring(fn)
 end
 
@@ -39,7 +39,7 @@ local function section(prefix)
 end
 
 local function call(name, args)
-  local fn = fns[name]
+  local fn = functions[name]
   if not fn then
     return nil, "No such API function: " .. name
   end
@@ -52,33 +52,8 @@ end
 
 local function alias(name, typ, docs)
   typ = checkType(typ)
-  local full = tostring(typ)
-  aliases[name] = {docs:match "^%s*(.-)%s*$", full}
+  aliases[name] = {docs:match "^%s*(.-)%s*$", typ}
   return makeAlias(name, typ)
-end
-
-local function dump()
-  local defs = {}
-  for key in pairs(fns) do
-    defs[#defs + 1] = key
-  end
-  table.sort(defs)
-  for i = 1, #defs do
-    local key = defs[i]
-    local fn = fns[key]
-    defs[i] = "### " .. tostring(fn) .. "\n\n" .. fn.docs
-  end
-  local typs = {}
-  for key in pairs(aliases) do
-    typs[#typs + 1] = key
-  end
-  table.sort(typs)
-  for i = 1, #typs do
-    local key = typs[i]
-    local docs, full = unpack(aliases[key])
-    typs[i] = "### " .. key .. " = " .. full .. "\n\n" .. docs
-  end
-  return defs, typs
 end
 
 return {
@@ -87,5 +62,6 @@ return {
   section = section,
   register = register,
   call = call,
-  dump = dump,
+  functions = functions,
+  aliases = aliases
 }

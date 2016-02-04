@@ -1,4 +1,4 @@
-local Schema = require('../init')
+local Schema = require('../schema')
 local p = require('pretty-print').prettyPrint
 
 local Any = Schema.Any
