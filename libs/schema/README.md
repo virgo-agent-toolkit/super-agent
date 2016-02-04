@@ -4,6 +4,15 @@ This library allows you to decorate public API functions with strict runtime
 typechecking.  You can declare the types using a clear declarative syntax
 using actual type object references (to enable extensibility).
 
+## Installing
+
+The easiest way to install for use in a project is using `lit` from
+ [luvit.io](https://luvit.io/).
+
+```sh
+lit install creationix/schema
+```
+
 ## Example
 
 For example, suppose you had a function that added two integers and returned a
