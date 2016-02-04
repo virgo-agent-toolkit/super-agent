@@ -62,6 +62,19 @@ local Bool = setmetatable({}, {
   end
 })
 
+local Function = setmetatable({}, {
+  __tostring = function(_)
+    return "Function"
+  end,
+  __call = function (_, name, value)
+    local t = type(value)
+    if t ~= "function" and not getmetatable(value).__call then
+      return name, "Function", capitalize(t)
+    end
+    return name, "Function"
+  end
+})
+
 local recordMeta = {
   __tostring = function (self)
     local parts = {}
@@ -182,16 +195,15 @@ end
 local function test(shouldPass, typ, value)
   typ = checkRecord(typ)
   local name, expected, actual = typ("arg", value)
+  -- p(unpack{name, expected, value, actual})
   if shouldPass then
     if actual then
-      p(unpack{name, expected, value, actual})
       error("Should pass, but did not: " .. tostring(typ))
     -- else
     --   print("Should pass and did: " .. tostring(typ))
     end
   else
     if not actual then
-      p(unpack{name, expected, value, actual})
       error("Should not pass, but did: " .. tostring(typ))
     -- else
     --   print("Should not pass and did not: " .. tostring(typ))
@@ -223,12 +235,16 @@ test(false, Array({name=String}), {{name="Tim",age=33}, 10})
 test(false, {name=String,age=Int}, {name="Tim",age="old"})
 test(false, {name=String,age=Int}, {1,2,3})
 test(false, {name=String,age=Int}, 757)
+test(true, Function, print)
+test(true, Function, Function)
+test(false, Function, "Bye")
 
 return {
   Int = Int,
   Number = Number,
   String = String,
   Bool = Bool,
+  Function = Function,
   Array = Array,
   Record = Record,
   checkRecord = checkRecord,
