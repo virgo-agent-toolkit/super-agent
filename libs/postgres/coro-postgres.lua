@@ -3,6 +3,8 @@
   version = "0.2.0"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
+    "creationix/coro-net@2.0.0",
+    "creationix/postgres-codec@0.2.0"
   }
   homepage = "https://github.com/virgo-agent-toolkit/super-agent/blob/master/libs/postgres"
   description = "coro-net enabled postgres client using postgres-codec."
@@ -154,7 +156,12 @@ local function wrap(options, read, write, socket)
     return coroutine.yield()
   end
 
+  local function close()
+    return write()
+  end
+
   return {
+    close = close,
     params = params,
     query = query,
     socket = socket
