@@ -17,9 +17,8 @@ if next(aliases) then
   for i = 1, #names do
     local name = names[i]
     local docs, original = unpack(aliases[name])
-    print("### `" .. name .. "` ← `" .. tostring(original) .. "`\n\n" .. docs)
+    print("### `" .. name .. "` ← `" .. tostring(original) .. "`\n\n" .. docs .. "\n")
   end
-  print()
 end
 if next(functions) then
   print("## Functions\n\nThis server implements the following public functions:\n")
@@ -31,7 +30,6 @@ if next(functions) then
   for i = 1, #names do
     local name = names[i]
     local fn = functions[name]
-    print("### `" .. tostring(fn) .. "`\n\n" .. fn.docs)
+    print("### `" .. tostring(fn) .. "`\n\n" .. fn.docs .. "\n")
   end
-  print()
 end
