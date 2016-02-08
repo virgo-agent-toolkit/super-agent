@@ -1,5 +1,4 @@
 local schema = require 'schema'
-local Int = schema.Int
 local String = schema.String
 local Array = schema.Array
 local registry = require 'registry'
@@ -7,7 +6,8 @@ local Uuid = registry.Uuid
 local register = registry.section("aep.")
 local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-local getConnection = require('connection').get
+local query = require('connection').query
+local quote = require('sql-helpers').quote
 
 
 local Aep = alias("Aep", {id=Uuid,hostname=String},
@@ -16,10 +16,10 @@ local Aep = alias("Aep", {id=Uuid,hostname=String},
 local AepWithoutId = alias("AepWithoutId", {hostname=String},
   "This alias is for creating new AEP entries that don't have an ID yet")
 
-local Query = alias("Query", {pattern=String},
-  "Structure for valid query parameters")
-local Page = alias("Page", {Int,Int},
-  "This alias is s tuple of `limit` and `offset` for tracking position when paginating")
+local AepQuery = alias("AepQuery", {pattern=String},
+    "Structure for valid query parameters")
+
+local Page = require('shared-types').Page
 
 assert(register("create", [[
 
@@ -28,14 +28,11 @@ the randomly generated UUID so you can reference the AEP.
 
 ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
   local id = getUUID()
-  local result = getConnection()(
+  assert(query(
     string.format(
-      "INSERT INTO aep ('id', 'hostname') VALUES ('%s', '%s')",
-      id,
-      aep['hostname']))
-  if not result then
-    error("Create aep failed: "..result[2])
-  end
+      "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
+      quote(id),
+      quote(aep['hostname']))))
   return id
 end))
 
@@ -44,7 +41,7 @@ assert(register("read", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Aep, function (id)
-  local result = getConnection().query(
+  local result = query(
     string.format(
       "SELECT id, hostname FROM aep WHERE id = '%s'",
       id))
@@ -59,7 +56,7 @@ assert(register("update", [[
 TODO: document me
 
 ]], {{"aep", Aep}}, Uuid, function (aep)
-  local result = getConnection().query(
+  local result = query(
     string.format(
       "UPDATE TABLE SET id = '%s', hostname = '%s' FROM aep WHERE id = '%s'",
       aep['id'],
@@ -75,7 +72,7 @@ assert(register("delete", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Uuid, function (id)
-  local result = getConnection().query(
+  local result = query(
     string.format(
       "DELETE FROM aep WHERE id = '%s'",
       id))
@@ -89,7 +86,7 @@ assert(register("query", [[
 TODO: document me
 
 ]], {
-  {"query", Query},
+  {"query", AepQuery},
   {"page", Page},
 }, {
   Array(Aep),

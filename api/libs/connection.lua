@@ -7,14 +7,15 @@ local function setup(opts)
   options = opts
 end
 
-local function getConnection()
-  if psql then return psql end
-  assert(options, "Please setup options first")
-  psql = postgresConnect(options)
-  return psql
+local function query(...)
+  if not psql then
+    assert(options, "Please setup options first")
+    psql = postgresConnect(options)
+  end
+  return psql.query(...)
 end
 
 return {
   setup = setup,
-  get = getConnection,
+  query = query,
 }
