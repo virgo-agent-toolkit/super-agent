@@ -8,6 +8,13 @@ local register = registry.section("aep.")
 local alias = registry.alias
 local getUUID = require('uuid4').getUUID
 
+local psqlConnect = require('coro-postgres')
+local getenv = require('os').getenv
+
+local psqlQuery = psqlConnect.connect(
+  {password=getenv("PASSWORD"),
+  database=getenv("DATABASE")}).query
+
 
 local Aep = alias("Aep", {id=Uuid,hostname=String},
   "This alias is for existing AEP entries that have an ID.")
@@ -27,7 +34,14 @@ the randomly generated UUID so you can reference the AEP.
 
 ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
   local id = getUUID()
-  -- TODO: Implement
+  local result = psqlQuery(
+    string.format(
+      "INSERT INTO aep ('id', 'hostname') VALUES ('%s', '%s')",
+      id,
+      aep['hostname']))
+  if not result then
+    error("Create aep failed: "..result[2])
+  end
   return id
 end))
 
@@ -36,15 +50,30 @@ assert(register("read", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Aep, function (id)
-  -- TODO: Implement
+  local result = psqlQuery(
+    string.format(
+      "SELECT id, hostname FROM aep WHERE id = '%s'",
+      id))
+  if not result then
+    error("Read aep information failed: ", result[2])
+  end
+  return {id='e108612e-7ade-41e8-80c6-f8da2681572c', hostname='something'}
 end))
 
 assert(register("update", [[
 
 TODO: document me
 
-]], {{"aep", Aep}}, Uuid, function (id)
-  -- TODO: Implement
+]], {{"aep", Aep}}, Uuid, function (aep)
+  local result = psqlQuery(
+    string.format(
+      "UPDATE TABLE SET id = '%s', hostname = '%s' FROM aep WHERE id = '%s'",
+      aep['id'],
+      aep['hostname'],
+      aep['id']))
+  if not result then
+    error("Update aep failed: ", result[2])
+  end
 end))
 
 assert(register("delete", [[
@@ -52,7 +81,13 @@ assert(register("delete", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Uuid, function (id)
-  -- TODO: Implement
+  local result = psqlQuery(
+    string.format(
+      "DELETE FROM aep WHERE id = '%s'",
+      id))
+  if not result then
+    error("Create aep failed: ", result[2])
+  end
 end))
 
 assert(register("query", [[
