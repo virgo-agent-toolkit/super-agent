@@ -1,6 +1,8 @@
 local schema = require 'schema'
 local String = schema.String
+local Int = schema.Int
 local Array = schema.Array
+local Optional = schema.Optional
 local registry = require 'registry'
 local Uuid = registry.Uuid
 local register = registry.section("aep.")
@@ -9,17 +11,18 @@ local getUUID = require('uuid4').getUUID
 local query = require('connection').query
 local quote = require('sql-helpers').quote
 
-
 local Aep = alias("Aep", {id=Uuid,hostname=String},
   "This alias is for existing AEP entries that have an ID.")
 
 local AepWithoutId = alias("AepWithoutId", {hostname=String},
   "This alias is for creating new AEP entries that don't have an ID yet")
 
-local AepQuery = alias("AepQuery", {pattern=String},
-    "Structure for valid query parameters")
-
-local Page = require('shared-types').Page
+local AepQuery = alias("AepQuery", {
+    hostname = Optional(String),
+    start = Optional(Int),
+    count = Optional(Int),
+  },
+  "Structure for valid query parameters")
 
 assert(register("create", [[
 
@@ -81,16 +84,13 @@ TODO: document me
   end
 end))
 
+
 assert(register("query", [[
 
-TODO: document me
+Query for existing AEP rows
 
-]], {
-  {"query", AepQuery},
-  {"page", Page},
-}, {
-  Array(Aep),
-  Page
-}, function (query)
-  -- TODO: Implement
+]], { {"query", AepQuery} }, Array(Aep), function (query)
+  local offset = query.start or 0
+  local limit = query.count or 20
+  -- TODO: write sql
 end))
