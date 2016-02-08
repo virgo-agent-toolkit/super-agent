@@ -1,5 +1,15 @@
-require 'weblit-websocket'
+
+-- Databasre connection setup
+require('connection').setup {
+  -- Setup username/password/database/etc here
+}
+
+-- API endpoints setup
 require './crud/aep'
+
+
+-- HTTP setup
+require 'weblit-websocket'
 require('weblit-app')
 
 .bind {

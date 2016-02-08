@@ -7,13 +7,7 @@ local Uuid = registry.Uuid
 local register = registry.section("aep.")
 local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-
-local psqlConnect = require('coro-postgres')
-local getenv = require('os').getenv
-
-local psqlQuery = psqlConnect.connect(
-  {password=getenv("PASSWORD"),
-  database=getenv("DATABASE")}).query
+local getConnection = require('connection').get
 
 
 local Aep = alias("Aep", {id=Uuid,hostname=String},
@@ -34,7 +28,7 @@ the randomly generated UUID so you can reference the AEP.
 
 ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
   local id = getUUID()
-  local result = psqlQuery(
+  local result = getConnection()(
     string.format(
       "INSERT INTO aep ('id', 'hostname') VALUES ('%s', '%s')",
       id,
@@ -50,7 +44,7 @@ assert(register("read", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Aep, function (id)
-  local result = psqlQuery(
+  local result = getConnection().query(
     string.format(
       "SELECT id, hostname FROM aep WHERE id = '%s'",
       id))
@@ -65,7 +59,7 @@ assert(register("update", [[
 TODO: document me
 
 ]], {{"aep", Aep}}, Uuid, function (aep)
-  local result = psqlQuery(
+  local result = getConnection().query(
     string.format(
       "UPDATE TABLE SET id = '%s', hostname = '%s' FROM aep WHERE id = '%s'",
       aep['id'],
@@ -81,7 +75,7 @@ assert(register("delete", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Uuid, function (id)
-  local result = psqlQuery(
+  local result = getConnection().query(
     string.format(
       "DELETE FROM aep WHERE id = '%s'",
       id))
