@@ -6,18 +6,20 @@ local registry = require 'registry'
 local Uuid = registry.Uuid
 local register = registry.section("account.")
 local alias = registry.alias
+local getUUID = require('uuid4').getUUID
 
-local account = alias("account", {id=Uuid, name=String},
+local psqlConnect = require('coro-postgres')
+local getenv = require('os').getenv
+
+local psqlQuery = psqlConnect.connect(
+  {password=getenv("PASSWORD"),
+  database=getenv("DATABASE")}).query
+
+local Account = alias("Account", {id=Uuid, name=String},
   "This alias is for existing account entries that have an ID.")
 
-local accountWithoutId = alias("accountWithoutId", {name=String},
+local AccountWithoutId = alias("AccountWithoutId", {name=String},
   "This alias creates a new account")
-
-local updateAccountName = alias("updateAccountName", {id=Uuid, name=String},
-  "This alias updates a particular account to have a new name")
-
-local deleteAccount = alias("deleteAccount", {id=Uuid},
-  "This alias delets an account with a particular uuid")
 
 local Query = alias("Query", {pattern=String},
   "Structure for valid query parameters")
@@ -34,7 +36,7 @@ assert(register("create", [[
 
 This function creates a new account entry in the database.
 It will return the randomly generated UUID of the account.
-]], {{"accountWithoutId", accountWithoutId}}, Uuid, function (account)
+]], {{"AccountWithoutId", AccountWithoutId}}, Uuid, function (account)
   local id = getUUID()
   local result = psqlQuery(
     string.format("INSERT INTO account ('id', 'name') VALUES ('%s', '%s')",
@@ -52,7 +54,6 @@ assert(register("read", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Account, function (id)
-  local id = getUUID()
   local result = psqlQuery(
     string.format("SELECT id, name FROM account WHERE id='%s'",
       id))
@@ -66,7 +67,7 @@ assert(register("update", [[
 
 TODO: document me
 
-]], {{"account", Account}}, Uuid, function (account)
+]], {{"Account", Account}}, Uuid, function (account)
   local result = psqlQuery(
     string.format(
       "UPDATE TABLE SET id = '%s', name = '%s' FROM account WHERE id = '%s'",
