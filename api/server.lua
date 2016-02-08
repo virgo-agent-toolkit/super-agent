@@ -1,7 +1,9 @@
+local getenv = require('os').getenv
 
 -- Databasre connection setup
 require('connection').setup {
-  -- Setup username/password/database/etc here
+  password = getenv('PASSWORD'),
+  database = getenv('DATABASE'),
 }
 
 -- API endpoints setup
