@@ -8,6 +8,7 @@ return {
     "creationix/weblit-auto-headers",
     "creationix/schema",
     "creationix/coro-postgres",
+    "creationix/coro-http",
     "creationix/msgpack",
     "luvit/json",
   }
