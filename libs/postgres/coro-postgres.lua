@@ -1,6 +1,6 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.2.0"
+  version = "0.3.0"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
@@ -23,6 +23,10 @@ local coroWrapper = require('coro-wrapper')
 local encode = require('postgres-codec').encode
 local decode = require('postgres-codec').decode
 local getenv = require('os').getenv
+
+local function md5(data)
+  return digest("md5", data)
+end
 
 -- Input is read/write pair for raw data stream and options table
 -- Output is query function for sending queries
@@ -49,9 +53,9 @@ local function wrap(options, read, write, socket)
       assert(options.password, "options.password is needed")
 
       local salt = message[2]
-      local inner = digest('md5', options.password .. options.username)
+      local inner = md5(options.password .. options.username)
       write { 'PasswordMessage',
-        'md5'.. digest('md5', inner .. salt)
+        'md5'.. md5(inner .. salt)
       }
     elseif message[1] == 'AuthenticationCleartextPassword' then
       write {'PasswordMessage', options.password}
@@ -119,6 +123,11 @@ local function wrap(options, read, write, socket)
     local summary
     for message in read do
       if message[1] == "ErrorResponse" then
+        if waiting then
+          local t
+          t, waiting = waiting, nil
+          return assert(coroutine.retume(t, message[2].M, message[2]))
+        end
         p(message)
         error("Server Error: " .. message[2].M)
       elseif message[1] == "RowDescription" then
@@ -142,7 +151,11 @@ local function wrap(options, read, write, socket)
         r, rows = rows, nil
         d, description = description, nil
         s, summary = summary, nil
-        assert(coroutine.resume(t, r, d, s))
+        assert(coroutine.resume(t, {
+          rows = r,
+          description = d,
+          summary = s
+        }))
       else
         p(message)
         error("Unexpected message from server: " .. message[1])

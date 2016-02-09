@@ -11,5 +11,6 @@ return {
     "creationix/coro-http",
     "creationix/msgpack",
     "luvit/json",
+    "luvit/pretty-print",
   }
 }
