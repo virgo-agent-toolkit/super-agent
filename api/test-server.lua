@@ -16,9 +16,11 @@ coroutine.wrap(function ()
     hostname = "localhost"
   }
   dump(request("POST", "http://localhost:8080/api/aep.create", {
+    {"User-Agent", "test-server.lua"},
     {"Content-Type", "application/json"}
   }, jsonEncode{aep}))
   dump(request("POST", "http://localhost:8080/api/aep.create", {
+    {"User-Agent", "test-server.lua"},
     {"Content-Type", "application/msgpack"}
   }, msgpackEncode{aep}))
 end)()

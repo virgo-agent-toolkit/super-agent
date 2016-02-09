@@ -12,5 +12,6 @@ return {
     "creationix/msgpack",
     "luvit/json",
     "luvit/pretty-print",
+    "creationix/uv",
   }
 }

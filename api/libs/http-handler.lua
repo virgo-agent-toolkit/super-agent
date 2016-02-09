@@ -41,7 +41,7 @@ return function (req, res)
   if err then
     return fail(res, err)
   end
-  res.code = 100
+  res.code = 200
   res.headers["Content-Type"] = contentType
   if contentType == "application/json" then
     res.body = jsonEncode(result)
