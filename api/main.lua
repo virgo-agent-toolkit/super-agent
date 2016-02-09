@@ -20,7 +20,13 @@ require('uv').run()
 
 -- Memory comparisions running server on different platforms
 
--- On OSX
+-- On OSX x64
 -- luvit(v2.9.1) 6.5MB
 -- luajit(v2.0.4-homebrew) 5.0MB
 -- lua(v5.2.4-homebrew) 12.3 MB
+
+-- On Linux x64
+
+-- luvit(v2.9.1) 10.b Mb
+-- luajit(v2.0.4-ubuntu) 6.8 Mb
+-- lua(v5.1.5-ubuntu) 10.1 Mb
