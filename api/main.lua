@@ -29,5 +29,6 @@ require('uv').run()
 -- On Linux x64
 
 -- luvit(v2.9.1) 10.b Mb
+-- luvi(v2.6.1-tiny) 7.1 Mb
 -- luajit(v2.0.4-ubuntu) 6.8 Mb
 -- lua(v5.1.5-ubuntu) 10.1 Mb
