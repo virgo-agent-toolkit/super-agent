@@ -1,10 +1,11 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.3.0"
+  version = "0.4.0"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
-    "creationix/postgres-codec@0.2.0"
+    "creationix/postgres-codec@0.2.0",
+    "creationix/md5@1.0.2"
   }
   homepage = "https://github.com/virgo-agent-toolkit/super-agent/blob/master/libs/postgres"
   description = "coro-net enabled postgres client using postgres-codec."
@@ -18,15 +19,11 @@
 
 local p = require('pretty-print').prettyPrint
 local netConnect = require('coro-net').connect
-local digest = require('openssl').digest.digest
 local coroWrapper = require('coro-wrapper')
 local encode = require('postgres-codec').encode
 local decode = require('postgres-codec').decode
 local getenv = require('os').getenv
-
-local function md5(data)
-  return digest("md5", data)
-end
+local md5 = require('md5').sumhexa
 
 -- Input is read/write pair for raw data stream and options table
 -- Output is query function for sending queries
