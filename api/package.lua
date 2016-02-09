@@ -13,5 +13,6 @@ return {
     "luvit/json",
     "luvit/pretty-print",
     "creationix/uv",
+    "creationix/uuid4",
   }
 }

@@ -18,6 +18,12 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 --]]
 
+--[[lit-meta
+	name = "creationix/uuid4"
+	version = "1.0.0"
+	description = "pure lua uuiv v4 generator"
+]]
+
 local M = {}
 -----
 math.randomseed( os.time() )
