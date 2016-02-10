@@ -44,7 +44,7 @@ return function (call)
         args[i - 2] = message[i]
       end
       local result, err = call(name, args)
-      if result then
+      if not err then
         return send(-id, result)
       end
       return send(0, err, id)

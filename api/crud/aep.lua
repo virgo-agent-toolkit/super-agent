@@ -12,15 +12,15 @@ return function (db, registry)
   local quote = db.quote
   local compileBlob = db.compileBlob
 
-  local Aep = alias("Aep",
+  local Row = alias("Row",
     "This alias is for existing AEP entries that have an ID.",
     {id=Uuid,hostname=String})
 
-  local AepWithoutId = alias("AepWithoutId",
+  local RowWithoutId = alias("RowWithoutId",
     "This alias is for creating new AEP entries that don't have an ID yet",
     {hostname=String})
 
-  local AepQuery = alias("AepQuery",
+  local Query = alias("Query",
     "Structure for valid query parameters",
     {
       hostname = Optional(String),
@@ -33,87 +33,68 @@ return function (db, registry)
   This function creates a new AEP entry in the database.  It will return
   the randomly generated UUID so you can reference the AEP.
 
-  ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
+  ]], {{"row", RowWithoutId}}, Uuid, function (row)
     local id = getUUID()
-    local result = assert(query(
-      string.format(
-        "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
-        quote(id),
-        quote(aep['hostname']))))
-    if result then
-      return id
-    end
-    return result
+    assert(query(string.format(
+      "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
+      quote(id),
+      quote(row['hostname']))))
+    return id
   end))
 
   assert(register("read", [[
 
-  TODO: document me
+  Given a UUID, return the corresponding row.
 
-  ]], {{"id", Uuid}}, Aep, function (id)
-    local result = assert(query(
-      string.format(
-        "SELECT id, hostname FROM aep WHERE id = '%s'",
-        quote(id))))
-    return result
+  ]], {{"id", Uuid}}, Optional(Row), function (id)
+    local result = assert(query(string.format(
+      "SELECT id, hostname FROM aep WHERE id = %s",
+      quote(id))))
+    return result.rows and result.rows[1]
   end))
 
   assert(register("update", [[
 
-  TODO: document me
+  Update an AEP row in the database.
 
-  ]], {{"aep", Aep}}, Uuid, function (aep)
-    local result = assert(query(
-      string.format(
-        "UPDATE TABLE SET id = %s, hostname = %s FROM aep WHERE id = %s",
-        quote(aep['id']),
-        quote(aep['hostname']),
-        quote(aep['id']))))
-
-    if result then
-      return aep['id']
-    end
-
-    return result
+  ]], {{"row", Row}}, Uuid, function (row)
+    assert(query(string.format(
+      "UPDATE aep SET hostname = %s WHERE id = %s",
+      quote(row['hostname']),
+      quote(row['id']))))
+    return row['id']
   end))
 
   assert(register("delete", [[
 
-  TODO: document me
+  Remove an AEP row from the database by UUID.
 
   ]], {{"id", Uuid}}, Uuid, function (id)
-    local result = assert(query(
-      string.format(
-        "DELETE FROM aep WHERE id = '%s'",
-        id)))
-    if result then
-      return id
-    end
-
-    return result
+    assert(query(string.format(
+      "DELETE FROM aep WHERE id = '%s'",
+      id)))
+    return id
   end))
 
   assert(register("query", [[
 
-  Query for existing AEP rows
+  Query for existing AEP rows.
+  Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", AepQuery} }, Array(Aep), function (queryParameters)
+  ]], { {"query", Query} }, Array(Row), function (queryParameters)
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
     local pattern
     if queryParameters.query then
-      pattern = 'WHERE hostname LIKE ' .. compileBlob(queryParameters.query) .. ' '
+      pattern = ' WHERE hostname LIKE' .. compileBlob(queryParameters.query) .. ' '
     else
       pattern = ''
     end
-    local sql = 'SELECT id, hostname FROM aep '..
-      pattern ..
-      'LIMIT '..
-      limit..
-      ' OFFSET '..
-      offset
-
-    return assert(query(sql))
+    local sql = 'SELECT id, hostname FROM aep' .. pattern ..
+      ' LIMIT ' .. limit ..
+      ' OFFSET ' .. offset
+    local result = assert(query(sql))
+    return result.rows
   end))
 
 end

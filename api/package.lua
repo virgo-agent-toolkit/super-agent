@@ -20,11 +20,12 @@ return {
     "creationix/weblit-auto-headers",
     "creationix/schema",
     "creationix/coro-postgres",
-    "creationix/coro-http",
     "creationix/msgpack",
     "luvit/json",
     "luvit/pretty-print",
     "creationix/uv",
     "creationix/uuid4",
+    "creationix/coro-http",
+    "creationix/websocket-client",
   }
 }
