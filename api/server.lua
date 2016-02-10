@@ -7,7 +7,10 @@ local db = require('connection')({
 
 -- API endpoints setup
 local registry = require('registry')()
+require('./crud/account')(db, registry.section("account"))
 require('./crud/aep')(db, registry.section("aep"))
+require('./crud/agent')(db, registry.section("agent"))
+
 
 -- HTTP setup
 require 'weblit-websocket'

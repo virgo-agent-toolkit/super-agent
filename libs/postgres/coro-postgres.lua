@@ -1,6 +1,6 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.4.3"
+  version = "0.4.4"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
@@ -147,7 +147,7 @@ local function wrap(options, read, write, socket)
           local value = message[2][i]
           local typeId = column.typeId
           if typeId == 16 then -- boolean
-            value = value > 0
+            value = value == "t"
           elseif typeId == 20 -- BIGINT
               or typeId == 23 -- INTEGER
               or typeId == 700 -- Real
