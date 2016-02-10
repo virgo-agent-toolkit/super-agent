@@ -1,6 +1,6 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.4.2"
+  version = "0.4.3"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
@@ -25,6 +25,16 @@ local decode = require('postgres-codec').decode
 local getenv = require('os').getenv
 local md5 = require('md5').sumhexa
 
+local function formatError(msg)
+  return string.format(
+    "%s: %s %s:%s (%s) - %s",
+    msg.S or "?",
+    msg.F or "?",
+    msg.L or "?",
+    msg.C or "?",
+    msg.R or "?",
+    msg.M or "?")
+end
 -- Input is read/write pair for raw data stream and options table
 -- Output is query function for sending queries
 local function wrap(options, read, write, socket)
@@ -85,8 +95,7 @@ local function wrap(options, read, write, socket)
       --   message = read()
       -- until message[1] ~= 'AuthenticationGSSContinue'
     elseif message[1] == 'ErrorResponse' then
-      p(message)
-      error("Authentication error:" .. message[2].M)
+      error(formatError(message[2]))
     else
       error("Unexpected response type: " .. message[1])
     end
@@ -123,10 +132,9 @@ local function wrap(options, read, write, socket)
         if waiting then
           local t
           t, waiting = waiting, nil
-          return assert(coroutine.resume(t, message[2].M, message[2]))
+          return assert(coroutine.resume(t, nil, formatError(message[2]), message[2]))
         end
-        p(message)
-        error("Server Error: " .. message[2].M)
+        error(formatError(message[2]))
       elseif message[1] == "RowDescription" then
         description = message[2]
         rows = {}
