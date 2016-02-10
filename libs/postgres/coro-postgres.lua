@@ -1,6 +1,6 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.4.0"
+  version = "0.4.1"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
@@ -123,7 +123,7 @@ local function wrap(options, read, write, socket)
         if waiting then
           local t
           t, waiting = waiting, nil
-          return assert(coroutine.retume(t, message[2].M, message[2]))
+          return assert(coroutine.resume(t, message[2].M, message[2]))
         end
         p(message)
         error("Server Error: " .. message[2].M)
