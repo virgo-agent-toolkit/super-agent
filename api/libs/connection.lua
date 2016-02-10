@@ -7,9 +7,10 @@ local function quote(str)
 end
 
 local function compileBlob(query)
-  query = gsub(query, '_', '\\_') -- make sure we keep '_' character rather than use the sql any character
-  query = gsub(query[1], '%', '\\%') -- make sure we keep '%' characters in the query
-  query = gsub(query[1], '*', '%') -- convert wildcard to sql wildcard
+  -- Escape any special characters that we don't want to interpret special.
+  query = gsub(query, '[\\_%%]', function (x) return '\\' .. x end)
+   -- convert wildcard to sql wildcard
+  query = gsub(query, '*', '%')
   return query
 end
 

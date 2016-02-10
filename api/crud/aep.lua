@@ -98,6 +98,7 @@ return function (db, registry)
       where = ''
     end
     local result = assert(query("SELECT count(*) from aep" .. where))
+    p("result",result)
     local count = result.rows[1].count
     local sql = 'SELECT id, hostname FROM aep' .. where ..
       ' ORDER BY hostname, id' ..
