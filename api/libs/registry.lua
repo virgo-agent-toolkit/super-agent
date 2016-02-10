@@ -59,7 +59,7 @@ return function ()
       return nil, "No such API function: " .. name
     end
     local result, error = fn(unpack(args))
-    if not result then
+    if error then
       return nil, error
     end
     return result

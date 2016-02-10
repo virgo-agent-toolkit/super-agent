@@ -115,10 +115,13 @@ coroutine.wrap(function ()
 
   AEP.query({hostname="local*"})
 
-
   assert(AEP.delete(id))
 
   assert(not AEP.read(id))
+
+  AEP.delete("6050BE6B-A8BC-4BF8-A55C-11D616679CBC")
+
+  AEP.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", hostname = "updated.host" }
 
   write()
 

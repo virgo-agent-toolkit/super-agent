@@ -1,4 +1,3 @@
-local p = require('pretty-print').prettyPrint
 local getUUID = require('uuid4').getUUID
 
 return function (db, registry)
@@ -7,6 +6,7 @@ return function (db, registry)
   local Optional = registry.Optional
   local String = registry.String
   local Int = registry.Int
+  local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
   local query = db.query
@@ -58,23 +58,23 @@ return function (db, registry)
 
   Update an AEP row in the database.
 
-  ]], {{"row", Row}}, Uuid, function (row)
-    assert(query(string.format(
+  ]], {{"row", Row}}, Bool, function (row)
+    local result = assert(query(string.format(
       "UPDATE aep SET hostname = %s WHERE id = %s",
       quote(row['hostname']),
       quote(row['id']))))
-    return row['id']
+    return result.summary == 'UPDATE 1'
   end))
 
   assert(register("delete", [[
 
   Remove an AEP row from the database by UUID.
 
-  ]], {{"id", Uuid}}, Uuid, function (id)
-    assert(query(string.format(
+  ]], {{"id", Uuid}}, Bool, function (id)
+    local result = assert(query(string.format(
       "DELETE FROM aep WHERE id = '%s'",
       id)))
-    return id
+    return result.summary == 'DELETE 1'
   end))
 
   assert(register("query", [[
@@ -90,17 +90,17 @@ return function (db, registry)
     local where
     if pattern then
       if string.match(pattern, "*") then
-        where = ' WHERE hostname LIKE' .. compileBlob(pattern)
+        where = ' WHERE hostname LIKE ' .. quote(compileBlob(pattern))
       else
         where = ' WHERE hostname = ' .. quote(pattern)
       end
     else
       where = ''
     end
-    local result = assert(query("SELECT count(*) from aep" .. where))
-    p("result",result)
+    local sql = "SELECT count(*) from aep" .. where
+    local result = assert(query(sql))
     local count = result.rows[1].count
-    local sql = 'SELECT id, hostname FROM aep' .. where ..
+    sql = 'SELECT id, hostname FROM aep' .. where ..
       ' ORDER BY hostname, id' ..
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset

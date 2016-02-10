@@ -8,10 +8,13 @@ end
 
 local function compileBlob(query)
   -- Escape any special characters that we don't want to interpret special.
-  query = gsub(query, '[\\_%%]', function (x) return '\\' .. x end)
-   -- convert wildcard to sql wildcard
-  query = gsub(query, '*', '%')
-  return query
+  return gsub(query, '[\\_%%*]', function (x)
+    if x == '*' then
+      return '%'
+    else
+     return '\\' .. x
+   end
+  end)
 end
 
 return function (options)

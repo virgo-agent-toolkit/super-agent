@@ -6,6 +6,7 @@ return function (db, registry)
   local Optional = registry.Optional
   local String = registry.String
   local Int = registry.Int
+  local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
   local query = db.query
@@ -33,87 +34,79 @@ return function (db, registry)
   This function creates a new Account entry in the database.  It will return
   the randomly generated UUID so you can reference the Account.
 
-  ]], {{"aep", RowWithoutId}}, Uuid, function (aep)
+  ]], {{"row", RowWithoutId}}, Uuid, function (row)
     local id = getUUID()
-    local result = assert(query(
-      string.format(
-        "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
-        quote(id),
-        quote(aep['hostname']))))
-    if result then
-      return id
-    end
-    return result
+    assert(query(string.format(
+      "INSERT INTO account (id, name) VALUES (%s, %s)",
+      quote(id),
+      quote(row['name']))))
+    return id
   end))
 
   assert(register("read", [[
 
-  TODO: document me
+  Given a UUID, return the corresponding row.
 
-  ]], {{"id", Uuid}}, Row, function (id)
-    local result = assert(query(
-      string.format(
-        "SELECT id, hostname FROM aep WHERE id = '%s'",
-        quote(id))))
-    return result
+  ]], {{"id", Uuid}}, Optional(Row), function (id)
+    local result = assert(query(string.format(
+      "SELECT id, name FROM account WHERE id = %s",
+      quote(id))))
+    return result.rows and result.rows[1]
   end))
 
   assert(register("update", [[
 
-  TODO: document me
+  Update an Account row in the database.
 
-  ]], {{"aep", Row}}, Uuid, function (aep)
-    local result = assert(query(
-      string.format(
-        "UPDATE TABLE SET id = %s, hostname = %s FROM aep WHERE id = %s",
-        quote(aep['id']),
-        quote(aep['hostname']),
-        quote(aep['id']))))
-
-    if result then
-      return aep['id']
-    end
-
-    return result
+  ]], {{"row", Row}}, Bool, function (row)
+    local result = assert(query(string.format(
+      "UPDATE account SET name = %s WHERE id = %s",
+      quote(row['name']),
+      quote(row['id']))))
+    return result.summary == 'UPDATE 1'
   end))
 
   assert(register("delete", [[
 
-  TODO: document me
+  Remove an Account row from the database by UUID.
 
-  ]], {{"id", Uuid}}, Uuid, function (id)
-    local result = assert(query(
-      string.format(
-        "DELETE FROM aep WHERE id = '%s'",
-        id)))
-    if result then
-      return id
-    end
-
-    return result
+  ]], {{"id", Uuid}}, Bool, function (id)
+    local result = assert(query(string.format(
+      "DELETE FROM account WHERE id = '%s'",
+      id)))
+    return result.summary == 'DELETE 1'
   end))
 
   assert(register("query", [[
 
-  Query for existing AEP rows
+  Query for existing Account rows.
+  Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", Query} }, Array(Row), function (queryParameters)
+  ]], { {"query", Query} }, {Array(Row),Int}, function (queryParameters)
+    queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
-    local pattern
-    if queryParameters.query then
-      pattern = 'WHERE hostname LIKE ' .. compileBlob(queryParameters.query) .. ' '
+    local pattern = queryParameters.name
+    local where
+    if pattern then
+      if string.match(pattern, "*") then
+        where = ' WHERE name LIKE ' .. quote(compileBlob(pattern))
+      else
+        where = ' WHERE name = ' .. quote(pattern)
+      end
     else
-      pattern = ''
+      where = ''
     end
-    local sql = 'SELECT id, hostname FROM aep '..
-      pattern ..
-      'LIMIT '..
-      limit..
-      ' OFFSET '..
-      offset
-
-    return assert(query(sql))
+    local sql = "SELECT count(*) from account" .. where
+    local result = assert(query(sql))
+    local count = result.rows[1].count
+    sql = 'SELECT id, name FROM account' .. where ..
+      ' ORDER BY name, id' ..
+      ' LIMIT ' .. limit ..
+      ' OFFSET ' .. offset
+    result = assert(query(sql))
+    local rows = result.rows
+    return {rows, count}
   end))
 
 end
