@@ -1,3 +1,4 @@
+local p = require('pretty-print').prettyPrint
 local getUUID = require('uuid4').getUUID
 
 return function (db, registry)
@@ -81,20 +82,30 @@ return function (db, registry)
   Query for existing AEP rows.
   Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", Query} }, Array(Row), function (queryParameters)
+  ]], { {"query", Query} }, {Array(Row),Int}, function (queryParameters)
+    queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
-    local pattern
-    if queryParameters.query then
-      pattern = ' WHERE hostname LIKE' .. compileBlob(queryParameters.query) .. ' '
+    local pattern = queryParameters.hostname
+    local where
+    if pattern then
+      if string.match(pattern, "*") then
+        where = ' WHERE hostname LIKE' .. compileBlob(pattern)
+      else
+        where = ' WHERE hostname = ' .. quote(pattern)
+      end
     else
-      pattern = ''
+      where = ''
     end
-    local sql = 'SELECT id, hostname FROM aep' .. pattern ..
+    local result = assert(query("SELECT count(*) from aep" .. where))
+    local count = result.rows[1].count
+    local sql = 'SELECT id, hostname FROM aep' .. where ..
+      ' ORDER BY hostname, id' ..
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
-    local result = assert(query(sql))
-    return result.rows
+    result = assert(query(sql))
+    local rows = result.rows
+    return {rows, count}
   end))
 
 end

@@ -1,6 +1,6 @@
 --[[lit-meta
   name = "creationix/coro-postgres"
-  version = "0.4.1"
+  version = "0.4.2"
   dependencies = {
     "creationix/coro-wrapper@2.0.0",
     "creationix/coro-net@2.0.0",
@@ -137,7 +137,16 @@ local function wrap(options, read, write, socket)
           local column = description[i]
           local field = column.field
           local value = message[2][i]
-          -- TODO: do type conversions so not everything is strings
+          local typeId = column.typeId
+          if typeId == 16 then -- boolean
+            value = value > 0
+          elseif typeId == 20 -- BIGINT
+              or typeId == 23 -- INTEGER
+              or typeId == 700 -- Real
+              or typeId == 701 -- Double
+              then
+            value = tonumber(value)
+          end
           row[field] = value
         end
       elseif message[1] == "CommandComplete" then

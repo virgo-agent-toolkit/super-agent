@@ -109,6 +109,13 @@ coroutine.wrap(function ()
 
   assert(AEP.read(id))
 
+  AEP.query({})
+
+  AEP.query({hostname="localhost"})
+
+  AEP.query({hostname="local*"})
+
+
   assert(AEP.delete(id))
 
   assert(not AEP.read(id))
