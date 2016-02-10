@@ -19,49 +19,74 @@ local Uuid = setmetatable({}, {
   end
 })
 
+return function ()
+  local functions = {}
+  local aliases = {}
 
-local functions = {}
-local aliases = {}
+  local shared = {__index={
+    functions = functions,
+    aliases = aliases,
+    Uuid = Uuid,
+    Any = schema.Any,
+    Truthy = schema.Truthy,
+    Int = schema.Int,
+    Number = schema.Number,
+    String = schema.String,
+    Bool = schema.Bool,
+    Function = schema.Function,
+    Array = schema.Array,
+    Optional = schema.Optional,
+    Type = schema.Type,
+  }}
 
-local function register(name, docs, args, output, fn)
-  local err
-  fn, err = addSchema(name, args, output, fn)
-  if not fn then return nil, err end
-  fn.docs = docs:match "^%s*(.-)%s*$"
-  functions[name] = fn
-  return tostring(fn)
-end
-
-local function section(prefix)
-  return function (name, ...)
-    return register(prefix .. name, ...)
+  local function register(name, doc, args, ret, fn)
+    local err
+    fn, err = addSchema(name, args, ret, fn)
+    if not fn then return nil, err end
+    fn.docs = doc:match "^%s*(.-)%s*$"
+    functions[name] = fn
+    return tostring(fn)
   end
-end
 
-local function call(name, args)
-  local fn = functions[name]
-  if not fn then
-    return nil, "No such API function: " .. name
+  local function alias(name, doc, typ)
+    typ = checkType(typ)
+    aliases[name] = {doc:match "^%s*(.-)%s*$", typ}
+    return makeAlias(name, typ)
   end
-  local result, error = fn(unpack(args))
-  if not result then
-    return nil, error
+  local function call(name, args)
+    local fn = functions[name]
+    if not fn then
+      return nil, "No such API function: " .. name
+    end
+    local result, error = fn(unpack(args))
+    if not result then
+      return nil, error
+    end
+    return result
   end
-  return result
-end
 
-local function alias(name, typ, docs)
-  typ = checkType(typ)
-  aliases[name] = {docs:match "^%s*(.-)%s*$", typ}
-  return makeAlias(name, typ)
-end
+  local function section(prefix)
+    prefix = prefix .. "."
+    return setmetatable({
+      register = function (name, ...)
+        return register(prefix .. name, ...)
+      end,
+      alias = function (name, ...)
+        return alias(prefix .. name, ...)
+      end,
+      section = function (name, ...)
+        return section(prefix .. name, ...)
+      end,
+      call = function (name, ...)
+        return call(prefix .. name, ...)
+      end,
+    }, shared)
+  end
 
-return {
-  Uuid = Uuid,
-  alias = alias,
-  section = section,
-  register = register,
-  call = call,
-  functions = functions,
-  aliases = aliases
-}
+  return setmetatable({
+    register = register,
+    alias = alias,
+    section = section,
+    call = call,
+  }, shared)
+end

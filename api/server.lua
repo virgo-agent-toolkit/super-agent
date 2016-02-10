@@ -1,14 +1,13 @@
+-- Database connection setup
 local getenv = require('os').getenv
-
--- Databasre connection setup
-require('connection').setup {
+local db = require('connection')({
   password = getenv('PASSWORD'),
   database = getenv('DATABASE'),
-}
+})
 
 -- API endpoints setup
-require './crud/aep'
-
+local registry = require('registry')()
+require('./crud/aep')(db, registry.section("aep"))
 
 -- HTTP setup
 require 'weblit-websocket'
@@ -25,11 +24,11 @@ require('weblit-app')
 .websocket({
   path = "/websocket",
   protocol = "schema-rpc"
-}, require('websocket-handler'))
+}, require('websocket-handler')(registry.call))
 
 .route({
   method = "POST",
   path = "/api/:path:"
-}, require('http-handler'))
+}, require('http-handler')(registry.call))
 
 .start()

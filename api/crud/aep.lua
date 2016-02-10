@@ -1,114 +1,119 @@
-local schema = require 'schema'
-local String = schema.String
-local Int = schema.Int
-local Array = schema.Array
-local Optional = schema.Optional
-local registry = require 'registry'
-local Uuid = registry.Uuid
-local register = registry.section("aep.")
-local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-local query = require('connection').query
-local quote = require('sql-helpers').quote
-local cleanQuery = require('sql-helpers').cleanQuery
 
-local Aep = alias("Aep", {id=Uuid,hostname=String},
-  "This alias is for existing AEP entries that have an ID.")
+return function (db, registry)
+  local alias = registry.alias
+  local register = registry.register
+  local Optional = registry.Optional
+  local String = registry.String
+  local Int = registry.Int
+  local Array = registry.Array
+  local Uuid = registry.Uuid
+  local query = db.query
+  local quote = db.quote
+  local compileBlob = db.compileBlob
 
-local AepWithoutId = alias("AepWithoutId", {hostname=String},
-  "This alias is for creating new AEP entries that don't have an ID yet")
+  local Aep = alias("Aep",
+    "This alias is for existing AEP entries that have an ID.",
+    {id=Uuid,hostname=String})
 
-local AepQuery = alias("AepQuery", {
-    hostname = Optional(String),
-    start = Optional(Int),
-    count = Optional(Int),
-  },
-  "Structure for valid query parameters")
+  local AepWithoutId = alias("AepWithoutId",
+    "This alias is for creating new AEP entries that don't have an ID yet",
+    {hostname=String})
 
-assert(register("create", [[
+  local AepQuery = alias("AepQuery",
+    "Structure for valid query parameters",
+    {
+      hostname = Optional(String),
+      start = Optional(Int),
+      count = Optional(Int),
+    })
 
-This function creates a new AEP entry in the database.  It will return
-the randomly generated UUID so you can reference the AEP.
+  assert(register("create", [[
 
-]], {{"aep", AepWithoutId}}, Uuid, function (aep)
-  local id = getUUID()
-  local result = assert(query(
-    string.format(
-      "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
-      quote(id),
-      quote(aep['hostname']))))
-  if result then
-    return id
-  end
-  return result
-end))
+  This function creates a new AEP entry in the database.  It will return
+  the randomly generated UUID so you can reference the AEP.
 
-assert(register("read", [[
+  ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
+    local id = getUUID()
+    local result = assert(query(
+      string.format(
+        "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
+        quote(id),
+        quote(aep['hostname']))))
+    if result then
+      return id
+    end
+    return result
+  end))
 
-TODO: document me
+  assert(register("read", [[
 
-]], {{"id", Uuid}}, Aep, function (id)
-  local result = assert(query(
-    string.format(
-      "SELECT id, hostname FROM aep WHERE id = '%s'",
-      quote(id))))
-  return result
-end))
+  TODO: document me
 
-assert(register("update", [[
+  ]], {{"id", Uuid}}, Aep, function (id)
+    local result = assert(query(
+      string.format(
+        "SELECT id, hostname FROM aep WHERE id = '%s'",
+        quote(id))))
+    return result
+  end))
 
-TODO: document me
+  assert(register("update", [[
 
-]], {{"aep", Aep}}, Uuid, function (aep)
-  local result = assert(query(
-    string.format(
-      "UPDATE TABLE SET id = %s, hostname = %s FROM aep WHERE id = %s",
-      quote(aep['id']),
-      quote(aep['hostname']),
-      quote(aep['id']))))
+  TODO: document me
 
-  if result then
-    return aep['id']
-  end
+  ]], {{"aep", Aep}}, Uuid, function (aep)
+    local result = assert(query(
+      string.format(
+        "UPDATE TABLE SET id = %s, hostname = %s FROM aep WHERE id = %s",
+        quote(aep['id']),
+        quote(aep['hostname']),
+        quote(aep['id']))))
 
-  return result
-end))
+    if result then
+      return aep['id']
+    end
 
-assert(register("delete", [[
+    return result
+  end))
 
-TODO: document me
+  assert(register("delete", [[
 
-]], {{"id", Uuid}}, Uuid, function (id)
-  local result = assert(query(
-    string.format(
-      "DELETE FROM aep WHERE id = '%s'",
-      id)))
-  if result then
-    return id
-  end
+  TODO: document me
 
-  return result
-end))
+  ]], {{"id", Uuid}}, Uuid, function (id)
+    local result = assert(query(
+      string.format(
+        "DELETE FROM aep WHERE id = '%s'",
+        id)))
+    if result then
+      return id
+    end
 
-assert(register("query", [[
+    return result
+  end))
 
-Query for existing AEP rows
+  assert(register("query", [[
 
-]], { {"query", AepQuery} }, Array(Aep), function (queryParameters)
-  local offset = queryParameters.start or 0
-  local limit = queryParameters.count or 20
-  local pattern
-  if not queryParameters.query then
-    pattern = ''
-  else
-    pattern = ('WHERE hostname LIKE '..cleanQuery(queryParameters.query)..' ')
-  end
-  local sql = 'SELECT id, hostname FROM aep '..
-    pattern ..
-    'LIMIT '..
-    limit..
-    ' OFFSET '..
-    offset
+  Query for existing AEP rows
 
-  return assert(query(sql))
-end))
+  ]], { {"query", AepQuery} }, Array(Aep), function (queryParameters)
+    local offset = queryParameters.start or 0
+    local limit = queryParameters.count or 20
+    local pattern
+    if queryParameters.query then
+      pattern = 'WHERE hostname LIKE ' .. compileBlob(queryParameters.query) .. ' '
+    else
+      pattern = ''
+    end
+    local sql = 'SELECT id, hostname FROM aep '..
+      pattern ..
+      'LIMIT '..
+      limit..
+      ' OFFSET '..
+      offset
+
+    return assert(query(sql))
+  end))
+
+end
