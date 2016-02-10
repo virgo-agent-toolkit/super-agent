@@ -7,13 +7,9 @@ local Uuid = registry.Uuid
 local register = registry.section("agent.")
 local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-
-local psqlConnect = require('coro-postgres')
-local getenv = require('os').getenv
-
-local psqlQuery = psqlConnect.connect(
-  {password=getenv("PASSWORD"),
-  database=getenv("DATABASE")}).query
+local query = require('connection').query
+local quote = require('sql-helpers').quote
+local cleanQuery = require('sql-helpers').cleanQuery
 
 local Agent = alias("Agent", {id=Uuid, name=String},
   "This alias is for existing agent entries that have an ID.")
@@ -38,14 +34,14 @@ This function creates a new agent entry in the database.
 It will return the randomly generated UUID of the agent.
 ]], {{"AgentWithoutId", AgentWithoutId}}, Uuid, function (agent)
   local id = getUUID()
-  local result = psqlQuery(
+  local result = assert(query(
     string.format("INSERT INTO agent ('id', 'name') VALUES ('%s', '%s')",
-      id,
-      agent['name']))
-  if not result then
-    error('Create agent failed: '..result[2])
+      quote(id),
+      quote(agent['name']))))
+  if result then
+    return id
   end
-  return id
+  return result
 end))
 
 
@@ -54,12 +50,9 @@ assert(register("read", [[
 TODO: document me
 
 ]], {{"id", Uuid}}, Agent, function (id)
-  local result = psqlQuery(
+  local result = assert(query(
     string.format("SELECT id, name FROM agent WHERE id='%s'",
-      id))
-  if not result then
-    error('Create agent failed: '..result[2])
-  end
+      quote(id))))
   return result
 end))
 
@@ -68,17 +61,17 @@ assert(register("update", [[
 TODO: document me
 
 ]], {{"Agent", Agent}}, Uuid, function (agent)
-  local result = psqlQuery(
+  local result = assert(query(
     string.format(
       "UPDATE TABLE SET id = '%s', name = '%s' FROM account WHERE id = '%s'",
-      agent['id'],
-      agent['name'],
-      agent['id']))
-  if not result then
-    error("Update agent failed: ", result[2])
+      quote(agent['id']),
+      quote(agent['name']),
+      quote(agent['id']))))
+  if result then
+    return agent['id']
   end
 
-  return agent['id']
+  return result
 end))
 
 assert(register("delete", [[
@@ -86,15 +79,15 @@ assert(register("delete", [[
 Deletes an agent with a particular id
 
 ]], {{"id", Uuid}}, Uuid, function (id)
-  local result = psqlQuery(
+  local result = assert(query(
     string.format(
       "DELETE FROM agent WHERE id = '%s'",
-      id))
-  if not result then
-    error("Create agent failed: ", result[2])
+      quote(id))))
+  if result then
+    return id
   end
 
-  return id
+  return result
 end))
 
 assert(register("query", [[
