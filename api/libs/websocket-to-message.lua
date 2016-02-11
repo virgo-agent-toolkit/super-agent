@@ -1,3 +1,4 @@
+local p = require('pretty-print').prettyPrint
 local jsonDecode = require('json').parse
 local jsonEncode = require('json').stringify
 local msgpackDecode = require('msgpack').decode
@@ -7,6 +8,7 @@ return function (read, write, jsonFirst)
   local encode = jsonFirst and jsonEncode or msgpackEncode
   return function ()
     local frame = read()
+    if not frame then return end
     local message
     if frame.opcode == 1 then
       message = jsonDecode(frame.payload)
@@ -15,11 +17,14 @@ return function (read, write, jsonFirst)
       message = msgpackDecode(frame.payload)
       encode = msgpackEncode
     end
+    p("<-", message)
     return message
   end, function (message)
-    return write {
+    p("->", message)
+    local frame = {
       opcode = encode == jsonEncode and 1 or 2,
       payload = encode(message),
     }
+    return write(frame)
   end
 end

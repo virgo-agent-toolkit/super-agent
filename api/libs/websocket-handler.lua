@@ -2,6 +2,13 @@ local p = require('pretty-print').prettyPrint
 local codec = require('websocket-to-message')
 local makeRpc = require('rpc')
 
+local severityTable = {
+  "Fatal",
+  "Error",
+  "Warning",
+  "Notice",
+  "Debug"
+}
 
 return function (call)
 
@@ -13,7 +20,13 @@ return function (call)
       peerName = peerName .. ' ' .. userAgent
     end
     print("UPGRADE " .. peerName)
-    makeRpc(call, log, codec(read, write))
+
+    local function log(severity, ...)
+      print(severityTable[severity], ...)
+    end
+
+    local rpc = makeRpc(call, log, codec(read, write))
+    rpc.readLoop()
 
     print("DISCONNECT " .. peerName)
 

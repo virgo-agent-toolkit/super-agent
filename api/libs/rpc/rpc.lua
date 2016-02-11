@@ -27,7 +27,7 @@ magicMeta = {
     }, magicMeta)
   end,
   __call = function (self, ...)
-    return self.call(self.name, ...)
+    return self.call(self.name, {...})
   end
 }
 
@@ -52,13 +52,24 @@ return function (call, log, read, write)
   local waiting = {}
 
   -- Run the read loop in a background thread
-  local graceful, error
+  local graceful, error, closed
+
+  local function close(err)
+    closed = true
+    graceful = true
+    if err then
+      log(1, err)
+    end
+
+    return write {0,0,err}
+  end
+
   local function readLoop()
     local success, stack = xpcall(function ()
       for message in read do
         if not(type(message) == "table" and
                type(message[1]) == "number") then
-          write {0, 0, "invalid message format"}
+          close "invalid message format"
           break;
         end
         local id = message[1]
@@ -67,41 +78,38 @@ return function (call, log, read, write)
         if id > 0 then
           local name = message[2]
           if type(name) ~= "string" then
-            write {-id, nil, "name must be string in remote call"}
-          else
-            -- Call API function in background and continue processing
-            coroutine.wrap(function ()
-              local result, err
-              local args = {}
-              for i = 3, #message do
-                args[i-2] = message[i]
-              end
-              local success, stack = xpcall(function ()
-                result, err = call(name, unpack(args))
-              end, debug.traceback)
-              if not success then
-                write {-id, nil, "Server Error"}
-                log(0, stack)
-              else
-                write {-id, result, err}
-              end
-            end)()
+            log(1, "invalid message format")
+            close "name must be string in remote call"
+            break
           end
+          -- Call API function in background and continue processing
+          coroutine.wrap(function ()
+            local result, err
+            local args = {}
+            for i = 3, #message do
+              args[i-2] = message[i]
+            end
+            local success, stack = xpcall(function ()
+              result, err = call(name, unpack(args))
+            end, debug.traceback)
+            if not success then
+              write {-id, nil, "Server Error"}
+              log(0, stack)
+            else
+              write {-id, result, err}
+            end
+          end)()
 
         -- Response from remote
         elseif id < 0 then
           id = -id
           local thread = waiting[id]
           if not thread then
-            write {0, 0, "Unexpected response id"}
+            close "Unexpected response id"
             break
           end
           waiting[id] = nil
-          local args = {}
-          for i = 2, #message do
-            args[i - 1] = message[i]
-          end
-          local success, err = coroutine.resume(thread, unpack(args))
+          local success, err = coroutine.resume(thread, message[2], message[3])
           if not success then
             log(1, err)
           end
@@ -115,7 +123,7 @@ return function (call, log, read, write)
             break
           end
           if type(sid) ~= "number" then
-            write {0, 0, "stream id must be integer"}
+            close "stream id must be integer"
             break
           else
             error("TODO: handle stream packets")
@@ -123,8 +131,8 @@ return function (call, log, read, write)
         end
 
       end
-      if graceful then
-        write(0,0)
+      if graceful and not closed then
+        close()
       end
     end, debug.traceback)
     -- Close the socket, ignore any errors
@@ -151,10 +159,6 @@ return function (call, log, read, write)
     write {id, name, ...}
     waiting[id] = coroutine.running()
     return coroutine.yield()
-  end
-
-  local function close()
-    return write {0,0}
   end
 
   -- Return the api magic object
