@@ -13,22 +13,24 @@ return function (db, registry)
   local quote = db.quote
   local parameterBuilder = db.parameterBuilder
 
-  local Row = alias("Agent", {
+  local Row = alias("Agent",
+  "This alias is for existing agent entries that have an ID."
+  {
     id=Uuid,
     name=String,
     aep_id=Uuid,
     token=Uuid,
     account_id=Uuid
-  },
-    "This alias is for existing agent entries that have an ID.")
+  })
 
-  local RowWithoutId = alias("AgentWithoutId", {
+  local RowWithoutId = alias("AgentWithoutId",
+  "This alias creates a new agent",
+  {
     name=String,
     aep_id=Uuid,
     token=Uuid,
     account_id=Uuid
-  },
-    "This alias creates a new agent")
+  })
 
   local Query = alias("Query",
     "Structure for valid query parameters",

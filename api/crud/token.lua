@@ -14,19 +14,23 @@ return function (db, registry)
   local parameterBuilder = db.parameterBuilder
 
 
-local Token = alias("Token", {id=Uuid, account_id=Uuid, description=String},
-  "This alias is for existing Token entries that has an ID.")
+local Token = alias("Token",
+"This alias is for existing Token entries that has an ID.",
+{id=Uuid, account_id=Uuid, description=String})
 
-local TokenWithoutId = alias("TokenWithoutId", {account_id=Uuid, description=String},
-  "This alias is for creating new Token entries that don't have an ID yet")
+local TokenWithoutId = alias("TokenWithoutId",
+"This alias is for creating new Token entries that don't have an ID yet",
+{account_id=Uuid, description=String})
 
-  local TokenQuery = alias("TokenQuery", {
+  local TokenQuery = alias("TokenQuery",
+  "Structure for valid query parameters",
+  {
       account_id = Optional(String),
       description = Optional(String),
       start = Optional(Int),
       count = Optional(Int),
-    },
-    "Structure for valid query parameters")
+    })
+
 assert(register("create", [[
 
 This function creates a new token entry in the database associated with a
