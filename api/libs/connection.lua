@@ -34,7 +34,7 @@ local function parameterBuilder(input)
       query[index] = 'AND'
       index = index + 1
     end
-    query[index] = table.tableName..' LIKE '..compileBlob(table.pattern)
+    query[index] = table.tableName..' LIKE '..quote(compileBlob(table.pattern))
     index = index + 1
   end
 

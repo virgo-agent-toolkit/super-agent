@@ -11,7 +11,7 @@ return function (db, registry)
   local Uuid = registry.Uuid
   local query = db.query
   local quote = db.quote
-  local compileBlob = db.compileBlob
+  local parameterBuilder = db.parameterBuilder
 
   local Row = alias("Row",
     "This alias is for existing AEP entries that have an ID.",
@@ -73,7 +73,7 @@ return function (db, registry)
   ]], {{"id", Uuid}}, Bool, function (id)
     local result = assert(query(string.format(
       "DELETE FROM aep WHERE id = '%s'",
-      id)))
+      quote(id))))
     return result.summary == 'DELETE 1'
   end))
 
@@ -87,8 +87,8 @@ return function (db, registry)
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
     local pattern = queryParameters.hostname
-    local where
-    if pattern then
+    local where = parameterBuilder({{tableName='hostname', pattern=pattern}})
+    --[[if pattern then
       if string.match(pattern, "*") then
         where = ' WHERE hostname LIKE ' .. quote(compileBlob(pattern))
       else
@@ -96,7 +96,7 @@ return function (db, registry)
       end
     else
       where = ''
-    end
+    end]]
     local sql = "SELECT count(*) from aep" .. where
     local result = assert(query(sql))
     local count = result.rows[1].count

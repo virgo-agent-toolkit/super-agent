@@ -1,105 +1,139 @@
-local schema = require 'schema'
-local Int = schema.Int
-local String = schema.String
-local Array = schema.Array
-local registry = require 'registry'
-local Uuid = registry.Uuid
-local register = registry.section("agent.")
-local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-local query = require('connection').query
-local quote = require('sql-helpers').quote
-local cleanQuery = require('sql-helpers').cleanQuery
 
-local Agent = alias("Agent", {id=Uuid, name=String},
-  "This alias is for existing agent entries that have an ID.")
+return function (db, registry)
+  local alias = registry.alias
+  local register = registry.register
+  local Optional = registry.Optional
+  local String = registry.String
+  local Int = registry.Int
+  local Bool = registry.Bool
+  local Array = registry.Array
+  local Uuid = registry.Uuid
+  local query = db.query
+  local quote = db.quote
+  local parameterBuilder = db.parameterBuilder
 
-local AgentWithoutId = alias("AgentWithoutId", {name=String},
-  "This alias creates a new agent")
+  local Row = alias("Agent", {
+    id=Uuid,
+    name=String,
+    aep_id=Uuid,
+    token=Uuid,
+    account_id=Uuid
+  },
+    "This alias is for existing agent entries that have an ID.")
 
-local Query = alias("Query", {pattern=String},
-  "Structure for valid query parameters")
-local Page = alias("Page", {Int,Int},
-  "This alias is s tuple of `limit` and `offset` for tracking position when paginating")
+  local RowWithoutId = alias("AgentWithoutId", {
+    name=String,
+    aep_id=Uuid,
+    token=Uuid,
+    account_id=Uuid
+  },
+    "This alias creates a new agent")
 
+  local Query = alias("Query",
+    "Structure for valid query parameters",
+    {
+      account_id = Optional(String),
+      name = Optional(String),
+      aep_id = Optional(String),
+      token = Optional(String),
+      start = Optional(Int),
+      count = Optional(Int),
+    })
 
--- create({description}})
--- update({uuid,name})
--- delete(uuid)
--- query({pattern}, {limit,offset})
+  -- create({description}})
+  -- update({uuid,name})
+  -- delete(uuid)
+  -- query({pattern}, {limit,offset})
 
-assert(register("create", [[
+  assert(register("create", [[
 
-This function creates a new agent entry in the database.
-It will return the randomly generated UUID of the agent.
-]], {{"AgentWithoutId", AgentWithoutId}}, Uuid, function (agent)
-  local id = getUUID()
-  local result = assert(query(
-    string.format("INSERT INTO agent ('id', 'name') VALUES ('%s', '%s')",
-      quote(id),
-      quote(agent['name']))))
-  if result then
+  This function creates a new agent entry in the database.
+  It will return the randomly generated UUID of the agent.
+  ]], {{"AgentWithoutId", RowWithoutId}}, Uuid, function (agent)
+    local id = getUUID()
+    assert(query(
+      string.format("INSERT INTO agent ('id', 'name', 'token', 'account_id', 'aep_id') VALUES ('%s', '%s')",
+        quote(id),
+        quote(agent['name']),
+        quote(agent['token']),
+        quote(agent['account_id']),
+        quote(agent['aep_id']))))
+
     return id
-  end
-  return result
-end))
+  end))
 
 
-assert(register("read", [[
+  assert(register("read", [[
 
-TODO: document me
+  TODO: document me
 
-]], {{"id", Uuid}}, Agent, function (id)
-  local result = assert(query(
-    string.format("SELECT id, name FROM agent WHERE id='%s'",
-      quote(id))))
-  return result
-end))
+  ]], {{"id", Uuid}}, Row, function (id)
+    local result = assert(query(
+      string.format("SELECT id, name, account_id, aep_id, token FROM agent WHERE id='%s'",
+        quote(id))))
+    return result.rows and result.rows[1]
+  end))
 
-assert(register("update", [[
+  assert(register("update", [[
 
-TODO: document me
+  TODO: document me
 
-]], {{"Agent", Agent}}, Uuid, function (agent)
-  local result = assert(query(
-    string.format(
-      "UPDATE TABLE SET id = '%s', name = '%s' FROM account WHERE id = '%s'",
-      quote(agent['id']),
-      quote(agent['name']),
-      quote(agent['id']))))
-  if result then
-    return agent['id']
-  end
+  ]], {{"Agent", Row}}, Uuid, function (agent)
+    local result = assert(query(
+      string.format(
+        "UPDATE account SET name = '%s', "..
+        "account_id = '%s', token ='%s', aep_id = '%s' WHERE id = '%s'",
+        quote(agent['name']),
+        quote(agent['account_id']),
+        quote(agent['token']),
+        quote(agent['aep_id']),
+        quote(agent['id']))))
+        -- are there other things we want to set?
 
-  return result
-end))
+    return result.summary == 'UPDATE 1'
+  end))
 
-assert(register("delete", [[
+  assert(register("delete", [[
 
-Deletes an agent with a particular id
+  Deletes an agent with a particular id
 
-]], {{"id", Uuid}}, Uuid, function (id)
-  local result = assert(query(
-    string.format(
-      "DELETE FROM agent WHERE id = '%s'",
-      quote(id))))
-  if result then
-    return id
-  end
+  ]], {{"id", Uuid}}, Bool, function (id)
+    local result = assert(query(
+      string.format(
+        "DELETE FROM agent WHERE id = '%s'",
+        quote(id))))
 
-  return result
-end))
+    return result.summary == 'DELETE 1'
+  end))
 
-assert(register("query", [[
+  assert(register("query", [[
 
-TODO: document me
+  TODO: document me
 
-]], {
-  {"query", Query},
-  {"page", Page},
-}, {
-  Array(Aep),
-  Page
-}, function (query)
-  -- TODO: Implement
-end))
+  ]], {
+    {"query", Query}},
+    {Array(Row)}, function (queryParameters)
+      queryParameters = queryParameters or {}
+      local offset = queryParameters.start or 0
+      local limit = queryParameters.count or 20
+      local where = parameterBuilder({
+        {tableName='account_id', pattern=queryParameters.account_id},
+        {tableName='name', pattern=queryParameters.name},
+        {tableName='aep_id', pattern=queryParameters.aep_id},
+        {tableName='token', pattern=queryParameters.token}
+      })
+
+      local sql = "SELECT count(*) from aep" .. where
+      local result = assert(query(sql))
+      local count = result.rows[1].count
+      sql = 'SELECT id, hostname FROM aep' .. where ..
+        ' ORDER BY name, id' ..
+        ' LIMIT ' .. limit ..
+        ' OFFSET ' .. offset
+      result = assert(query(sql))
+      local rows = result.rows
+      return {rows, count}
+  end))
+
+end

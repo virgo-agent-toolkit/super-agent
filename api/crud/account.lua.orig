@@ -1,5 +1,18 @@
+<<<<<<< Updated upstream
+=======
+local schema = require 'schema'
+local Int = schema.Int
+local String = schema.String
+local Array = schema.Array
+local Optional = schema.Optional
+local registry = require 'registry'
+local Uuid = registry.Uuid
+local register = registry.section("account.")
+local alias = registry.alias
+>>>>>>> Stashed changes
 local getUUID = require('uuid4').getUUID
 
+<<<<<<< Updated upstream
 return function (db, registry)
   local alias = registry.alias
   local register = registry.register
@@ -11,7 +24,7 @@ return function (db, registry)
   local Uuid = registry.Uuid
   local query = db.query
   local quote = db.quote
-  local parameterBuilder = db.parameterBuilder
+  local compileBlob = db.compileBlob
 
   local Row = alias("Row",
     "This alias is for existing Account entries that have an ID.",
@@ -38,6 +51,35 @@ return function (db, registry)
     local id = getUUID()
     assert(query(string.format(
       "INSERT INTO account (id, name) VALUES (%s, %s)",
+=======
+local Account = alias("Account", {id=Uuid, name=String},
+  "This alias is for existing account entries that have an ID.")
+
+local AccountWithoutId = alias("AccountWithoutId", {name=String},
+  "This alias creates a new account")
+
+  local AccountQuery = alias("AccountQuery", {
+      name = Optional(String),
+      start = Optional(Int),
+      count = Optional(Int),
+    },
+    "Structure for valid query parameters")
+
+
+-- create({description}})
+-- update({uuid,name})
+-- delete(uuid)
+-- query({pattern}, {limit,offset})
+
+assert(register("create", [[
+
+This function creates a new account entry in the database.
+It will return the randomly generated UUID of the account.
+]], {{"AccountWithoutId", AccountWithoutId}}, Uuid, function (account)
+  local id = getUUID()
+  local result = assert(query(
+    string.format("INSERT INTO account ('id', 'name') VALUES ('%s', '%s')",
+>>>>>>> Stashed changes
       quote(id),
       quote(row['name']))))
     return id
@@ -73,6 +115,7 @@ return function (db, registry)
   ]], {{"id", Uuid}}, Bool, function (id)
     local result = assert(query(string.format(
       "DELETE FROM account WHERE id = '%s'",
+<<<<<<< Updated upstream
       id)))
     return result.summary == 'DELETE 1'
   end))
@@ -86,8 +129,17 @@ return function (db, registry)
     queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
-    local where = parameterBuilder({{tableName='name', pattern=queryParameters.name}})
-
+    local pattern = queryParameters.name
+    local where
+    if pattern then
+      if string.match(pattern, "*") then
+        where = ' WHERE name LIKE ' .. quote(compileBlob(pattern))
+      else
+        where = ' WHERE name = ' .. quote(pattern)
+      end
+    else
+      where = ''
+    end
     local sql = "SELECT count(*) from account" .. where
     local result = assert(query(sql))
     local count = result.rows[1].count
@@ -101,3 +153,35 @@ return function (db, registry)
   end))
 
 end
+=======
+      quote(id))))
+  if result then
+    return id
+  end
+  return result
+end))
+
+assert(register("query", [[
+
+TODO: document me
+
+]], {
+  {"query", AccountQuery},
+}, {Array(Account)}, function (queryParameters)
+  local offset = queryParameters.start or 0
+  local limit = queryParameters.count or 20
+  local pattern = ''
+
+  if queryParameters.name then
+    pattern = 'WHERE name LIKE '..cleanQuery(queryParameters.name)
+  end
+  local sql = 'SELECT id, name FROM account '..
+  pattern..
+  'LIMIT '..
+  limit..
+  ' OFFSET '..
+  offset
+
+  return assert(query(sql)).row
+end))
+>>>>>>> Stashed changes

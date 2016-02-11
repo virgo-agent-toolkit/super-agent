@@ -1,16 +1,17 @@
-local schema = require 'schema'
-local Int = schema.Int
-local String = schema.String
-local Array = schema.Array
-local Optional = schema.Optional
-local registry = require 'registry'
-local Uuid = registry.Uuid
-local register = registry.section("token.")
-local alias = registry.alias
 local getUUID = require('uuid4').getUUID
-local query = require('connection').query
-local quote = require('sql-helpers').quote
-local cleanQuery = require('sql-helpers').cleanQuery
+
+return function (db, registry)
+  local alias = registry.alias
+  local register = registry.register
+  local Optional = registry.Optional
+  local String = registry.String
+  local Int = registry.Int
+  local Bool = registry.Bool
+  local Array = registry.Array
+  local Uuid = registry.Uuid
+  local query = db.query
+  local quote = db.quote
+  local parameterBuilder = db.parameterBuilder
 
 
 local Token = alias("Token", {id=Uuid, account_id=Uuid, description=String},
@@ -19,7 +20,7 @@ local Token = alias("Token", {id=Uuid, account_id=Uuid, description=String},
 local TokenWithoutId = alias("TokenWithoutId", {account_id=Uuid, description=String},
   "This alias is for creating new Token entries that don't have an ID yet")
 
-  local TokenQuery = alias("AepQuery", {
+  local TokenQuery = alias("TokenQuery", {
       account_id = Optional(String),
       description = Optional(String),
       start = Optional(Int),
@@ -39,10 +40,7 @@ This function creates a new token entry in the database associated with a
       quote(id),
       quote(token['account_id']),
       quote(token['description']))))
-  if result then
-    return id
-  end
-  return result
+  return id
 end))
 
 assert(register("read", [[
@@ -54,14 +52,14 @@ TODO: document me
     string.format(
       "SELECT id, account_id, description FROM token WHERE id = '%s'",
       quote(id))))
-  return result
+  return result.rows and result.rows[1]
 end))
 
 assert(register("update", [[
 
 TODO: document me
 
-]], {{"Token", Token}}, Uuid, function (token)
+]], {{"Token", Token}}, Bool, function (token)
   local result = assert(query(
     string.format(
       "UPDATE TABLE SET id = '%s', account_id = '%s', description = '%s' FROM token WHERE id = '%s'",
@@ -102,22 +100,8 @@ TODO: document me
 }, function (queryParameters)
   local offset = queryParameters.start or 0
   local limit = queryParameters.count or 20
-  local pattern
+  local pattern = parameterBuilder({{tableName='account_id'}})
 
-  if queryParameters.account_id or queryParameters.description then
-    pattern = 'WHERE '
-
-    if queryParameters.account_id then
-      pattern = pattern ..('account_id LIKE '..cleanQuery(queryParameters.account_id)..' ')
-    end
-    if queryParameters.account_id and queryParameters.description then
-      pattern = pattern..'AND '
-    end
-    if queryParameters.description then
-      pattern = pattern .. 'description LIKE '..cleanQuery(queryParameters.description)
-    end
-
-  end
   local sql = 'SELECT id, account_id, description FROM aep '..
     pattern ..
     'LIMIT '..
@@ -125,5 +109,5 @@ TODO: document me
     ' OFFSET '..
     offset
 
-  return assert(query(sql))
+  return assert(query(sql)).rows
 end))
