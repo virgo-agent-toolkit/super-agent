@@ -14,7 +14,7 @@ return function (db, registry)
   local parameterBuilder = db.parameterBuilder
 
   local Row = alias("Agent",
-  "This alias is for existing agent entries that have an ID."
+  "This alias is for existing agent entries that have an ID.",
   {
     id=Uuid,
     name=String,
