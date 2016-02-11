@@ -42,7 +42,7 @@ magicMeta = {
 --   3 - warning - This is probably a problem, but maybe not.
 --   4 - notice - This is for informational purposes only
 --   5 - debug - This message is super chatty, but useful for debugging
-return function (read, write, call, log)
+return function (call, log, read, write)
   assert(type(read) == "function", "read should be function")
   assert(type(write) == "function", "write should be function")
   assert(type(call) == "function", "call should be function")
@@ -53,7 +53,7 @@ return function (read, write, call, log)
 
   -- Run the read loop in a background thread
   local graceful, error
-  coroutine.wrap(function ()
+  local function readLoop()
     local success, stack = xpcall(function ()
       for message in read do
         if not(type(message) == "table" and
@@ -141,18 +141,27 @@ return function (read, write, call, log)
     if not graceful then
       pcall(log, 2, "unexpected socket close")
     end
-  end)()
+  end
 
   -- Helper to make remote calls.  Blocks caller waiting for response.
   local nextId = 1
   local function callRemote(name, ...)
     local id = nextId
     nextId = nextId + 1
-    write({id, name, ...})
+    write {id, name, ...}
     waiting[id] = coroutine.running()
     return coroutine.yield()
   end
 
+  local function close()
+    return write {0,0}
+  end
+
   -- Return the api magic object
-  return setmetatable({call=callRemote,name=false}, magicMeta)
+  return setmetatable({
+    call = callRemote,
+    name = false,
+    readLoop = readLoop,
+    close = close,
+  }, magicMeta)
 end

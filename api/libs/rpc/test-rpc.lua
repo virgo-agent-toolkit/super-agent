@@ -53,7 +53,7 @@ end
 -- Make read/write pairs for virtual client and server
 local sread, swrite, cread, cwrite = pair("server", "client")
 
-local client = require('rpc')(sread, swrite, function (name, ...)
+local client = require('rpc')(function (name, ...)
   p("Call server:", name, ...)
   if name == "sub" then
     local a, b = ...
@@ -63,8 +63,8 @@ local client = require('rpc')(sread, swrite, function (name, ...)
   return nil, "No such method: " .. name
 end, function (...)
   p("Server Log", ...)
-end)
-local server = require('rpc')(cread, cwrite, function (name, ...)
+end, sread, swrite)
+local server = require('rpc')(function (name, ...)
   p("Call client:", name, ...)
   if name == "add" then
     local a, b = ...
@@ -74,15 +74,29 @@ local server = require('rpc')(cread, cwrite, function (name, ...)
   return nil, "No such method: " .. name
 end, function (...)
   p("Client Log", ...)
-end)
+end, cread, cwrite)
 
 local split = require('coro-split')
 
+local finished
 coroutine.wrap(function ()
-  split(function ()
-    assert(client.add(1,2) == 3)
-  end, function ()
-    assert(server.sub(5,3) == 2)
-  end)
+  split(
+    client.readLoop,
+    server.readLoop,
+    function ()
+      assert(client.add(1,2) == 3)
+      print("add succeeded")
+      client.close()
+    end,
+    function ()
+      assert(server.sub(5,3) == 2)
+      print("sub succeeded")
+      client.close()
+    end
+  )
+  finished = true
   print("Done!")
 end)()
+
+require('uv').run()
+assert(finished, "Loop fell out!")
