@@ -17,6 +17,30 @@ local function compileBlob(query)
   end)
 end
 
+--[[
+queryBuilder takes an array of tables
+each table should be in the following format
+{tableName=String, pattern=String}
+]]
+local function parameterBuilder(input)
+  if not input then
+    return ''
+  end
+  local index = 1
+  local query = {' WHERE'}
+  index = index + 1
+  for i=1, #input do
+    if i ~= 1 then
+      query[index] = 'AND'
+      index = index + 1
+    end
+    query[index] = table.tableName..' LIKE '..compileBlob(table.pattern)
+    index = index + 1
+  end
+
+  return table.concat(query, ' ')
+end
+
 return function (options)
   local psql
 
@@ -32,5 +56,6 @@ return function (options)
     quote = quote,
     compileBlob = compileBlob,
     options = options,
+    parameterBuilder = parameterBuilder
   }
 end
