@@ -95,6 +95,5 @@ coroutine.wrap(function ()
 
   Account.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", name = "updateAccount" }
 
-
-  write()
+  api.close()
 end)()
