@@ -1,4 +1,3 @@
-local p = require('pretty-print').prettyPrint
 local codec = require('websocket-to-message')
 local makeRpc = require('rpc')
 

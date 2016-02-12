@@ -11,7 +11,7 @@ return function (db, registry)
   local Uuid = registry.Uuid
   local query = db.query
   local quote = db.quote
-  local parameterBuilder = db.parameterBuilder
+  local conditionBuilder = db.conditionBuilder
 
   local Row = alias("Agent",
   "This alias is for existing agent entries that have an ID.",
@@ -119,12 +119,12 @@ return function (db, registry)
       queryParameters = queryParameters or {}
       local offset = queryParameters.start or 0
       local limit = queryParameters.count or 20
-      local where = parameterBuilder({
-        {tableName='account_id', pattern=queryParameters.account_id},
-        {tableName='name', pattern=queryParameters.name},
-        {tableName='aep_id', pattern=queryParameters.aep_id},
-        {tableName='token', pattern=queryParameters.token}
-      })
+      local where = conditionBuilder(
+        'account_id', queryParameters.account_id,
+        'name', queryParameters.name,
+        'aep_id', queryParameters.aep_id,
+        'token', queryParameters.token
+      )
 
       local sql = "SELECT count(*) from aep" .. where
       local result = assert(query(sql))

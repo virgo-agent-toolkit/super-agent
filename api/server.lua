@@ -9,7 +9,7 @@ local db = require('connection')({
 local registry = require('registry')()
 require('./crud/account')(db, registry.section("account"))
 require('./crud/aep')(db, registry.section("aep"))
---require('./crud/agent')(db, registry.section("agent"))
+require('./crud/agent')(db, registry.section("agent"))
 
 
 -- HTTP setup

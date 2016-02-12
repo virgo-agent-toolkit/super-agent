@@ -11,107 +11,106 @@ return function (db, registry)
   local Uuid = registry.Uuid
   local query = db.query
   local quote = db.quote
-  local parameterBuilder = db.parameterBuilder
+  local conditionBuilder = db.conditionBuilder
 
+  local Token = alias("Token",
+  "This alias is for existing Token entries that has an ID.",
+  {id=Uuid, account_id=Uuid, description=String})
 
-local Token = alias("Token",
-"This alias is for existing Token entries that has an ID.",
-{id=Uuid, account_id=Uuid, description=String})
+  local TokenWithoutId = alias("TokenWithoutId",
+  "This alias is for creating new Token entries that don't have an ID yet",
+  {account_id=Uuid, description=String})
 
-local TokenWithoutId = alias("TokenWithoutId",
-"This alias is for creating new Token entries that don't have an ID yet",
-{account_id=Uuid, description=String})
+    local TokenQuery = alias("TokenQuery",
+    "Structure for valid query parameters",
+    {
+        account_id = Optional(String),
+        description = Optional(String),
+        start = Optional(Int),
+        count = Optional(Int),
+      })
 
-  local TokenQuery = alias("TokenQuery",
-  "Structure for valid query parameters",
-  {
-      account_id = Optional(String),
-      description = Optional(String),
-      start = Optional(Int),
-      count = Optional(Int),
-    })
+  assert(register("create", [[
 
-assert(register("create", [[
+  This function creates a new token entry in the database associated with a
+    particular users account.  It will return the randomly generated UUID.
 
-This function creates a new token entry in the database associated with a
-  particular users account.  It will return the randomly generated UUID.
-
-]], {{"TokenWithoutId", TokenWithoutId}}, Uuid, function (token)
-  local id = getUUID()
-  local result = assert(query(
-    string.format(
-      "INSERT INTO token ('id', 'account_id', 'description') VALUES ('%s', '%s', '%s')",
-      quote(id),
-      quote(token['account_id']),
-      quote(token['description']))))
-  return id
-end))
-
-assert(register("read", [[
-
-TODO: document me
-
-]], {{"id", Uuid}}, Token, function (id)
-  local result = assert(query(
-    string.format(
-      "SELECT id, account_id, description FROM token WHERE id = '%s'",
-      quote(id))))
-  return result.rows and result.rows[1]
-end))
-
-assert(register("update", [[
-
-TODO: document me
-
-]], {{"Token", Token}}, Bool, function (token)
-  local result = assert(query(
-    string.format(
-      "UPDATE TABLE SET id = '%s', account_id = '%s', description = '%s' FROM token WHERE id = '%s'",
-      quote(token['id']),
-      quote(token['account_id']),
-      quote(token['hostname']),
-      quote(token['id']))))
-  if result then
-    return token['id']
-  end
-  return result
-end))
-
-assert(register("delete", [[
-
-TODO: document me
-
-]], {{"id", Uuid}}, Uuid, function (id)
-  local result = assert(query(
-    string.format(
-      "DELETE FROM token WHERE id = '%s'",
-      quote(id))))
-  if result then
+  ]], {{"TokenWithoutId", TokenWithoutId}}, Uuid, function (token)
+    local id = getUUID()
+    assert(query(
+      string.format(
+        "INSERT INTO token ('id', 'account_id', 'description') VALUES ('%s', '%s', '%s')",
+        quote(id),
+        quote(token['account_id']),
+        quote(token['description']))))
     return id
-  end
+  end))
 
-  return result
-end))
+  assert(register("read", [[
 
-assert(register("query", [[
+  TODO: document me
 
-TODO: document me
+  ]], {{"id", Uuid}}, Token, function (id)
+    local result = assert(query(
+      string.format(
+        "SELECT id, account_id, description FROM token WHERE id = '%s'",
+        quote(id))))
+    return result.rows and result.rows[1]
+  end))
 
-]], {
-  {'query', TokenQuery}
-}, {
-  Array(Token),
-}, function (queryParameters)
-  local offset = queryParameters.start or 0
-  local limit = queryParameters.count or 20
-  local pattern = parameterBuilder({{tableName='account_id'}})
+  assert(register("update", [[
 
-  local sql = 'SELECT id, account_id, description FROM aep '..
-    pattern ..
-    'LIMIT '..
-    limit..
-    ' OFFSET '..
-    offset
+  TODO: document me
 
-  return assert(query(sql)).rows
-end))
+  ]], {{"Token", Token}}, Bool, function (token)
+    local result = assert(query(
+      string.format(
+        "UPDATE TABLE SET id = '%s', account_id = '%s', description = '%s' FROM token WHERE id = '%s'",
+        quote(token['id']),
+        quote(token['account_id']),
+        quote(token['hostname']),
+        quote(token['id']))))
+    if result then
+      return token['id']
+    end
+    return result
+  end))
+
+  assert(register("delete", [[
+
+  TODO: document me
+
+  ]], {{"id", Uuid}}, Uuid, function (id)
+    local result = assert(query(
+      string.format(
+        "DELETE FROM token WHERE id = '%s'",
+        quote(id))))
+    if result then
+      return id
+    end
+
+    return result
+  end))
+
+  assert(register("query", [[
+
+  TODO: document me
+
+  ]], {
+    {'query', TokenQuery}
+  }, {
+    Array(Token),
+  }, function (queryParameters)
+    local offset = queryParameters.start or 0
+    local limit = queryParameters.count or 20
+    local where = conditionBuilder(
+      'account_id', queryParameters.account_id,
+      'description', queryParameters.description
+    )
+    local sql = 'SELECT id, account_id, description FROM aep' .. where ..
+      ' LIMIT ' .. limit ..
+      ' OFFSET ' .. offset
+    -- TODO: change to return total rows as well like other APIs
+    return assert(query(sql)).rows
+  end))
+end

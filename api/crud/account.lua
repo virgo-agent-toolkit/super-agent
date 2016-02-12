@@ -11,7 +11,7 @@ return function (db, registry)
   local Uuid = registry.Uuid
   local query = db.query
   local quote = db.quote
-  local parameterBuilder = db.parameterBuilder
+  local conditionBuilder = db.conditionBuilder
 
   local Row = alias("Row",
     "This alias is for existing Account entries that have an ID.",
@@ -86,9 +86,7 @@ return function (db, registry)
     queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
-    local where = parameterBuilder({{tableName='name', pattern=queryParameters.name}})
-    -- so right now with nothing provided to parameterBuilder it provides an empty String
-    -- since it is an empty string we just pull everything which certainly we don't want.
+    local where = conditionBuilder('name', queryParameters.name)
     local sql = "SELECT count(*) from account" .. where
     local result = assert(query(sql))
     local count = result.rows[1].count

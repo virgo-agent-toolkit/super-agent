@@ -1,6 +1,9 @@
 local postgresConnect = require('coro-postgres').connect
 
 local gsub = string.gsub
+local format = string.format
+local find = string.find
+local concat = table.cocnat
 
 local function quote(str)
   return "'" .. gsub(str, "'", "''") .. "'"
@@ -18,31 +21,34 @@ local function compileBlob(query)
 end
 
 --[[
-queryBuilder takes an array of tables
-each table should be in the following format
-{tableName=String, pattern=String}
+  Given an even number of arguments in alternating name / value format
+  this will build a SQL WHERE clause matching the values to the names.
+  Any values containing `*` will be converted to a LIKE match query.
+  Others will be matched using a simple `=`
+  If none of the values are truthy, it will return an empty string.
 ]]
-local function parameterBuilder(input)
-  if not input then
-    return ''
-  end
+local function conditionBuilder(...)
   local index = 1
-  local query = {''}
-  for i=1, #input do
-    if input[i].pattern then
-      if i ~= 1 then
-        query[index] = 'AND'
-        index = index + 1
-      else
-        query = {' WHERE'}
-        index = index + 1
-      end
-      query[index] = input[i].tableName..' LIKE '..quote(compileBlob(input[1].pattern))
+  local inputs = {...}
+  local parts = {}
+  for i = 1, select("#", ...), 2 do
+    local name = inputs[i]
+    local value = inputs[i + 1]
+    if value then
+      parts[index] = (find(value, "*", 1, true)
+        and format("%s LIKE %s",
+          name,
+          quote(compileBlob(value)))
+        or format("%s = %s",
+          name,
+          quote(value)))
       index = index + 1
     end
   end
-
-  return table.concat(query, ' ')
+  if index == 1 then
+    return ""
+  end
+  return " WHERE " .. concat(parts, " AND ")
 end
 
 return function (options)
@@ -60,6 +66,6 @@ return function (options)
     quote = quote,
     compileBlob = compileBlob,
     options = options,
-    parameterBuilder = parameterBuilder
+    conditionBuilder = conditionBuilder
   }
 end
