@@ -44,6 +44,8 @@ coroutine.wrap(function ()
 
   coroutine.wrap(api.readLoop)()
 
+
+-- AEP section
   local AEP = api.aep
 
   local id = assert(AEP.create { hostname = "test.host" })
@@ -68,6 +70,31 @@ coroutine.wrap(function ()
 
   AEP.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", hostname = "updated.host" }
 
-  write()
+-- account section
+  local Account = api.account
 
+  id = assert(Account.create {name = 'testAccount'})
+
+  assert(Account.read(id))
+
+  assert(Account.update { id = id, name = "updateAccountName" })
+
+  assert(Account.read(id))
+
+  Account.query({})
+
+  Account.query({name="updateAccountName"})
+
+  Account.query({name="update*"})
+
+  assert(Account.delete(id))
+
+  assert(not Account.read(id))
+
+  Account.delete("6050BE6B-A8BC-4BF8-A55C-11D616679CBC")
+
+  Account.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", name = "updateAccount" }
+
+
+  write()
 end)()
