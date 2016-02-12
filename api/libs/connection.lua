@@ -3,7 +3,7 @@ local postgresConnect = require('coro-postgres').connect
 local gsub = string.gsub
 local format = string.format
 local find = string.find
-local concat = table.cocnat
+local concat = table.concat
 
 local function quote(str)
   return "'" .. gsub(str, "'", "''") .. "'"
