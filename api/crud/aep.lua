@@ -59,6 +59,7 @@ return function (db, registry)
   Update an AEP row in the database.
 
   ]], {{"row", Row}}, Bool, function (row)
+
     local result = assert(query(string.format(
       "UPDATE aep SET hostname = %s WHERE id = %s",
       quote(row['hostname']),
@@ -71,9 +72,11 @@ return function (db, registry)
   Remove an AEP row from the database by UUID.
 
   ]], {{"id", Uuid}}, Bool, function (id)
+
     local result = assert(query(string.format(
       "DELETE FROM aep WHERE id = '%s'",
-      quote(id))))
+      id))) -- something is going on and for some reason breaks when I try to quote this id
+
     return result.summary == 'DELETE 1'
   end))
 

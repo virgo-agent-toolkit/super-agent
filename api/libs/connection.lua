@@ -27,15 +27,19 @@ local function parameterBuilder(input)
     return ''
   end
   local index = 1
-  local query = {' WHERE'}
-  index = index + 1
+  local query = {''}
   for i=1, #input do
-    if i ~= 1 then
-      query[index] = 'AND'
+    if input[i].pattern then
+      if i ~= 1 then
+        query[index] = 'AND'
+        index = index + 1
+      else
+        query = {' WHERE'}
+        index = index + 1
+      end
+      query[index] = input[i].tableName..' LIKE '..quote(compileBlob(input[1].pattern))
       index = index + 1
     end
-    query[index] = table.tableName..' LIKE '..quote(compileBlob(table.pattern))
-    index = index + 1
   end
 
   return table.concat(query, ' ')
