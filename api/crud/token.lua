@@ -39,7 +39,7 @@ return function (db, registry)
     local id = getUUID()
     assert(query(
       string.format(
-        "INSERT INTO token ('id', 'account_id', 'description') VALUES ('%s', '%s', '%s')",
+        "INSERT INTO token (id, account_id, description) VALUES (%s, %s, %s)",
         quote(id),
         quote(token['account_id']),
         quote(token['description']))))
@@ -53,7 +53,7 @@ return function (db, registry)
   ]], {{"id", Uuid}}, Token, function (id)
     local result = assert(query(
       string.format(
-        "SELECT id, account_id, description FROM token WHERE id = '%s'",
+        "SELECT id, account_id, description FROM token WHERE id = %s",
         quote(id))))
     return result.rows and result.rows[1]
   end))
@@ -63,33 +63,32 @@ return function (db, registry)
   TODO: document me
 
   ]], {{"Token", Token}}, Bool, function (token)
+
     local result = assert(query(
       string.format(
-        "UPDATE TABLE SET id = '%s', account_id = '%s', description = '%s' FROM token WHERE id = '%s'",
-        quote(token['id']),
+        "UPDATE token SET account_id = %s, description = %s WHERE id = %s",
         quote(token['account_id']),
-        quote(token['hostname']),
+        quote(token['description']),
         quote(token['id']))))
-    if result then
-      return token['id']
-    end
-    return result
+
+    return result.summary == 'UPDATE 1'
   end))
 
   assert(register("delete", [[
 
   TODO: document me
 
-  ]], {{"id", Uuid}}, Uuid, function (id)
+  ]], {{"id", Uuid}}, Bool, function (id)
+      p(string.format(
+        "DELETE FROM token WHERE id = %s",
+        quote(id)))
     local result = assert(query(
       string.format(
-        "DELETE FROM token WHERE id = '%s'",
+        "DELETE FROM token WHERE id = %s",
         quote(id))))
-    if result then
-      return id
-    end
 
-    return result
+    p('token delete: ', result.summary)
+    return result.summary == 'DELETE 1'
   end))
 
   assert(register("query", [[
@@ -107,7 +106,7 @@ return function (db, registry)
       'account_id', queryParameters.account_id,
       'description', queryParameters.description
     )
-    local sql = 'SELECT id, account_id, description FROM aep' .. where ..
+    local sql = 'SELECT id, account_id, description FROM token' .. where ..
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
     -- TODO: change to return total rows as well like other APIs

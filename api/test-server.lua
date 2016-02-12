@@ -95,5 +95,49 @@ coroutine.wrap(function ()
 
   Account.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", name = "updateAccount" }
 
+-- token section
+
+  -- Token setup. We need to get an account
+  local accountId = assert(Account.create {name = 'testAccount'})
+  -- end Token setup
+
+  local Token = api.token
+
+  id = assert(Token.create {account_id = accountId, description = 'This token is for testing'})
+
+  assert(Token.read(id))
+
+  assert(Token.update {
+    id = id,
+    account_id=accountId,
+    description = "Update token testing" })
+
+  assert(Token.read(id))
+
+  Token.query({})
+
+  Token.query({description="Update token testing"})
+
+  Token.query({description="Update*"})
+
+  Token.query({account_id=accountId})
+
+  -- Token.query({account_id='*'}) wildcards aren't allowed for uuid columns
+
+  Token.query({account_id=accountId, description='Update token testing'})
+
+  Token.query({account_id=accountId, descrption='Update*'})
+
+  assert(Token.delete(id))
+
+  assert(not Token.read(id))
+
+  Token.delete("6050BE6B-A8BC-4BF8-A55C-11D616679CBC")
+
+  Token.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", name = "updateAccount" }
+
+  -- clean up section
+  Account.delete(accountId)
+
   api.close()
 end)()

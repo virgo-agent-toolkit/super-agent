@@ -74,8 +74,8 @@ return function (db, registry)
   ]], {{"id", Uuid}}, Bool, function (id)
 
     local result = assert(query(string.format(
-      "DELETE FROM aep WHERE id = '%s'",
-      id))) -- something is going on and for some reason breaks when I try to quote this id
+      "DELETE FROM aep WHERE id = %s",
+      quote(id)))) -- something is going on and for some reason breaks when I try to quote this id
 
     return result.summary == 'DELETE 1'
   end))

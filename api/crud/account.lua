@@ -72,8 +72,8 @@ return function (db, registry)
 
   ]], {{"id", Uuid}}, Bool, function (id)
     local result = assert(query(string.format(
-      "DELETE FROM account WHERE id = '%s'",
-      id)))
+      "DELETE FROM account WHERE id = %s",
+      quote(id))))
     return result.summary == 'DELETE 1'
   end))
 

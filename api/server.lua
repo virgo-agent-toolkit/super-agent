@@ -9,6 +9,7 @@ local db = require('connection')({
 local registry = require('registry')()
 require('./crud/account')(db, registry.section("account"))
 require('./crud/aep')(db, registry.section("aep"))
+require('./crud/token')(db, registry.section("token"))
 require('./crud/agent')(db, registry.section("agent"))
 
 
