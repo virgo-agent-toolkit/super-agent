@@ -79,15 +79,11 @@ return function (db, registry)
   TODO: document me
 
   ]], {{"id", Uuid}}, Bool, function (id)
-      p(string.format(
-        "DELETE FROM token WHERE id = %s",
-        quote(id)))
     local result = assert(query(
       string.format(
         "DELETE FROM token WHERE id = %s",
         quote(id))))
 
-    p('token delete: ', result.summary)
     return result.summary == 'DELETE 1'
   end))
 

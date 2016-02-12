@@ -55,7 +55,7 @@ return function (db, registry)
   ]], {{"AgentWithoutId", RowWithoutId}}, Uuid, function (agent)
     local id = getUUID()
     assert(query(
-      string.format("INSERT INTO agent ('id', 'name', 'token', 'account_id', 'aep_id') VALUES ('%s', '%s')",
+      string.format("INSERT INTO agent (id, name, token, account_id, aep_id) VALUES (%s, %s, %s, %s, %s)",
         quote(id),
         quote(agent['name']),
         quote(agent['token']),
@@ -72,7 +72,7 @@ return function (db, registry)
 
   ]], {{"id", Uuid}}, Row, function (id)
     local result = assert(query(
-      string.format("SELECT id, name, account_id, aep_id, token FROM agent WHERE id='%s'",
+      string.format("SELECT id, name, account_id, aep_id, token FROM agent WHERE id=%s",
         quote(id))))
     return result.rows and result.rows[1]
   end))
@@ -81,11 +81,11 @@ return function (db, registry)
 
   TODO: document me
 
-  ]], {{"Agent", Row}}, Uuid, function (agent)
+  ]], {{"Agent", Row}}, Bool, function (agent)
     local result = assert(query(
       string.format(
-        "UPDATE account SET name = '%s', "..
-        "account_id = '%s', token ='%s', aep_id = '%s' WHERE id = '%s'",
+        "UPDATE agent SET name = %s, "..
+        "account_id = %s, token = %s, aep_id = %s WHERE id = %s",
         quote(agent['name']),
         quote(agent['account_id']),
         quote(agent['token']),
@@ -103,7 +103,7 @@ return function (db, registry)
   ]], {{"id", Uuid}}, Bool, function (id)
     local result = assert(query(
       string.format(
-        "DELETE FROM agent WHERE id = '%s'",
+        "DELETE FROM agent WHERE id = %s",
         quote(id))))
 
     return result.summary == 'DELETE 1'
@@ -115,7 +115,7 @@ return function (db, registry)
 
   ]], {
     {"query", Query}},
-    {Array(Row)}, function (queryParameters)
+    {Array(Row), Int}, function (queryParameters)
       queryParameters = queryParameters or {}
       local offset = queryParameters.start or 0
       local limit = queryParameters.count or 20
@@ -125,11 +125,10 @@ return function (db, registry)
         'aep_id', queryParameters.aep_id,
         'token', queryParameters.token
       )
-
-      local sql = "SELECT count(*) from aep" .. where
+      local sql = "SELECT count(*) from agent" .. where
       local result = assert(query(sql))
       local count = result.rows[1].count
-      sql = 'SELECT id, hostname FROM aep' .. where ..
+      sql = 'SELECT id, name, token, account_id, aep_id FROM agent' .. where ..
         ' ORDER BY name, id' ..
         ' LIMIT ' .. limit ..
         ' OFFSET ' .. offset

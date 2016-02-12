@@ -139,5 +139,71 @@ coroutine.wrap(function ()
   -- clean up section
   Account.delete(accountId)
 
+  -- agent section
+  Token = api.token
+
+  Account = api.account
+
+  -- agent setup
+  accountId = assert(Account.create {name = 'testAccount'})
+
+  local aepId = assert(AEP.create {hostname = 'test.host'})
+
+  local tokenId = assert(Token.create {account_id=accountId, description='Test token for test agent'})
+  -- end of agent setup
+
+  local Agent = api.agent
+
+  id = assert(Agent.create({
+    account_id=accountId,
+    name = "test agent",
+    aep_id = aepId,
+    token = tokenId}))
+
+  assert(Agent.read(id))
+
+  assert(Agent.update {
+    id = id,
+    account_id=accountId,
+    name = "update test agent",
+    aep_id = aepId,
+    token = tokenId
+   })
+
+  assert(Agent.read(id))
+
+  Agent.query({})
+
+  Agent.query({name="Update token testing"})
+
+  Agent.query({name="Update*"})
+
+  Agent.query({account_id=accountId})
+
+  Agent.query({aep_id=aepId})
+
+  Agent.query({token=tokenId})
+
+  -- Token.query({account_id='*'}) wildcards aren't allowed for uuid columns
+
+  Agent.query({account_id=accountId, name=''})
+
+  Agent.query({account_id=accountId, name='Update*'})
+
+  assert(Agent.delete(id))
+
+  assert(not Agent.read(id))
+
+  Agent.delete("6050BE6B-A8BC-4BF8-A55C-11D616679CBC")
+
+  Agent.update { id = "6050BE6B-A8BC-4BF8-A55C-11D616679CBC", name = "updateAccount" }
+
+
+  -- clean up section
+  Token.delete(tokenId)
+  AEP.delete(aepId)
+  Account.delete(accountId)
+
+
   api.close()
 end)()
