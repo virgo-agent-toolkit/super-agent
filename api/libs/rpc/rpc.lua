@@ -27,7 +27,7 @@ magicMeta = {
     }, magicMeta)
   end,
   __call = function (self, ...)
-    return self.call(self.name, {...})
+    return self.call(self.name, ...)
   end
 }
 
@@ -90,7 +90,7 @@ return function (call, log, read, write)
               args[i-2] = message[i]
             end
             local success, stack = xpcall(function ()
-              result, err = call(name, unpack(args))
+              result, err = call(name, args)
             end, debug.traceback)
             if not success then
               write {-id, nil, "Server Error"}
