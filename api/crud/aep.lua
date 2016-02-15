@@ -1,22 +1,4 @@
-local p = require('pretty-print').prettyPrint
 local getUUID = require('uuid4').getUUID
-
-local function toTable(result)
-  local columns = {};
-  for i = 1, #result.description do
-    columns[i] = result.description[i].field
-  end
-  local rows = {}
-  for j = 1, #result.rows do
-    local row = {}
-    local input = result.rows[j]
-    rows[j] = row
-    for i = 1, #columns do
-      row[i] = input[columns[i]]
-    end
-  end
-  return columns, rows
-end
 
 return function (db, registry)
   local alias = registry.alias
@@ -27,13 +9,16 @@ return function (db, registry)
   local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
+  local Stats = registry.Stats
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
+  local toTable = db.toTable
 
-  local Stats = alias("Stats",
-    "Structure for pagination results.",
-    {start=Int,count=Int,total=Int})
+  local Columns = alias("Columns", "Column field names for query results.",
+    {String,String})
+  local Rows = alias("Rows", "Raw rows for query results.",
+    Array({String,String}))
 
   local Row = alias("Row",
     "This alias is for existing AEP entries that have an ID.",
@@ -107,7 +92,7 @@ return function (db, registry)
   Query for existing AEP rows.
   Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", Query} }, {{String,String},Array({String,String}),Stats}, function (queryParameters)
+  ]], { {"query", Query} }, {Columns,Rows,Stats}, function (queryParameters)
     queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
@@ -123,12 +108,10 @@ return function (db, registry)
     result = assert(query(sql))
     local columns, rows = toTable(result)
     local stats = {
-      start = offset,
-      count = limit,
-      total = count
+      offset,
+      limit,
+      count
     }
-    p{columns,rows,stats}
-
     return {columns,rows,stats}
   end))
 

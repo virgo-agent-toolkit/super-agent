@@ -61,11 +61,30 @@ return function (options)
     return psql.query(...)
   end
 
+  local function toTable(result)
+    local columns = {};
+    for i = 1, #result.description do
+      columns[i] = result.description[i].field
+    end
+    local rows = {}
+    for j = 1, #result.rows do
+      local row = {}
+      local input = result.rows[j]
+      rows[j] = row
+      for i = 1, #columns do
+        row[i] = input[columns[i]]
+      end
+    end
+    return columns, rows
+  end
+
+
   return {
     query = query,
     quote = quote,
     compileBlob = compileBlob,
     options = options,
-    conditionBuilder = conditionBuilder
+    conditionBuilder = conditionBuilder,
+    toTable = toTable,
   }
 end

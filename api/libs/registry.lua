@@ -83,6 +83,9 @@ return function ()
     }, shared)
   end
 
+  shared.__index.Stats = alias("Stats", "Structure for pagination results. (offset, limit, total)",
+    {schema.Int,schema.Int,schema.Int})
+
   return setmetatable({
     register = register,
     alias = alias,
