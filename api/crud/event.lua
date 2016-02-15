@@ -11,6 +11,7 @@ return function (db, registry)
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
+  local toTable = db.toTable
 
   local Row = alias("Row",
     "This alias is for existing AEP entries that have an ID.",
@@ -70,8 +71,13 @@ return function (db, registry)
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
     result = assert(query(sql))
-    local rows = result.rows
-    return {rows, count}
+    local columns, rows = toTable(result)
+    local stats = {
+      offset,
+      limit,
+      count
+    }
+    return {columns,rows,stats}
   end))
 
 end

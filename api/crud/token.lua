@@ -12,6 +12,7 @@ return function (db, registry)
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
+  local toTable = db.toTable
 
   local Token = alias("Token",
   "This alias is for existing Token entries that has an ID.",
@@ -102,10 +103,20 @@ return function (db, registry)
       'account_id', queryParameters.account_id,
       'description', queryParameters.description
     )
-    local sql = 'SELECT id, account_id, description FROM token' .. where ..
+    local sql = "SELECT count(*) from account" .. where
+    local result = assert(query(sql))
+    local count = result.rows[1].count
+    sql = 'SELECT id, account_id, description FROM token' .. where ..
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
     -- TODO: change to return total rows as well like other APIs
-    return assert(query(sql)).rows
+    result = assert(query(sql)).rows
+    local columns, rows = toTable(result)
+    local stats = {
+      offset,
+      limit,
+      count
+    }
+    return {columns,rows,stats}
   end))
 end
