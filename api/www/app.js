@@ -56,7 +56,7 @@ function renderQueryResults(emit, h, model) {
         )
       ]),
       h("tbody", model.rows.map(function (row) {
-        return h("tr",
+        return h("tr", {key: row[0]},
           row.map(function (cell) {
             return h("td", cell);
           }).concat([
@@ -71,6 +71,15 @@ function renderQueryResults(emit, h, model) {
   ]);
 }
 
+function renderRowView(emit, h, model) {
+  return h("div", [
+    h(".nav", [
+      h("h1", names[model.table] + " - " + model.id)
+    ]),
+    h(".loading", "Loading...")
+  ]);
+}
+
 function view(emit, h, model) {
   if (!model.mode) {
     return h(".loading", "Loading...");
@@ -78,8 +87,8 @@ function view(emit, h, model) {
   if (model.mode === "query") {
     return renderQueryResults(emit, h, model);
   }
-  if (mode.mode === "read") {
-
+  if (model.mode === "view") {
+    return renderRowView(emit, h, model);
   }
   throw new Error("Unknown mode: " + model.mode);
 }
@@ -114,7 +123,8 @@ function update(emit, model, args) {
     call(table + ".read", [id], emit("read-result"));
     return {
       mode: "view",
-      table: table
+      table: table,
+      id: id,
     };
   }
   throw new Error("Unknown action: " + action);
