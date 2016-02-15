@@ -1,4 +1,22 @@
+local p = require('pretty-print').prettyPrint
 local getUUID = require('uuid4').getUUID
+
+local function toTable(result)
+  local columns = {};
+  for i = 1, #result.description do
+    columns[i] = result.description[i].field
+  end
+  local rows = {}
+  for j = 1, #result.rows do
+    local row = {}
+    local input = result.rows[j]
+    rows[j] = row
+    for i = 1, #columns do
+      row[i] = input[columns[i]]
+    end
+  end
+  return columns, rows
+end
 
 return function (db, registry)
   local alias = registry.alias
@@ -12,6 +30,10 @@ return function (db, registry)
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
+
+  local Stats = alias("Stats",
+    "Structure for pagination results.",
+    {start=Int,count=Int,total=Int})
 
   local Row = alias("Row",
     "This alias is for existing AEP entries that have an ID.",
@@ -85,7 +107,7 @@ return function (db, registry)
   Query for existing AEP rows.
   Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", Query} }, {Array(Row),Int}, function (queryParameters)
+  ]], { {"query", Query} }, {{String,String},Array({String,String}),Stats}, function (queryParameters)
     queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
@@ -99,8 +121,15 @@ return function (db, registry)
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
     result = assert(query(sql))
-    local rows = result.rows
-    return {rows, count}
+    local columns, rows = toTable(result)
+    local stats = {
+      start = offset,
+      count = limit,
+      total = count
+    }
+    p{columns,rows,stats}
+
+    return {columns,rows,stats}
   end))
 
 end

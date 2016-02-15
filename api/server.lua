@@ -12,7 +12,6 @@ require('./crud/aep')(db, registry.section("aep"))
 require('./crud/token')(db, registry.section("token"))
 require('./crud/agent')(db, registry.section("agent"))
 
-
 -- HTTP setup
 require 'weblit-websocket'
 require('weblit-app')
@@ -34,5 +33,7 @@ require('weblit-app')
   method = "POST",
   path = "/api/:path:"
 }, require('http-handler')(registry.call))
+
+.use(require('weblit-static')("www"))
 
 .start()

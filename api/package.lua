@@ -18,6 +18,7 @@ return {
     "creationix/weblit-websocket",
     "creationix/weblit-logger",
     "creationix/weblit-auto-headers",
+    "creationix/weblit-static",
     "creationix/schema",
     "creationix/coro-postgres",
     "creationix/msgpack",
