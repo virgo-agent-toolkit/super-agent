@@ -1,51 +1,77 @@
-local schema = require 'schema'
-local Int = schema.Int
-local String = schema.String
-local Array = schema.Array
-local Bool = schema.Bool
-local Json = schema.Json
-local registry = require 'registry'
-local register = registry.section("token.")
-local alias = registry.alias
+local json = require('json')
 
-local psqlConnect = require('coro-postgres')
-local getenv = require('os').getenv
+return function (db, registry)
+  local alias = registry.alias
+  local register = registry.register
+  local Optional = registry.Optional
+  local String = registry.String
+  local Int = registry.Int
+  local Bool = registry.Bool
+  local Array = registry.Array
+  local query = db.query
+  local quote = db.quote
+  local conditionBuilder = db.conditionBuilder
 
-local psqlQuery = psqlConnect.connect(
-  {password=getenv("PASSWORD"),
-  database=getenv("DATABASE")}).query
+  local Row = alias("Row",
+    "This alias is for existing AEP entries that have an ID.",
+    {event=String,timestamp=Int})
 
--- TODO: convert file to new registry format
-
-local Query = alias("Query", {pattern=String},
-  "Structure for valid query parameters")
-local Page = alias("Page", {Int,Int},
-  "This alias is s tuple of `limit` and `offset` for tracking position when paginating")
-
-assert(register("log"), [[
-
-TODO: document me
-
-]], {{"Event", Json}}, Bool, function (event)
-  local result = psqlQuery(
-    string.format(
-      "INSERT INTO event (timestamp, event) VALEUS (NOW(), '%s')",
-      event['event']))
+  local Query = alias("Query",
+    "Structure for valid query parameters",
+    {
+      event = Optional(String),
+      timestamp = Optional(Int),
+      start = Optional(Int),
+      count = Optional(Int),
+    })
 
 
-  return result
-end)
+  assert(register("log", [[
 
-assert(register("query", [[
+  TODO: document me
 
-TODO: document me
+  ]], {{"Event", Row}}, Bool, function (event)
+    local eventTable = assert(json.parse(event['event']))
+    if eventTable then
+      assert(query(
+        string.format(
+          "INSERT INTO event (timestamp, event) VALUES (to_timestamp(%i), %s)",
+          event['timestamp'],
+          quote(event['event']))))
 
-]], {
-  {"query", Query},
-  {"page", Page},
-}, {
-  Array(Aep),
-  Page
-}, function (query)
-  -- TODO: Implement
-end))
+      -- INSERT's return null from the db so if we get here
+      -- assume that it succeeded and return true
+      return true
+    end
+
+    return
+  end))
+
+  assert(register("query", [[
+
+  TODO: document me
+
+  ]], { {"query", Query} }, {
+    Array(Row)
+  }, function (queryParameters)
+    local offset = queryParameters.start or 0
+    local limit = queryParameters.count or 20
+    local eventPattern = queryParameters.event
+    local timePattern = queryParameters.timestamp
+    -- this is not going to work for this because we have a timestamp and we
+    local where = conditionBuilder('event', eventPattern, 'timestamp', timePattern)
+
+    local sql = "SELECT count(*) FROM event" .. where
+    local result = assert(query(sql))
+    local count = result.rows[1].count
+
+    sql = 'SELECT event, timestamp FROM event' .. where ..
+      ' ORDER BY timestamp, event' ..
+      ' LIMIT ' .. limit ..
+      ' OFFSET ' .. offset
+    result = assert(query(sql))
+    local rows = result.rows
+    return {rows, count}
+  end))
+
+end

@@ -205,5 +205,22 @@ coroutine.wrap(function ()
   Account.delete(accountId)
 
 
+  -- event
+  local Event = api.event
+
+  Event.log({timestamp=1455562901, event="lets break things"})
+
+  Event.log({timestamp=1455562901, event='{"test":"value"}'})
+
+  Event.log({timestamp='This should fail', event='{"in":"something"}'})
+
+  --[[
+  --We will add pagination for events at some future point when we understand how we want to filter events
+  Event.query({timestamp=1455562901})
+
+  Event.query({timestamp=1}) -- should return nothing but still work
+
+  Event.query({event='{test:value}'})]]
+
   api.close()
 end)()
