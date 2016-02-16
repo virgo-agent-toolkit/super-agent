@@ -1,5 +1,5 @@
-import Html exposing (form,h1,text,label,input,div,button)
-import Html.Events exposing (onClick)
+import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td)
+import Html.Events exposing (onClick,on,targetValue)
 import Html.Attributes exposing (id,for,type',value,class)
 import Http
 import Task exposing (Task, andThen)
@@ -14,6 +14,7 @@ type alias Model =
   { hostname: String
   , offset: Int
   , limit: Int
+  , results: Maybe (Result Http.Error Results)
   }
 
 type alias Columns = List String
@@ -23,7 +24,7 @@ type alias Results = (Columns, Rows, Stats)
 
 
 init : (Model, Effects Action)
-init = ({hostname="",offset=0,limit=20}, Effects.none)
+init = ({hostname="*",offset=0,limit=20,results=Nothing}, Effects.none)
 
 -- UPDATE --
 
@@ -50,24 +51,76 @@ update action model =
         Err _ -> (model, Effects.none)
     Query ->
        (model, doQuery model.hostname model.offset model.limit)
-    _ ->
-       (model, Effects.none)
+    QueryResults results ->
+       ({model | results = Just results }, Effects.none)
 
 -- VIEW --
 
-view: Signal.Address Action -> Model -> Html.Html
-view address model =
-  div [ id "signup-form" ] [
-    h1 [] [ text "AEP Query" ],
-    label [ for "hostname" ] [ text "Hostname: " ],
-    input [ id "hostname", type' "text", value model.hostname ] [],
-    label [ for "offset" ] [ text "Offset: " ],
-    input [ id "offset", type' "number", value (toString model.offset) ] [],
-    label [ for "limit" ] [ text "Limit: " ],
-    input [ id "limit", type' "number", value (toString model.limit) ] [],
-    button [ class "signup-button", onClick address Query ] [ text "Query" ]
+onInput: Signal.Address Action -> (String -> Action) -> Html.Attribute
+onInput address action =
+  on "input" targetValue (\str -> Signal.message address (action str))
+
+renderTable: Results -> Html.Html
+renderTable (columns, rows, stats) =
+  table [] [
+    renderHead columns,
+    renderBody rows
   ]
 
+renderHead : List String -> Html.Html
+renderHead names =
+  thead [] (List.map renderHeader names)
+
+renderHeader : String -> Html.Html
+renderHeader name =
+  th [] [text name]
+
+renderBody : List (List String) -> Html.Html
+renderBody rows =
+  tbody [] (List.map renderRow rows)
+
+renderRow : List String -> Html.Html
+renderRow row =
+  tr [] (List.map renderCell row)
+
+renderCell: String -> Html.Html
+renderCell value =
+  td [] [text value]
+
+
+view: Signal.Address Action -> Model -> Html.Html
+view address model = div []
+  [
+    div [ id "signup-form" ] [
+      h1 [] [ text "AEP Query" ],
+      label [ for "hostname" ] [ text "Hostname: " ],
+      input [
+        id "hostname",
+        type' "text",
+        value model.hostname ,
+        onInput address Hostname
+      ] [],
+      label [ for "offset" ] [ text "Offset: " ],
+      input [
+        id "offset",
+        type' "number",
+        value (toString model.offset),
+        onInput address Offset
+      ] [],
+      label [ for "limit" ] [ text "Limit: " ],
+      input [
+        id "limit",
+        type' "number",
+        value (toString model.limit),
+        onInput address Limit
+      ] [],
+      button [ class "signup-button", onClick address Query ] [ text "Query" ]
+    ],
+    case model.results of
+      Just (Ok results) -> renderTable results
+      Just (Err err) -> text "There was an error"
+      Nothing -> text "Please make a query"
+  ]
 -- EFFECTS --
 
 decode : Decode.Decoder Results
@@ -78,20 +131,17 @@ decode = Decode.tuple3 (,,)
 
 doQuery: String -> Int -> Int -> Effects Action
 doQuery hostname offset limit =
-  let task =
-    Encode.list [Encode.object[
-      ("hostname",Encode.string hostname),
-      ("offset",Encode.int offset),
-      ("limit",Encode.int limit)
-    ]]
-      |> Encode.encode 0
-      |> Http.string
-      |> Http.post decode "http://localhost:8080/api/aep.query"
-  in
-    task
-      |> Task.toResult
-      |> Task.map QueryResults
-      |> Effects.task
+  Encode.list [Encode.object[
+    ("hostname",Encode.string hostname),
+    ("offset",Encode.int offset),
+    ("limit",Encode.int limit)
+  ]]
+    |> Encode.encode 0
+    |> Http.string
+    |> Http.post decode "http://localhost:8080/api/aep.query"
+    |> Task.toResult
+    |> Task.map QueryResults
+    |> Effects.task
 
 -- MAIN --
 

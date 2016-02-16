@@ -32,8 +32,8 @@ return function (db, registry)
     "Structure for valid query parameters",
     {
       hostname = Optional(String),
-      start = Optional(Int),
-      count = Optional(Int),
+      offset = Optional(Int),
+      limit = Optional(Int),
     })
 
   assert(register("create", [[
@@ -94,8 +94,8 @@ return function (db, registry)
 
   ]], { {"query", Query} }, {Columns,Rows,Stats}, function (queryParameters)
     queryParameters = queryParameters or {}
-    local offset = queryParameters.start or 0
-    local limit = queryParameters.count or 20
+    local offset = queryParameters.offset or 0
+    local limit = queryParameters.limit or 20
     local pattern = queryParameters.hostname
     local where = conditionBuilder('hostname', pattern)
     local sql = "SELECT count(*) from aep" .. where
