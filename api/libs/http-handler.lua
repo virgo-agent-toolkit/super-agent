@@ -16,22 +16,19 @@ return function (call)
     local args
 
     local contentType = req.headers["content-type"]
-    if contentType == "application/json" then
-      local _, err
-      args, _, err = jsonDecode(body)
-      if not args then
-        return fail(res,
-          "Invalid JSON: " .. err)
-      end
-    elseif contentType == "application/msgpack" then
+    if contentType == "application/msgpack" then
       local success, result = pcall(msgpackDecode, body)
       if not success then
         return fail(res, result)
       end
       args = result
     else
-      return fail(res,
-        "Missing 'Content-Type' header (use application/json or application/msgpack)")
+      local _, err
+      args, _, err = jsonDecode(body)
+      if not args then
+        return fail(res,
+          "Invalid JSON: " .. err)
+      end
     end
     if type(args) ~= "table" or #args == 0 then
       return fail(res,

@@ -25,6 +25,10 @@ require('weblit-app')
 .use(require('weblit-logger'))
 .use(require('weblit-auto-headers'))
 
+.use(function (req, res, go)
+  res.headers['Access-Control-Allow-Origin'] = '*'
+end)
+
 .websocket({
   path = "/websocket",
   protocol = "schema-rpc"

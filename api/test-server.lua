@@ -5,6 +5,10 @@ local connect = require('websocket-client')
 local makeRpc = require('rpc')
 local codec = require('websocket-to-message')
 
+local jsonEncode = require('json').stringify
+local msgpackEncode = require('msgpack').encode
+
+
 local function dump(...)
   local args = {...}
   for i = 1, select("#", ...) do
@@ -17,14 +21,15 @@ coroutine.wrap(function ()
   local aep = {
     hostname = "localhost"
   }
-  -- dump(request("POST", "http://localhost:8080/api/aep.create", {
-  --   {"User-Agent", userAgent},
-  --   {"Content-Type", "application/json"}
-  -- }, jsonEncode{aep}))
-  -- dump(request("POST", "http://localhost:8080/api/aep.create", {
-  --   {"User-Agent", userAgent},
-  --   {"Content-Type", "application/msgpack"}
-  -- }, msgpackEncode{aep}))
+  dump(request("POST", "http://localhost:8080/api/aep.create", {
+    {"User-Agent", userAgent},
+    {"Content-Type", "application/json"}
+  }, jsonEncode{aep}))
+  dump(request("POST", "http://localhost:8080/api/aep.create", {
+    {"User-Agent", userAgent},
+    {"Content-Type", "application/msgpack"}
+  }, msgpackEncode{aep}))
+  if true then return end
   local read, write = connect("ws://localhost:8080/websocket", "schema-rpc", {
     {"User-Agent", userAgent}
   })
