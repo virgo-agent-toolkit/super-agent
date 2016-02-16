@@ -29,7 +29,6 @@ coroutine.wrap(function ()
     {"User-Agent", userAgent},
     {"Content-Type", "application/msgpack"}
   }, msgpackEncode{aep}))
-  if true then return end
   local read, write = connect("ws://localhost:8080/websocket", "schema-rpc", {
     {"User-Agent", userAgent}
   })

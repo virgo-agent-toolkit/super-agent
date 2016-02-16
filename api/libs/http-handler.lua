@@ -23,6 +23,7 @@ return function (call)
       end
       args = result
     else
+      contentType = "application/json"
       local _, err
       args, _, err = jsonDecode(body)
       if not args then
@@ -40,10 +41,10 @@ return function (call)
     end
     res.code = 200
     res.headers["Content-Type"] = contentType
-    if contentType == "application/json" then
-      res.body = jsonEncode(result)
-    else
+    if contentType == "application/msgpack" then
       res.body = msgpackEncode(result)
+    else
+      res.body = jsonEncode(result)
     end
   end
 end
