@@ -9,6 +9,7 @@ import StartApp as StartApp
 import Effects exposing (Effects, Never)
 import String exposing (toInt)
 
+
 -- MODEL --
 type alias Model =
   { hostname: String
@@ -17,8 +18,9 @@ type alias Model =
   , results: Maybe (Result Http.Error Results)
   }
 
-type alias Columns = List String
-type alias Rows = List (List String)
+type alias Columns = (String, String)
+type alias Rows = List Row
+type alias Row = (String, String)
 type alias Stats = (Int, Int, Int)
 type alias Results = (Columns, Rows, Stats)
 
@@ -67,26 +69,23 @@ renderTable (columns, rows, stats) =
     renderBody rows
   ]
 
-renderHead : List String -> Html.Html
-renderHead names =
-  thead [] (List.map renderHeader names)
+renderHead : Columns -> Html.Html
+renderHead (n1, n2) =
+  thead [] [
+    th [] [ text n1 ],
+    th [] [ text n2 ]
+  ]
 
-renderHeader : String -> Html.Html
-renderHeader name =
-  th [] [text name]
-
-renderBody : List (List String) -> Html.Html
+renderBody : Rows -> Html.Html
 renderBody rows =
   tbody [] (List.map renderRow rows)
 
-renderRow : List String -> Html.Html
-renderRow row =
-  tr [] (List.map renderCell row)
-
-renderCell: String -> Html.Html
-renderCell value =
-  td [] [text value]
-
+renderRow : Row -> Html.Html
+renderRow (id, hostname) =
+  tr [] [
+    td [] [ text id ],
+    td [] [ text hostname ]
+  ]
 
 view: Signal.Address Action -> Model -> Html.Html
 view address model = div []
@@ -117,16 +116,21 @@ view address model = div []
       button [ class "signup-button", onClick address Query ] [ text "Query" ]
     ],
     case model.results of
-      Just (Ok results) -> renderTable results
-      Just (Err err) -> text "There was an error"
       Nothing -> text "Please make a query"
+      Just (Ok results) -> renderTable results
+      Just (Err err) -> text ("Error: " ++ (case err of
+        Http.Timeout -> "Timeout"
+        Http.NetworkError -> "Network Error"
+        Http.UnexpectedPayload err -> "Unexpected Payload: " ++ err
+        Http.BadResponse code message -> "Bad Response: " ++ (toString code) ++ " " ++ message
+      ))
   ]
 -- EFFECTS --
 
 decode : Decode.Decoder Results
 decode = Decode.tuple3 (,,)
-  (Decode.list Decode.string)
-  (Decode.list (Decode.list Decode.string))
+  (Decode.tuple2 (,) Decode.string Decode.string)
+  (Decode.list (Decode.tuple2 (,) Decode.string Decode.string))
   (Decode.tuple3 (,,) Decode.int Decode.int Decode.int)
 
 doQuery: String -> Int -> Int -> Effects Action
