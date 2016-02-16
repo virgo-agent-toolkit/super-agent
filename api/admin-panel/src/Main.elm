@@ -3,7 +3,9 @@ import Html.Events exposing (onClick)
 import StartApp as StartApp
 import Native.Rpc
 import Task exposing (Task, andThen)
-import Effects exposing (Effects)
+import Effects exposing (Effects, Never)
+import Json.Decode as Json exposing ((:=))
+import Http
 
 app: StartApp.App Model
 app = StartApp.start
@@ -12,6 +14,10 @@ app = StartApp.start
   , view = view
   , inputs = []
   }
+
+port tasks : Signal (Task.Task Never ())
+port tasks =
+  app.tasks
 
 type alias Model =
   { mode: Mode
@@ -24,7 +30,7 @@ type Action
     , offset: Int
     , limit: Int
     }
-  | ViewAep String
+  | AepResults (Maybe String)
 
 init : (Model, Effects Action)
 init = ({ mode = Overview , loading = Nothing }, Effects.none)
@@ -55,13 +61,20 @@ type alias AepRow =
   , hostname: String
   }
 
+type alias AepResult =
+  { hostname: String
+  , stats: Stats
+  , results: List AepRow
+  }
+type alias AepQuery =
+  { hostname: String
+  , offset: Int
+  , limit: Int
+  }
+
 type Mode
   = Overview
-  | Aep {
-    hostname: String,
-    stats: Stats,
-    results: List AepRow
-  }
+  | Aep AepResult
 
 
 
@@ -79,4 +92,31 @@ view address model =
 update: Action -> Model -> (Model, Effects Action)
 update action model =
   case action of
-    _ -> ({ model | loading = Just action }, Effects.none)
+    QueryAep params ->
+      ( { model | loading = Just action }
+      , queryAep params
+      )
+    AepResults str -> ( model, Effects.none)
+
+
+queryAep : AepQuery -> Effects Action
+queryAep query =
+  Http.get decodeUrl (randomUrl "test")
+    |> Task.toMaybe
+    |> Task.map AepResults
+    |> Effects.task
+
+(=>): a -> b -> (a, b)
+(=>) = (,)
+
+randomUrl : String -> String
+randomUrl topic =
+  Http.url "http://api.giphy.com/v1/gifs/random"
+    [ "api_key" => "dc6zaTOxFJmzC"
+    , "tag" => topic
+    ]
+
+
+decodeUrl : Json.Decoder String
+decodeUrl =
+  Json.at ["data", "image_url"] Json.string
