@@ -11032,34 +11032,34 @@ Elm.Main.make = function (_elm) {
       var _p4 = _p3;
       var _p5 = _p4._1;
       var currentPage = _p4._0 / _p5 | 0;
-      var startPage$ = A2($Basics.max,0,currentPage - 4);
+      var startPage$ = A2($Basics.max,0,currentPage - 7);
       var lastPage = _p4._2 / _p5 | 0;
-      var endPage = A2($Basics.min,lastPage,startPage$ + 8);
-      var startPage = A2($Basics.max,0,endPage - 8);
+      var endPage = A2($Basics.min,lastPage,startPage$ + 14);
+      var startPage = A2($Basics.max,0,endPage - 14);
       return A2($Html.nav,
       _U.list([]),
       _U.list([A2($Html.ul,
       _U.list([$Html$Attributes.$class("pagination")]),
       A2($List._op["::"],
       _U.cmp(currentPage,0) > 0 ? A2($Html.li,
-      _U.list([]),
+      _U.list([$Html$Attributes.key("left")]),
       _U.list([A2($Html.a,
       _U.list([$Html$Attributes.href("javascript:void(0)"),A2($Html$Events.onClick,address,Goto(currentPage - 1))]),
       _U.list([$Html.text("«")]))])) : A2($Html.li,
-      _U.list([$Html$Attributes.$class("disabled")]),
+      _U.list([$Html$Attributes.key("left"),$Html$Attributes.$class("disabled")]),
       _U.list([A2($Html.a,_U.list([$Html$Attributes.href("javascript:void(0)")]),_U.list([$Html.text("«")]))])),
       A2($List._op["::"],
       _U.cmp(currentPage,lastPage) < 0 ? A2($Html.li,
-      _U.list([]),
+      _U.list([$Html$Attributes.key("right")]),
       _U.list([A2($Html.a,
       _U.list([$Html$Attributes.href("javascript:void(0)"),A2($Html$Events.onClick,address,Goto(currentPage + 1))]),
       _U.list([$Html.text("»")]))])) : A2($Html.li,
-      _U.list([$Html$Attributes.$class("disabled")]),
+      _U.list([$Html$Attributes.key("right"),$Html$Attributes.$class("disabled")]),
       _U.list([A2($Html.a,_U.list([$Html$Attributes.href("javascript:void(0)")]),_U.list([$Html.text("»")]))])),
       A2($List.map,
       function (i) {
          return A2($Html.li,
-         _U.list([$Html$Attributes.$class(_U.eq(currentPage,i) ? "active" : "")]),
+         _U.list([$Html$Attributes.key($Basics.toString(i)),$Html$Attributes.$class(_U.eq(currentPage,i) ? "active" : "")]),
          _U.list([A2($Html.a,
          _U.list([$Html$Attributes.href("javascript:void(0)"),A2($Html$Events.onClick,address,Goto(i))]),
          _U.list([$Html.text($Basics.toString(i + 1))]))]));
@@ -11082,7 +11082,7 @@ Elm.Main.make = function (_elm) {
       var _p7 = _p6;
       var _p8 = _p7._0;
       return A2($Html.tr,
-      _U.list([]),
+      _U.list([$Html$Attributes.key(_p8)]),
       _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(_p8)]))
               ,A2($Html.td,_U.list([]),_U.list([$Html.text(_p7._1)]))
               ,A2($Html.td,
@@ -11091,10 +11091,10 @@ Elm.Main.make = function (_elm) {
               _U.list([$Html$Attributes.$class("btn-group")]),
               _U.list([A2($Html.button,
                       _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,Edit(_p8))]),
-                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-pencil alterar")]),_U.list([]))]))
+                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-pencil")]),_U.list([]))]))
                       ,A2($Html.button,
-                      _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,Delete(_p8))]),
-                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-trash excluir")]),_U.list([]))]))]))]))]));
+                      _U.list([$Html$Attributes.$class("btn btn-danger"),A2($Html$Events.onClick,address,Delete(_p8))]),
+                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),_U.list([]))]))]))]))]));
    });
    var renderBody = F2(function (address,rows) {    return A2($Html.tbody,_U.list([]),A2($List.map,renderRow(address),rows));});
    var renderTable = F3(function (address,columns,rows) {
@@ -11103,7 +11103,7 @@ Elm.Main.make = function (_elm) {
       _U.list([renderHead(columns),A2(renderBody,address,rows)]));
    });
    var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
-   var doQuery = F3(function (hostname,offset,limit) {
+   var doQuery = function (model) {
       var decode = A4($Json$Decode.tuple3,
       F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
       A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string),
@@ -11120,114 +11120,131 @@ Elm.Main.make = function (_elm) {
       "http://localhost:8080/api/aep.query",
       $Http.string(A2($Json$Encode.encode,
       0,
-      $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(hostname)}
-                                                             ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(offset)}
-                                                             ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(limit)}]))]))))))));
-   });
+      $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2"
+                                                              ,_0: "hostname"
+                                                              ,_1: $Json$Encode.string(A2($Basics._op["++"],"*",A2($Basics._op["++"],model.hostname,"*")))}
+                                                             ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(model.offset)}
+                                                             ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(model.limit)}]))]))))))));
+   };
    var update = F2(function (action,model) {
       var _p9 = action;
       switch (_p9.ctor)
-      {case "Hostname": return {ctor: "_Tuple2",_0: _U.update(model,{hostname: _p9._0}),_1: $Effects.none};
+      {case "Hostname": var model = _U.update(model,{hostname: _p9._0});
+           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
          case "Limit": var _p10 = $String.toInt(_p9._0);
            if (_p10.ctor === "Ok") {
-                 return {ctor: "_Tuple2",_0: _U.update(model,{limit: _p10._0}),_1: $Effects.none};
+                 var model = _U.update(model,{limit: _p10._0});
+                 return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
               } else {
                  return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
               }
-         case "Query": return {ctor: "_Tuple2",_0: _U.update(model,{offset: 0}),_1: A3(doQuery,model.hostname,0,model.limit)};
          case "QueryResults": return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just(_p9._0)}),_1: $Effects.none};
          case "Edit": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
          case "Delete": return {ctor: "_Tuple2",_0: model,_1: deleteNode(_p9._0)};
          case "Changed": if (_p9._0.ctor === "Ok") {
                  if (_p9._0._0 === true) {
-                       return {ctor: "_Tuple2",_0: model,_1: A3(doQuery,model.hostname,model.offset,model.limit)};
+                       return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
                     } else {
                        return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
                     }
               } else {
                  return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just($Result.Err(_p9._0._0))}),_1: $Effects.none};
               }
-         default: var offset = _p9._0 * model.limit;
-           return {ctor: "_Tuple2",_0: _U.update(model,{offset: offset}),_1: A3(doQuery,model.hostname,offset,model.limit)};}
+         default: var model = _U.update(model,{offset: _p9._0 * model.limit});
+           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};}
    });
    var Limit = function (a) {    return {ctor: "Limit",_0: a};};
    var Hostname = function (a) {    return {ctor: "Hostname",_0: a};};
-   var Query = {ctor: "Query"};
    var renderForm = F2(function (address,model) {
       return A2($Html.form,
       _U.list([$Html$Attributes.$class("form-horizontal")]),
       _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("form-group")]),
               _U.list([A2($Html.label,
-                      _U.list([$Html$Attributes.$class("col-sm-2 control-label"),$Html$Attributes.$for("hostname")]),
+                      _U.list([$Html$Attributes.$class("col-sm-3 control-label"),$Html$Attributes.$for("hostname")]),
                       _U.list([$Html.text("Hostname")]))
                       ,A2($Html.div,
-                      _U.list([$Html$Attributes.$class("col-sm-10")]),
+                      _U.list([$Html$Attributes.$class("col-sm-9")]),
                       _U.list([A2($Html.input,
                       _U.list([$Html$Attributes.$class("form-control")
                               ,$Html$Attributes.id("hostname")
                               ,$Html$Attributes.type$("text")
                               ,$Html$Attributes.value(model.hostname)
-                              ,$Html$Attributes.placeholder("Hostname Filter")
+                              ,$Html$Attributes.placeholder("Show All")
                               ,A2(onInput,address,Hostname)]),
                       _U.list([]))]))]))
               ,A2($Html.div,
               _U.list([$Html$Attributes.$class("form-group")]),
               _U.list([A2($Html.label,
-                      _U.list([$Html$Attributes.$class("col-sm-2 control-label"),$Html$Attributes.$for("limit")]),
-                      _U.list([$Html.text("Limit")]))
+                      _U.list([$Html$Attributes.$class("col-sm-3 control-label"),$Html$Attributes.$for("limit")]),
+                      _U.list([$Html.text("Results per Page: ")]))
                       ,A2($Html.div,
-                      _U.list([$Html$Attributes.$class("col-sm-10")]),
+                      _U.list([$Html$Attributes.$class("col-sm-9")]),
                       _U.list([A2($Html.input,
-                      _U.list([$Html$Attributes.$class("form-control")
+                      _U.list([$Html$Attributes.title($Basics.toString(model.limit))
+                              ,$Html$Attributes.$class("form-control")
                               ,$Html$Attributes.id("limit")
-                              ,$Html$Attributes.type$("number")
+                              ,$Html$Attributes.type$("range")
+                              ,$Html$Attributes.min("10")
+                              ,$Html$Attributes.max("100")
+                              ,$Html$Attributes.step("10")
                               ,$Html$Attributes.value($Basics.toString(model.limit))
                               ,A2(onInput,address,Limit)]),
-                      _U.list([]))]))]))
-              ,A2($Html.div,
-              _U.list([$Html$Attributes.$class("form-group")]),
-              _U.list([A2($Html.div,
-              _U.list([$Html$Attributes.$class("col-sm-offset-2 col-sm-10")]),
-              _U.list([A2($Html.a,
-              _U.list([$Html$Attributes.href("#"),$Html$Attributes.$class("btn btn-primary active"),A2($Html$Events.onClick,address,Query)]),
-              _U.list([$Html.text("Query")]))]))]))]));
+                      _U.list([]))]))]))]));
    });
    var view = F2(function (address,model) {
       return A2($Html.div,
-      _U.list([$Html$Attributes.$class("container")]),
-      _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Agent Endpoints")]))
-              ,A2(renderForm,address,model)
-              ,function () {
-                 var _p11 = model.results;
-                 if (_p11.ctor === "Nothing") {
-                       return $Html.text("Loading...");
-                    } else {
-                       if (_p11._0.ctor === "Ok") {
-                             var _p12 = _p11._0._0._2;
-                             return A2($Html.div,
-                             _U.list([]),
-                             _U.list([A2(renderPagination,address,_p12)
-                                     ,A3(renderTable,address,_p11._0._0._0,_p11._0._0._1)
-                                     ,A2(renderPagination,address,_p12)]));
-                          } else {
-                             return $Html.text(A2($Basics._op["++"],
-                             "Error: ",
-                             function () {
-                                var _p13 = _p11._0._0;
-                                switch (_p13.ctor)
-                                {case "Timeout": return "Timeout";
-                                   case "NetworkError": return "Network Error";
-                                   case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p13._0);
-                                   default: return A2($Basics._op["++"],
-                                     "Bad Response: ",
-                                     A2($Basics._op["++"],$Basics.toString(_p13._0),A2($Basics._op["++"]," ",_p13._1)));}
-                             }()));
-                          }
-                    }
-              }()]));
+      _U.list([]),
+      _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("navbar navbar-default navbar-fixed-top")]),
+              _U.list([A2($Html.div,
+              _U.list([$Html$Attributes.$class("container")]),
+              _U.list([A2($Html.div,
+                      _U.list([$Html$Attributes.$class("navbar-header")]),
+                      _U.list([A2($Html.a,_U.list([$Html$Attributes.$class("navbar-brand")]),_U.list([$Html.text("Admin Panel")]))]))
+                      ,A2($Html.div,
+                      _U.list([$Html$Attributes.$class("navbar-collapse collapse")]),
+                      _U.list([A2($Html.ul,
+                      _U.list([$Html$Attributes.$class("nav navbar-nav")]),
+                      _U.list([A2($Html.li,_U.list([]),_U.list([A2($Html.a,_U.list([$Html$Attributes.href("#")]),_U.list([$Html.text("AEPs")]))]))]))]))]))]))
+              ,A2($Html.div,
+              _U.list([$Html$Attributes.$class("container")]),
+              _U.list([A2($Html.div,
+                      _U.list([$Html$Attributes.$class("page-header")]),
+                      _U.list([A2($Html.div,
+                      _U.list([$Html$Attributes.$class("row")]),
+                      _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Agent Endpoints")]))]))]))
+                      ,A2(renderForm,address,model)
+                      ,function () {
+                         var _p11 = model.results;
+                         if (_p11.ctor === "Nothing") {
+                               return $Html.text("Loading...");
+                            } else {
+                               if (_p11._0.ctor === "Ok") {
+                                     var _p12 = _p11._0._0._2;
+                                     return A2($Html.div,
+                                     _U.list([]),
+                                     _U.list([A2(renderPagination,address,_p12)
+                                             ,A3(renderTable,address,_p11._0._0._0,_p11._0._0._1)
+                                             ,A2(renderPagination,address,_p12)]));
+                                  } else {
+                                     return $Html.text(A2($Basics._op["++"],
+                                     "Error: ",
+                                     function () {
+                                        var _p13 = _p11._0._0;
+                                        switch (_p13.ctor)
+                                        {case "Timeout": return "Timeout";
+                                           case "NetworkError": return "Network Error";
+                                           case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p13._0);
+                                           default: return A2($Basics._op["++"],
+                                             "Bad Response: ",
+                                             A2($Basics._op["++"],$Basics.toString(_p13._0),A2($Basics._op["++"]," ",_p13._1)));}
+                                     }()));
+                                  }
+                            }
+                      }()]))]));
    });
-   var init = {ctor: "_Tuple2",_0: {hostname: "",offset: 0,limit: 20,results: $Maybe.Nothing},_1: A3(doQuery,"*",0,20)};
+   var init = function () {    var model = {hostname: "",offset: 0,limit: 20,results: $Maybe.Nothing};return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};}();
    var app = $StartApp.start({init: init,update: update,view: view,inputs: _U.list([])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
@@ -11235,7 +11252,6 @@ Elm.Main.make = function (_elm) {
    return _elm.Main.values = {_op: _op
                              ,Model: Model
                              ,init: init
-                             ,Query: Query
                              ,Hostname: Hostname
                              ,Limit: Limit
                              ,QueryResults: QueryResults
