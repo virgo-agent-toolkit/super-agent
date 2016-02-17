@@ -34,7 +34,7 @@ local function conditionBuilder(...)
   for i = 1, select("#", ...), 2 do
     local name = inputs[i]
     local value = inputs[i + 1]
-    if value then
+    if value and #value > 0 then
       parts[index] = (find(value, "*", 1, true)
         and format("%s LIKE %s",
           name,
