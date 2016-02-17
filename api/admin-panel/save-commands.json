@@ -1,0 +1,6 @@
+{
+  "timeout": 5000,
+  "commands" : [
+      "src/**/*.elm : elm make src/Main.elm --output=gen/main.js"
+  ]
+}

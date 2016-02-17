@@ -1,4 +1,6 @@
-import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td)
+module Main where
+
+import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td,i)
 import Html.Events exposing (onClick,on,targetValue)
 import Html.Attributes exposing (id,for,type',value,class)
 import Http
@@ -8,7 +10,7 @@ import Json.Encode as Encode
 import StartApp as StartApp
 import Effects exposing (Effects, Never)
 import String exposing (toInt)
-
+import Char
 
 -- MODEL --
 type alias Model =
@@ -26,7 +28,12 @@ type alias Results = (Columns, Rows, Stats)
 
 
 init : (Model, Effects Action)
-init = ({hostname="*",offset=0,limit=20,results=Nothing}, Effects.none)
+init = (
+  { hostname = "*"
+  , offset = 0
+  , limit = 20
+  , results = Nothing
+  }, Effects.none)
 
 -- UPDATE --
 
@@ -36,6 +43,9 @@ type Action
   | Offset String
   | Limit String
   | QueryResults (Result Http.Error Results)
+  | Edit String
+  | Delete String
+  | Changed (Result Http.Error Bool)
 
 
 update: Action -> Model -> (Model, Effects Action)
@@ -55,6 +65,17 @@ update action model =
        (model, doQuery model.hostname model.offset model.limit)
     QueryResults results ->
        ({model | results = Just results }, Effects.none)
+    Edit id ->
+      (model, Effects.none)
+    Delete id ->
+      (model, deleteNode id)
+    Changed (Ok True) ->
+      (model, doQuery model.hostname model.offset model.limit)
+    Changed (Ok False) ->
+      (model, Effects.none)
+    Changed (Err err) ->
+      ({model | results = Just(Err err)}, Effects.none)
+
 
 -- VIEW --
 
@@ -62,29 +83,43 @@ onInput: Signal.Address Action -> (String -> Action) -> Html.Attribute
 onInput address action =
   on "input" targetValue (\str -> Signal.message address (action str))
 
-renderTable: Results -> Html.Html
-renderTable (columns, rows, stats) =
+renderTable: Signal.Address Action -> Results -> Html.Html
+renderTable address (columns, rows, stats) =
   table [] [
     renderHead columns,
-    renderBody rows
+    renderBody address rows
   ]
+
+capitalize : String -> String
+capitalize s =
+  case String.uncons s of
+    Just (c,ss) -> String.cons (Char.toUpper c) ss
+    Nothing -> s
 
 renderHead : Columns -> Html.Html
 renderHead (n1, n2) =
   thead [] [
-    th [] [ text n1 ],
-    th [] [ text n2 ]
+    th [] [ text (capitalize n1) ],
+    th [] [ text (capitalize n2) ]
   ]
 
-renderBody : Rows -> Html.Html
-renderBody rows =
-  tbody [] (List.map renderRow rows)
+renderBody : Signal.Address Action -> Rows -> Html.Html
+renderBody address rows =
+  tbody [] (List.map (renderRow address) rows)
 
-renderRow : Row -> Html.Html
-renderRow (id, hostname) =
+renderRow : Signal.Address Action -> Row -> Html.Html
+renderRow address (id, hostname) =
   tr [] [
     td [] [ text id ],
-    td [] [ text hostname ]
+    td [] [ text hostname ],
+    td [] [
+      i [ class "fa fa-pencil button alterar"
+        , onClick address (Edit id)
+        ] [],
+      i [ class "fa fa-trash button excluir"
+        , onClick address (Delete id)
+        ] []
+    ]
   ]
 
 view: Signal.Address Action -> Model -> Html.Html
@@ -117,7 +152,7 @@ view address model = div []
     ],
     case model.results of
       Nothing -> text "Please make a query"
-      Just (Ok results) -> renderTable results
+      Just (Ok results) -> renderTable address results
       Just (Err err) -> text ("Error: " ++ (case err of
         Http.Timeout -> "Timeout"
         Http.NetworkError -> "Network Error"
@@ -127,25 +162,38 @@ view address model = div []
   ]
 -- EFFECTS --
 
-decode : Decode.Decoder Results
-decode = Decode.tuple3 (,,)
-  (Decode.tuple2 (,) Decode.string Decode.string)
-  (Decode.list (Decode.tuple2 (,) Decode.string Decode.string))
-  (Decode.tuple3 (,,) Decode.int Decode.int Decode.int)
-
 doQuery: String -> Int -> Int -> Effects Action
 doQuery hostname offset limit =
-  Encode.list [Encode.object[
-    ("hostname",Encode.string hostname),
-    ("offset",Encode.int offset),
-    ("limit",Encode.int limit)
-  ]]
-    |> Encode.encode 0
-    |> Http.string
-    |> Http.post decode "http://localhost:8080/api/aep.query"
-    |> Task.toResult
-    |> Task.map QueryResults
-    |> Effects.task
+  let
+    decode = Decode.tuple3 (,,)
+      (Decode.tuple2 (,) Decode.string Decode.string)
+      (Decode.list (Decode.tuple2 (,) Decode.string Decode.string))
+      (Decode.tuple3 (,,) Decode.int Decode.int Decode.int)
+  in
+    Encode.list [Encode.object[
+      ("hostname",Encode.string hostname),
+      ("offset",Encode.int offset),
+      ("limit",Encode.int limit)
+    ]]
+      |> Encode.encode 0
+      |> Http.string
+      |> Http.post decode "http://localhost:8080/api/aep.query"
+      |> Task.toResult
+      |> Task.map QueryResults
+      |> Effects.task
+
+deleteNode: String -> Effects Action
+deleteNode id =
+  let
+    decode = Decode.bool
+  in
+    Encode.list [Encode.string id]
+      |> Encode.encode 0
+      |> Http.string
+      |> Http.post decode "http://localhost:8080/api/aep.delete"
+      |> Task.toResult
+      |> Task.map Changed
+      |> Effects.task
 
 -- MAIN --
 
