@@ -1,8 +1,8 @@
 module Main where
 
-import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td,i)
+import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td,i,a)
 import Html.Events exposing (onClick,on,targetValue)
-import Html.Attributes exposing (id,for,type',value,class)
+import Html.Attributes exposing (id,for,type',value,class,href)
 import Http
 import Task exposing (Task, andThen)
 import Json.Decode as Decode
@@ -33,7 +33,7 @@ init = (
   , offset = 0
   , limit = 20
   , results = Nothing
-  }, Effects.none)
+  }, doQuery "*" 0 20)
 
 -- UPDATE --
 
@@ -85,7 +85,7 @@ onInput address action =
 
 renderTable: Signal.Address Action -> Results -> Html.Html
 renderTable address (columns, rows, stats) =
-  table [] [
+  table [class "table table-striped table-hover table-bordered"] [
     renderHead columns,
     renderBody address rows
   ]
@@ -122,36 +122,72 @@ renderRow address (id, hostname) =
     ]
   ]
 
-view: Signal.Address Action -> Model -> Html.Html
-view address model = div []
-  [
-    div [ id "signup-form" ] [
-      h1 [] [ text "AEP Query" ],
-      label [ for "hostname" ] [ text "Hostname: " ],
-      input [
-        id "hostname",
-        type' "text",
-        value model.hostname ,
-        onInput address Hostname
-      ] [],
-      label [ for "offset" ] [ text "Offset: " ],
-      input [
-        id "offset",
-        type' "number",
-        value (toString model.offset),
-        onInput address Offset
-      ] [],
-      label [ for "limit" ] [ text "Limit: " ],
-      input [
-        id "limit",
-        type' "number",
-        value (toString model.limit),
-        onInput address Limit
-      ] [],
-      button [ class "signup-button", onClick address Query ] [ text "Query" ]
+renderForm : Signal.Address Action -> Model -> Html.Html
+renderForm address model =
+  form [ class "form-horizontal" ] [
+    div [class "form-group"] [
+      label [
+        class "col-sm-2 control-label",
+        for "hostname"
+      ] [ text "Hostname" ],
+      div [ class "col-sm-10" ] [
+        input [
+          class "form-control",
+          id "hostname",
+          type' "text",
+          value model.hostname ,
+          onInput address Hostname
+        ] []
+      ]
     ],
+    div [class "form-group"] [
+      label [
+        class "col-sm-2 control-label",
+        for "offset"
+      ] [ text "Offset" ],
+      div [ class "col-sm-10" ] [
+        input [
+          class "form-control",
+          id "offset",
+          type' "number",
+          value (toString model.offset),
+          onInput address Offset
+        ] []
+      ]
+    ],
+    div [class "form-group"] [
+      label [
+        class "col-sm-2 control-label",
+        for "limit"
+      ] [ text "Limit: " ],
+      div [ class "col-sm-10" ] [
+        input [
+          class "form-control",
+          id "limit",
+          type' "number",
+          value (toString model.limit),
+          onInput address Limit
+        ] []
+      ]
+    ],
+    div [class "form-group"] [
+      div [class "col-sm-offset-2 col-sm-10"] [
+        a [
+          href "#",
+          class "btn btn-primary active",
+          onClick address Query
+        ] [ text "Query" ]
+      ]
+    ]
+  ]
+
+view: Signal.Address Action -> Model -> Html.Html
+view address model = div [ class "container" ]
+  [
+    h1 [] [ text "Agent Endpoints" ],
+    renderForm address model,
     case model.results of
-      Nothing -> text "Please make a query"
+      Nothing -> text "Loading..."
       Just (Ok results) -> renderTable address results
       Just (Err err) -> text ("Error: " ++ (case err of
         Http.Timeout -> "Timeout"
