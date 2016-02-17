@@ -40,6 +40,6 @@ end)
   path = "/api/:path:"
 }, require('http-handler')(registry.call))
 
-.use(require('weblit-static')("www"))
+.use(require('weblit-static')("admin-panel"))
 
 .start()
