@@ -1,8 +1,8 @@
 module Main where
 
-import Html exposing (form,h1,text,label,input,div,button,table,thead,tbody,tr,th,td,i,a)
+import Html exposing (form,div,ul,li,a,text,table,thead,tbody,tr,th,td,nav,button,span,label,input,h1)
 import Html.Events exposing (onClick,on,targetValue)
-import Html.Attributes exposing (id,for,type',value,class,href)
+import Html.Attributes exposing (class,href,for,id,type',value,placeholder)
 import Http
 import Task exposing (Task, andThen)
 import Json.Decode as Decode
@@ -29,7 +29,7 @@ type alias Results = (Columns, Rows, Stats)
 
 init : (Model, Effects Action)
 init = (
-  { hostname = "*"
+  { hostname = ""
   , offset = 0
   , limit = 20
   , results = Nothing
@@ -40,12 +40,12 @@ init = (
 type Action
   = Query
   | Hostname String
-  | Offset String
   | Limit String
   | QueryResults (Result Http.Error Results)
   | Edit String
   | Delete String
   | Changed (Result Http.Error Bool)
+  | Goto Int
 
 
 update: Action -> Model -> (Model, Effects Action)
@@ -53,16 +53,12 @@ update action model =
   case action of
     Hostname value ->
       ({model | hostname = value}, Effects.none)
-    Offset value ->
-      case toInt value of
-        Ok num -> ({model | offset = num}, Effects.none)
-        Err _ -> (model, Effects.none)
     Limit value ->
       case toInt value of
         Ok num -> ({model | limit = num}, Effects.none)
         Err _ -> (model, Effects.none)
     Query ->
-       (model, doQuery model.hostname model.offset model.limit)
+       ({model|offset=0}, doQuery model.hostname 0 model.limit)
     QueryResults results ->
        ({model | results = Just results }, Effects.none)
     Edit id ->
@@ -75,6 +71,11 @@ update action model =
       (model, Effects.none)
     Changed (Err err) ->
       ({model | results = Just(Err err)}, Effects.none)
+    Goto page ->
+      let
+        offset = page * model.limit
+      in
+        ({model|offset=offset}, doQuery model.hostname offset model.limit)
 
 
 -- VIEW --
@@ -83,8 +84,50 @@ onInput: Signal.Address Action -> (String -> Action) -> Html.Attribute
 onInput address action =
   on "input" targetValue (\str -> Signal.message address (action str))
 
-renderTable: Signal.Address Action -> Results -> Html.Html
-renderTable address (columns, rows, stats) =
+renderPagination: Signal.Address Action -> Stats -> Html.Html
+renderPagination address (offset, limit, total) =
+  let
+    lastPage = total // limit
+    currentPage = offset // limit
+    startPage' = max 0 (currentPage - 4)
+    endPage = min lastPage (startPage' + 8)
+    startPage = max 0 (endPage - 8)
+  in nav [] [
+    ul [class "pagination"] (
+      (if currentPage > 0 then
+        li [] [a [
+          href "javascript:void(0)",
+          onClick address (Goto (currentPage - 1))
+        ] [text "«"]]
+      else
+        li [class "disabled"] [
+          a [href "javascript:void(0)"] [text "«"]
+        ])
+      ::
+        (if currentPage < lastPage then
+          li [] [a [
+            href "javascript:void(0)",
+            onClick address (Goto (currentPage + 1))
+          ] [text "»"]]
+        else
+          li [class "disabled"] [
+            a [href "javascript:void(0)"] [text "»"]
+          ])
+      ::
+      List.map (\i ->
+         li [class (if currentPage == i then "active" else "")] [
+          a [
+            href "javascript:void(0)",
+            onClick address (Goto i)
+          ] [i + 1 |> toString |> text]
+        ]
+      ) [startPage..endPage]
+    )
+  ]
+
+
+renderTable: Signal.Address Action -> Columns -> Rows -> Html.Html
+renderTable address columns rows =
   table [class "table table-striped table-hover table-bordered"] [
     renderHead columns,
     renderBody address rows
@@ -99,8 +142,11 @@ capitalize s =
 renderHead : Columns -> Html.Html
 renderHead (n1, n2) =
   thead [] [
-    th [] [ text (capitalize n1) ],
-    th [] [ text (capitalize n2) ]
+    tr [] [
+      th [] [ text (capitalize n1) ],
+      th [] [ text (capitalize n2) ],
+      th [] [ text "Actions"]
+    ]
   ]
 
 renderBody : Signal.Address Action -> Rows -> Html.Html
@@ -113,12 +159,20 @@ renderRow address (id, hostname) =
     td [] [ text id ],
     td [] [ text hostname ],
     td [] [
-      i [ class "fa fa-pencil button alterar"
-        , onClick address (Edit id)
-        ] [],
-      i [ class "fa fa-trash button excluir"
-        , onClick address (Delete id)
-        ] []
+      div [class "btn-group"] [
+        button [
+          class "btn btn-default",
+          onClick address (Edit id)
+        ] [
+          span [ class "glyphicon glyphicon-pencil alterar"] [ ]
+        ],
+        button [
+          class "btn btn-default",
+          onClick address (Delete id)
+        ] [
+          span [ class "glyphicon glyphicon-trash excluir"] [ ]
+        ]
+      ]
     ]
   ]
 
@@ -136,6 +190,7 @@ renderForm address model =
           id "hostname",
           type' "text",
           value model.hostname ,
+          placeholder "Hostname Filter",
           onInput address Hostname
         ] []
       ]
@@ -143,23 +198,8 @@ renderForm address model =
     div [class "form-group"] [
       label [
         class "col-sm-2 control-label",
-        for "offset"
-      ] [ text "Offset" ],
-      div [ class "col-sm-10" ] [
-        input [
-          class "form-control",
-          id "offset",
-          type' "number",
-          value (toString model.offset),
-          onInput address Offset
-        ] []
-      ]
-    ],
-    div [class "form-group"] [
-      label [
-        class "col-sm-2 control-label",
         for "limit"
-      ] [ text "Limit: " ],
+      ] [ text "Limit" ],
       div [ class "col-sm-10" ] [
         input [
           class "form-control",
@@ -188,7 +228,11 @@ view address model = div [ class "container" ]
     renderForm address model,
     case model.results of
       Nothing -> text "Loading..."
-      Just (Ok results) -> renderTable address results
+      Just (Ok (columns, rows, stats)) -> div [] [
+        renderPagination address stats,
+        renderTable address columns rows,
+        renderPagination address stats
+      ]
       Just (Err err) -> text ("Error: " ++ (case err of
         Http.Timeout -> "Timeout"
         Http.NetworkError -> "Network Error"
