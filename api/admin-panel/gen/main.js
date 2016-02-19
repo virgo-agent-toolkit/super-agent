@@ -11088,6 +11088,7 @@ Elm.Main.make = function (_elm) {
    });
    var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
    var doQuery = function (model) {    return A3($do,$Aep.query,extractQuery(model),QueryResults);};
+   var OnCreate = function (a) {    return {ctor: "OnCreate",_0: a};};
    var Changed = function (a) {    return {ctor: "Changed",_0: a};};
    var update = F2(function (action,model) {
       var _p4 = action;
@@ -11110,6 +11111,7 @@ Elm.Main.make = function (_elm) {
                  }
            }();
            return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+         case "Create": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.create,{hostname: model.hostname},OnCreate)};
          case "Goto": var model = _U.update(model,{offset: _p4._0 * model.limit});
            return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
          case "Edit": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Just(_p4._0)}),_1: $Effects.none};
@@ -11131,6 +11133,11 @@ Elm.Main.make = function (_elm) {
                     } else {
                        return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
                     }
+              } else {
+                 return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just($Result.Err(_p4._0._0))}),_1: $Effects.none};
+              }
+         case "OnCreate": if (_p4._0.ctor === "Ok") {
+                 return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
               } else {
                  return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just($Result.Err(_p4._0._0))}),_1: $Effects.none};
               }
@@ -11179,6 +11186,7 @@ Elm.Main.make = function (_elm) {
       },
       _U.range(startPage,endPage)))))]));
    });
+   var Create = {ctor: "Create"};
    var HostnameEdit = function (a) {    return {ctor: "HostnameEdit",_0: a};};
    var renderRow = F3(function (address,current,_p11) {
       var _p12 = _p11;
@@ -11190,7 +11198,7 @@ Elm.Main.make = function (_elm) {
       A2($Html.td,_U.list([]),_U.list([$Html.text(_p14)])),
       A2(isSelected,current,_p14) ? _U.list([A2($Html.td,
                                             _U.list([]),
-                                            _U.list([A2($Html.form,
+                                            _U.list([A2($Html.div,
                                             _U.list([$Html$Attributes.$class("form")]),
                                             _U.list([A2($Html.div,
                                             _U.list([$Html$Attributes.$class("form-group")]),
@@ -11250,7 +11258,7 @@ Elm.Main.make = function (_elm) {
    var Limit = function (a) {    return {ctor: "Limit",_0: a};};
    var Hostname = function (a) {    return {ctor: "Hostname",_0: a};};
    var renderForm = F2(function (address,model) {
-      return A2($Html.form,
+      return A2($Html.div,
       _U.list([$Html$Attributes.$class("form-horizontal")]),
       _U.list([A2($Html.div,
               _U.list([$Html$Attributes.$class("form-group")]),
@@ -11259,14 +11267,19 @@ Elm.Main.make = function (_elm) {
                       _U.list([$Html.text("Hostname")]))
                       ,A2($Html.div,
                       _U.list([$Html$Attributes.$class("col-sm-9")]),
+                      _U.list([A2($Html.div,
+                      _U.list([$Html$Attributes.$class("input-group")]),
                       _U.list([A2($Html.input,
-                      _U.list([$Html$Attributes.$class("form-control")
-                              ,$Html$Attributes.id("hostname")
-                              ,$Html$Attributes.type$("text")
-                              ,$Html$Attributes.value(model.hostname)
-                              ,$Html$Attributes.placeholder("Show All")
-                              ,A2(onInput,address,Hostname)]),
-                      _U.list([]))]))]))
+                              _U.list([$Html$Attributes.$class("form-control")
+                                      ,$Html$Attributes.id("hostname")
+                                      ,$Html$Attributes.type$("text")
+                                      ,$Html$Attributes.value(model.hostname)
+                                      ,$Html$Attributes.placeholder("Show All")
+                                      ,A2(onInput,address,Hostname)]),
+                              _U.list([]))
+                              ,A2($Html.span,
+                              _U.list([$Html$Attributes.$class("input-group-addon")]),
+                              _U.list([A2($Html.button,_U.list([A2($Html$Events.onClick,address,Create)]),_U.list([$Html.text("Create")]))]))]))]))]))
               ,A2($Html.div,
               _U.list([$Html$Attributes.$class("form-group")]),
               _U.list([A2($Html.label,
@@ -11352,12 +11365,14 @@ Elm.Main.make = function (_elm) {
                              ,Hostname: Hostname
                              ,Limit: Limit
                              ,HostnameEdit: HostnameEdit
+                             ,Create: Create
                              ,Goto: Goto
                              ,Edit: Edit
                              ,Delete: Delete
                              ,Save: Save
                              ,Cancel: Cancel
                              ,Changed: Changed
+                             ,OnCreate: OnCreate
                              ,QueryResults: QueryResults
                              ,update: update
                              ,onInput: onInput

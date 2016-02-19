@@ -37,12 +37,14 @@ type Action
   = Hostname String
   | Limit String
   | HostnameEdit String
+  | Create
   | Goto Int
   | Edit Row
   | Delete Uuid
   | Save
   | Cancel
   | Changed (Result Http.Error Bool)
+  | OnCreate (Result Http.Error Uuid)
   | QueryResults (Result Http.Error Results)
 
 
@@ -63,6 +65,8 @@ update action model =
           Nothing -> model
         in
           (model, Effects.none)
+    Create ->
+      (model, do Aep.create {hostname=model.hostname} OnCreate )
     Goto page -> let model = { model | offset = page * model.limit } in
       (model, doQuery model)
     Edit row ->
@@ -82,6 +86,10 @@ update action model =
     Changed (Ok False) ->
       (model, Effects.none)
     Changed (Err err) ->
+      ({model | results = Just(Err err)}, Effects.none)
+    OnCreate (Ok _) ->
+      (model, doQuery model)
+    OnCreate (Err err) ->
       ({model | results = Just(Err err)}, Effects.none)
     QueryResults results ->
        ({model | results = Just results }, Effects.none)
@@ -179,7 +187,7 @@ renderRow address current (id, hostname) =
       isSelected current id
     then [
       td [] [
-      form [ class "form" ] [
+      div [ class "form" ] [
         div [class "form-group"] [
           input [
             class "form-control",
@@ -243,21 +251,28 @@ renderRow address current (id, hostname) =
 
 renderForm : Signal.Address Action -> Model -> Html.Html
 renderForm address model =
-  form [ class "form-horizontal" ] [
+  div [ class "form-horizontal" ] [
     div [class "form-group"] [
       label [
         class "col-sm-3 control-label",
         for "hostname"
       ] [ text "Hostname" ],
       div [ class "col-sm-9" ] [
-        input [
-          class "form-control",
-          id "hostname",
-          type' "text",
-          value model.hostname ,
-          placeholder "Show All",
-          onInput address Hostname
-        ] []
+        div [class "input-group" ] [
+          input [
+            class "form-control",
+            id "hostname",
+            type' "text",
+            value model.hostname ,
+            placeholder "Show All",
+            onInput address Hostname
+          ] [],
+          span [ class "input-group-addon"] [
+            button [
+              onClick address Create
+            ] [text "Create"]
+          ]
+        ]
       ]
     ],
     div [class "form-group"] [
