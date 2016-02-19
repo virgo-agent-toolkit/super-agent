@@ -23,7 +23,9 @@ type alias Rows = List Row
 type alias Stats = (Int, Int, Int)
 type alias Results = (Columns, Rows, Stats)
 
+
 -- CODECS --
+
 
 decodeResults: Decoder Results
 decodeResults = Decode.tuple3 (,,)
@@ -36,27 +38,29 @@ decodeMaybeRow = Decode.maybe (Decode.object2 Aep
     ("id" := Decode.string)
     ("hostname" := Decode.string))
 
-encodeNewAep: NewAep -> Encode.Value
+type alias Encoder a = (a -> Encode.Value)
+
+encodeNewAep: Encoder NewAep
 encodeNewAep row =
   Encode.object [
     ("hostname", Encode.string row.hostname)
   ]
 
-encodeRow: Aep -> Encode.Value
+encodeRow: Encoder Aep
 encodeRow row =
   Encode.object [
     ("id", Encode.string row.id),
     ("hostname", Encode.string row.hostname)
   ]
 
-encodeQuery: Query -> Encode.Value
+encodeQuery: Encoder Query
 encodeQuery query =
   Encode.object [
     ("hostname", Encode.string query.hostname),
     ("offset", Encode.int query.offset),
     ("limit", Encode.int query.limit)
   ]
-encodeUuid: Uuid -> Encode.Value
+encodeUuid: Encoder Uuid
 encodeUuid = Encode.string
 
 -- HELPER --

@@ -255,7 +255,13 @@ do call value wrap =
 
 extractQuery: Model -> Query
 extractQuery model = {
-    hostname = model.hostname,
+    hostname =
+      if
+        String.contains "*" model.hostname
+      then
+        model.hostname
+      else
+         "*" ++ model.hostname ++ "*",
     offset = model.offset,
     limit = model.limit
   }

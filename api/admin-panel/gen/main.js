@@ -11058,7 +11058,11 @@ Elm.Main.make = function (_elm) {
    $String = Elm.String.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var extractQuery = function (model) {    return {hostname: model.hostname,offset: model.offset,limit: model.limit};};
+   var extractQuery = function (model) {
+      return {hostname: A2($String.contains,"*",model.hostname) ? model.hostname : A2($Basics._op["++"],"*",A2($Basics._op["++"],model.hostname,"*"))
+             ,offset: model.offset
+             ,limit: model.limit};
+   };
    var $do = F3(function (call,value,wrap) {    return $Effects.task(A2($Task.map,wrap,$Task.toResult(call(value))));});
    var capitalize = function (s) {
       var _p0 = $String.uncons(s);
