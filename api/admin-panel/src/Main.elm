@@ -4,7 +4,7 @@ import Aep exposing(Uuid, NewAep, Row, Query, Columns, Rows, Stats, Results)
 
 import Html exposing (form,div,ul,li,a,text,table,thead,tbody,tr,th,td,nav,button,span,label,input,h1)
 import Html.Events exposing (onClick,on,targetValue)
-import Html.Attributes as Attr exposing (class,href,for,id,type',value,placeholder,step,title,key)
+import Html.Attributes as Attr exposing (class,href,for,id,type',value,placeholder,step,title,key,disabled)
 import Http
 import Task exposing (Task, andThen)
 import StartApp as StartApp
@@ -17,6 +17,7 @@ type alias Model =
   { hostname: String
   , offset: Int
   , limit: Int
+  , current: Maybe Row
   , results: Maybe (Result Http.Error Results)
   }
 
@@ -25,6 +26,7 @@ init : (Model, Effects Action)
 init = let model = { hostname = ""
   , offset = 0
   , limit = 20
+  , current = Nothing
   , results = Nothing
   } in (model, doQuery model)
 
@@ -33,11 +35,14 @@ init = let model = { hostname = ""
 type Action
   = Hostname String
   | Limit String
-  | QueryResults (Result Http.Error Results)
-  | Edit String
-  | Delete String
-  | Changed (Result Http.Error Bool)
+  | HostnameEdit String
   | Goto Int
+  | Edit Row
+  | Delete Uuid
+  | Save
+  | Cancel
+  | Changed (Result Http.Error Bool)
+  | QueryResults (Result Http.Error Results)
 
 
 update: Action -> Model -> (Model, Effects Action)
@@ -50,20 +55,30 @@ update action model =
         Ok num -> let model = {model | limit = num} in
           (model, doQuery model)
         Err _ -> (model, Effects.none)
-    QueryResults results ->
-       ({model | results = Just results }, Effects.none)
-    Edit id ->
-      (model, Effects.none)
+    HostnameEdit name -> let
+      model = case model.current of
+        Just (currentId, _) -> {model|current = Just (currentId, name)}
+        Nothing -> model
+      in
+        (model, Effects.none)
+    Goto page -> let model = { model | offset = page * model.limit } in
+      (model, doQuery model)
+    Edit row ->
+      ({model | current = Just row}, Effects.none)
+    Cancel ->
+      ({model | current = Nothing}, Effects.none)
     Delete id ->
       (model, do Aep.delete id Changed)
+    Save ->
+      ({model | current = Nothing}, Effects.none)
     Changed (Ok True) ->
       (model, doQuery model)
     Changed (Ok False) ->
       (model, Effects.none)
     Changed (Err err) ->
       ({model | results = Just(Err err)}, Effects.none)
-    Goto page -> let model = { model | offset = page * model.limit } in
-      (model, doQuery model)
+    QueryResults results ->
+       ({model | results = Just results }, Effects.none)
 
 
 -- VIEW --
@@ -115,11 +130,11 @@ renderPagination address (offset, limit, total) =
     ]
 
 
-renderTable: Signal.Address Action -> Columns -> Rows -> Html.Html
-renderTable address columns rows =
+renderTable: Signal.Address Action -> Maybe Row -> Columns -> Rows -> Html.Html
+renderTable address current columns rows =
   table [class "table table-striped table-hover table-bordered"] [
     renderHead columns,
-    renderBody address rows
+    renderBody address current rows
   ]
 
 capitalize : String -> String
@@ -138,32 +153,93 @@ renderHead (n1, n2) =
     ]
   ]
 
-renderBody : Signal.Address Action -> Rows -> Html.Html
-renderBody address rows =
-  tbody [] (List.map (renderRow address) rows)
+renderBody : Signal.Address Action -> Maybe Row -> Rows -> Html.Html
+renderBody address current rows =
+  tbody [] (List.map (renderRow address current) rows)
 
-renderRow : Signal.Address Action -> Row -> Html.Html
-renderRow address (id, hostname) =
-  tr [key id] [
-    td [] [ text id ],
-    td [] [ text hostname ],
-    td [] [
-      div [class "btn-group"] [
-        button [
-          class "btn btn-default",
-          onClick address (Edit id)
-        ] [
-          span [ class "glyphicon glyphicon-pencil"] [ ]
-        ],
-        button [
-          class "btn btn-danger",
-          onClick address (Delete id)
-        ] [
-          span [ class "glyphicon glyphicon-trash"] [ ]
+
+isSelected: Maybe (Uuid, String) -> Uuid -> Bool
+isSelected current id =
+  case current of
+    Just (currentId, _) -> currentId == id
+    Nothing -> False
+
+
+renderRow : Signal.Address Action -> Maybe Row -> Row -> Html.Html
+renderRow address current (id, hostname) =
+  tr [key id] (
+    td [] [ text id ] ::
+    if
+      isSelected current id
+    then [
+      td [] [
+
+
+
+
+
+
+      form [ class "form" ] [
+        div [class "form-group"] [
+          input [
+            class "form-control",
+            type' "text",
+            value hostname ,
+            placeholder "hostname",
+              onInput address HostnameEdit
+            ] []
+          ]
+        ]
+      ],
+      td [] [
+        div [class "btn-group"] [
+          button [
+            class "btn btn-default",
+            onClick address Cancel
+          ] [
+            span [ class "glyphicon glyphicon-ban-circle"] [ ]
+          ],
+          button [
+            class "btn btn-warning",
+            onClick address Save
+          ] [
+            span [ class "glyphicon glyphicon-save"] [ ]
+          ],
+          button [
+            class "btn btn-danger",
+            disabled True
+          ] [
+            span [ class "glyphicon glyphicon-trash"] [ ]
+          ]
         ]
       ]
     ]
-  ]
+    else [
+      td [] [ text hostname ],
+      td [] [
+        div [class "btn-group"] [
+          button [
+            class "btn btn-default",
+            onClick address (Edit (id,hostname))
+          ] [
+            span [ class "glyphicon glyphicon-pencil"] [ ]
+          ],
+          button [
+            class "btn btn-warning",
+            disabled True
+          ] [
+            span [ class "glyphicon glyphicon-save"] [ ]
+          ],
+          button [
+            class "btn btn-danger",
+            onClick address (Delete id)
+          ] [
+            span [ class "glyphicon glyphicon-trash"] [ ]
+          ]
+        ]
+      ]
+    ]
+  )
 
 renderForm : Signal.Address Action -> Model -> Html.Html
 renderForm address model =
@@ -233,7 +309,7 @@ view address model = div [] [
         Nothing -> text "Loading..."
         Just (Ok (columns, rows, stats)) -> div [] [
           renderPagination address stats,
-          renderTable address columns rows,
+          renderTable address model.current columns rows,
           renderPagination address stats
         ]
         Just (Err err) -> text ("Error: " ++ (case err of

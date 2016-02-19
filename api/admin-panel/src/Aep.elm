@@ -74,8 +74,8 @@ makeCall name encoder decoder arg =
 
 -- API CALLS --
 
-create: NewAep -> Task Error Results
-create = makeCall "aep.create" encodeNewAep decodeResults
+create: NewAep -> Task Error Uuid
+create = makeCall "aep.create" encodeNewAep Decode.string
 
 read: Uuid -> Task Error (Maybe Aep)
 read = makeCall "aep.read" encodeUuid decodeMaybeRow

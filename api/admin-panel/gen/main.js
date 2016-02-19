@@ -11018,12 +11018,12 @@ Elm.Aep.make = function (_elm) {
    };
    var update = A3(makeCall,"aep.update",encodeRow,$Json$Decode.bool);
    var encodeNewAep = function (row) {    return $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]));};
+   var create = A3(makeCall,"aep.create",encodeNewAep,$Json$Decode.string);
    var decodeResults = A4($Json$Decode.tuple3,
    F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
    A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string),
    $Json$Decode.list(A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string)),
    A4($Json$Decode.tuple3,F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),$Json$Decode.$int,$Json$Decode.$int,$Json$Decode.$int));
-   var create = A3(makeCall,"aep.create",encodeNewAep,decodeResults);
    var query = A3(makeCall,"aep.query",encodeQuery,decodeResults);
    var Query = F3(function (a,b,c) {    return {hostname: a,offset: b,limit: c};});
    var Aep = F2(function (a,b) {    return {id: a,hostname: b};});
@@ -11064,34 +11064,80 @@ Elm.Main.make = function (_elm) {
              ,limit: model.limit};
    };
    var $do = F3(function (call,value,wrap) {    return $Effects.task(A2($Task.map,wrap,$Task.toResult(call(value))));});
+   var isSelected = F2(function (current,id) {    var _p0 = current;if (_p0.ctor === "Just") {    return _U.eq(_p0._0._0,id);} else {    return false;}});
    var capitalize = function (s) {
-      var _p0 = $String.uncons(s);
-      if (_p0.ctor === "Just") {
-            return A2($String.cons,$Char.toUpper(_p0._0._0),_p0._0._1);
+      var _p1 = $String.uncons(s);
+      if (_p1.ctor === "Just") {
+            return A2($String.cons,$Char.toUpper(_p1._0._0),_p1._0._1);
          } else {
             return s;
          }
    };
-   var renderHead = function (_p1) {
-      var _p2 = _p1;
+   var renderHead = function (_p2) {
+      var _p3 = _p2;
       return A2($Html.thead,
       _U.list([]),
       _U.list([A2($Html.tr,
       _U.list([]),
-      _U.list([A2($Html.th,_U.list([]),_U.list([$Html.text(capitalize(_p2._0))]))
-              ,A2($Html.th,_U.list([]),_U.list([$Html.text(capitalize(_p2._1))]))
+      _U.list([A2($Html.th,_U.list([]),_U.list([$Html.text(capitalize(_p3._0))]))
+              ,A2($Html.th,_U.list([]),_U.list([$Html.text(capitalize(_p3._1))]))
               ,A2($Html.th,_U.list([]),_U.list([$Html.text("Actions")]))]))]));
    };
    var onInput = F2(function (address,action) {
       return A3($Html$Events.on,"input",$Html$Events.targetValue,function (str) {    return A2($Signal.message,address,action(str));});
    });
+   var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
+   var doQuery = function (model) {    return A3($do,$Aep.query,extractQuery(model),QueryResults);};
+   var Changed = function (a) {    return {ctor: "Changed",_0: a};};
+   var update = F2(function (action,model) {
+      var _p4 = action;
+      switch (_p4.ctor)
+      {case "Hostname": var model = _U.update(model,{hostname: _p4._0});
+           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
+         case "Limit": var _p5 = $String.toInt(_p4._0);
+           if (_p5.ctor === "Ok") {
+                 var model = _U.update(model,{limit: _p5._0});
+                 return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
+              } else {
+                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+              }
+         case "HostnameEdit": var model = function () {
+              var _p6 = model.current;
+              if (_p6.ctor === "Just") {
+                    return _U.update(model,{current: $Maybe.Just({ctor: "_Tuple2",_0: _p6._0._0,_1: _p4._0})});
+                 } else {
+                    return model;
+                 }
+           }();
+           return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+         case "Goto": var model = _U.update(model,{offset: _p4._0 * model.limit});
+           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
+         case "Edit": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Just(_p4._0)}),_1: $Effects.none};
+         case "Cancel": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Nothing}),_1: $Effects.none};
+         case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,_p4._0,Changed)};
+         case "Save": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Nothing}),_1: $Effects.none};
+         case "Changed": if (_p4._0.ctor === "Ok") {
+                 if (_p4._0._0 === true) {
+                       return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
+                    } else {
+                       return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
+                    }
+              } else {
+                 return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just($Result.Err(_p4._0._0))}),_1: $Effects.none};
+              }
+         default: return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just(_p4._0)}),_1: $Effects.none};}
+   });
+   var Cancel = {ctor: "Cancel"};
+   var Save = {ctor: "Save"};
+   var Delete = function (a) {    return {ctor: "Delete",_0: a};};
+   var Edit = function (a) {    return {ctor: "Edit",_0: a};};
    var Goto = function (a) {    return {ctor: "Goto",_0: a};};
-   var renderPagination = F2(function (address,_p3) {
-      var _p4 = _p3;
-      var _p5 = _p4._1;
-      var currentPage = _p4._0 / _p5 | 0;
+   var renderPagination = F2(function (address,_p7) {
+      var _p8 = _p7;
+      var _p9 = _p8._1;
+      var currentPage = _p8._0 / _p9 | 0;
       var startPage$ = A2($Basics.max,0,currentPage - 7);
-      var lastPage = _p4._2 / _p5 | 0;
+      var lastPage = _p8._2 / _p9 | 0;
       var endPage = A2($Basics.min,lastPage,startPage$ + 14);
       var startPage = A2($Basics.max,0,endPage - 14);
       return A2($Html.nav,
@@ -11124,61 +11170,73 @@ Elm.Main.make = function (_elm) {
       },
       _U.range(startPage,endPage)))))]));
    });
-   var Changed = function (a) {    return {ctor: "Changed",_0: a};};
-   var Delete = function (a) {    return {ctor: "Delete",_0: a};};
-   var Edit = function (a) {    return {ctor: "Edit",_0: a};};
-   var renderRow = F2(function (address,_p6) {
-      var _p7 = _p6;
-      var _p8 = _p7._0;
+   var HostnameEdit = function (a) {    return {ctor: "HostnameEdit",_0: a};};
+   var renderRow = F3(function (address,current,_p10) {
+      var _p11 = _p10;
+      var _p13 = _p11._0;
+      var _p12 = _p11._1;
       return A2($Html.tr,
-      _U.list([$Html$Attributes.key(_p8)]),
-      _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(_p8)]))
-              ,A2($Html.td,_U.list([]),_U.list([$Html.text(_p7._1)]))
-              ,A2($Html.td,
-              _U.list([]),
-              _U.list([A2($Html.div,
-              _U.list([$Html$Attributes.$class("btn-group")]),
-              _U.list([A2($Html.button,
-                      _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,Edit(_p8))]),
-                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-pencil")]),_U.list([]))]))
-                      ,A2($Html.button,
-                      _U.list([$Html$Attributes.$class("btn btn-danger"),A2($Html$Events.onClick,address,Delete(_p8))]),
-                      _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),_U.list([]))]))]))]))]));
+      _U.list([$Html$Attributes.key(_p13)]),
+      A2($List._op["::"],
+      A2($Html.td,_U.list([]),_U.list([$Html.text(_p13)])),
+      A2(isSelected,current,_p13) ? _U.list([A2($Html.td,
+                                            _U.list([]),
+                                            _U.list([A2($Html.form,
+                                            _U.list([$Html$Attributes.$class("form")]),
+                                            _U.list([A2($Html.div,
+                                            _U.list([$Html$Attributes.$class("form-group")]),
+                                            _U.list([A2($Html.input,
+                                            _U.list([$Html$Attributes.$class("form-control")
+                                                    ,$Html$Attributes.type$("text")
+                                                    ,$Html$Attributes.value(_p12)
+                                                    ,$Html$Attributes.placeholder("hostname")
+                                                    ,A2(onInput,address,HostnameEdit)]),
+                                            _U.list([]))]))]))]))
+                                            ,A2($Html.td,
+                                            _U.list([]),
+                                            _U.list([A2($Html.div,
+                                            _U.list([$Html$Attributes.$class("btn-group")]),
+                                            _U.list([A2($Html.button,
+                                                    _U.list([$Html$Attributes.$class("btn btn-default"),A2($Html$Events.onClick,address,Cancel)]),
+                                                    _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-ban-circle")]),_U.list([]))]))
+                                                    ,A2($Html.button,
+                                                    _U.list([$Html$Attributes.$class("btn btn-warning"),A2($Html$Events.onClick,address,Save)]),
+                                                    _U.list([A2($Html.span,_U.list([$Html$Attributes.$class("glyphicon glyphicon-save")]),_U.list([]))]))
+                                                    ,A2($Html.button,
+                                                    _U.list([$Html$Attributes.$class("btn btn-danger"),$Html$Attributes.disabled(true)]),
+                                                    _U.list([A2($Html.span,
+                                                    _U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),
+                                                    _U.list([]))]))]))]))]) : _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(_p12)]))
+                                                                                      ,A2($Html.td,
+                                                                                      _U.list([]),
+                                                                                      _U.list([A2($Html.div,
+                                                                                      _U.list([$Html$Attributes.$class("btn-group")]),
+                                                                                      _U.list([A2($Html.button,
+                                                                                              _U.list([$Html$Attributes.$class("btn btn-default")
+                                                                                                      ,A2($Html$Events.onClick,
+                                                                                                      address,
+                                                                                                      Edit({ctor: "_Tuple2",_0: _p13,_1: _p12}))]),
+                                                                                              _U.list([A2($Html.span,
+                                                                                              _U.list([$Html$Attributes.$class("glyphicon glyphicon-pencil")]),
+                                                                                              _U.list([]))]))
+                                                                                              ,A2($Html.button,
+                                                                                              _U.list([$Html$Attributes.$class("btn btn-warning")
+                                                                                                      ,$Html$Attributes.disabled(true)]),
+                                                                                              _U.list([A2($Html.span,
+                                                                                              _U.list([$Html$Attributes.$class("glyphicon glyphicon-save")]),
+                                                                                              _U.list([]))]))
+                                                                                              ,A2($Html.button,
+                                                                                              _U.list([$Html$Attributes.$class("btn btn-danger")
+                                                                                                      ,A2($Html$Events.onClick,address,Delete(_p13))]),
+                                                                                              _U.list([A2($Html.span,
+                                                                                              _U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),
+                                                                                              _U.list([]))]))]))]))])));
    });
-   var renderBody = F2(function (address,rows) {    return A2($Html.tbody,_U.list([]),A2($List.map,renderRow(address),rows));});
-   var renderTable = F3(function (address,columns,rows) {
+   var renderBody = F3(function (address,current,rows) {    return A2($Html.tbody,_U.list([]),A2($List.map,A2(renderRow,address,current),rows));});
+   var renderTable = F4(function (address,current,columns,rows) {
       return A2($Html.table,
       _U.list([$Html$Attributes.$class("table table-striped table-hover table-bordered")]),
-      _U.list([renderHead(columns),A2(renderBody,address,rows)]));
-   });
-   var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
-   var doQuery = function (model) {    return A3($do,$Aep.query,extractQuery(model),QueryResults);};
-   var update = F2(function (action,model) {
-      var _p9 = action;
-      switch (_p9.ctor)
-      {case "Hostname": var model = _U.update(model,{hostname: _p9._0});
-           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
-         case "Limit": var _p10 = $String.toInt(_p9._0);
-           if (_p10.ctor === "Ok") {
-                 var model = _U.update(model,{limit: _p10._0});
-                 return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
-              } else {
-                 return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-              }
-         case "QueryResults": return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just(_p9._0)}),_1: $Effects.none};
-         case "Edit": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,_p9._0,Changed)};
-         case "Changed": if (_p9._0.ctor === "Ok") {
-                 if (_p9._0._0 === true) {
-                       return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
-                    } else {
-                       return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-                    }
-              } else {
-                 return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just($Result.Err(_p9._0._0))}),_1: $Effects.none};
-              }
-         default: var model = _U.update(model,{offset: _p9._0 * model.limit});
-           return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};}
+      _U.list([renderHead(columns),A3(renderBody,address,current,rows)]));
    });
    var Limit = function (a) {    return {ctor: "Limit",_0: a};};
    var Hostname = function (a) {    return {ctor: "Hostname",_0: a};};
@@ -11243,49 +11301,55 @@ Elm.Main.make = function (_elm) {
                       _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Agent Endpoints")]))]))]))
                       ,A2(renderForm,address,model)
                       ,function () {
-                         var _p11 = model.results;
-                         if (_p11.ctor === "Nothing") {
+                         var _p14 = model.results;
+                         if (_p14.ctor === "Nothing") {
                                return $Html.text("Loading...");
                             } else {
-                               if (_p11._0.ctor === "Ok") {
-                                     var _p12 = _p11._0._0._2;
+                               if (_p14._0.ctor === "Ok") {
+                                     var _p15 = _p14._0._0._2;
                                      return A2($Html.div,
                                      _U.list([]),
-                                     _U.list([A2(renderPagination,address,_p12)
-                                             ,A3(renderTable,address,_p11._0._0._0,_p11._0._0._1)
-                                             ,A2(renderPagination,address,_p12)]));
+                                     _U.list([A2(renderPagination,address,_p15)
+                                             ,A4(renderTable,address,model.current,_p14._0._0._0,_p14._0._0._1)
+                                             ,A2(renderPagination,address,_p15)]));
                                   } else {
                                      return $Html.text(A2($Basics._op["++"],
                                      "Error: ",
                                      function () {
-                                        var _p13 = _p11._0._0;
-                                        switch (_p13.ctor)
+                                        var _p16 = _p14._0._0;
+                                        switch (_p16.ctor)
                                         {case "Timeout": return "Timeout";
                                            case "NetworkError": return "Network Error";
-                                           case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p13._0);
+                                           case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p16._0);
                                            default: return A2($Basics._op["++"],
                                              "Bad Response: ",
-                                             A2($Basics._op["++"],$Basics.toString(_p13._0),A2($Basics._op["++"]," ",_p13._1)));}
+                                             A2($Basics._op["++"],$Basics.toString(_p16._0),A2($Basics._op["++"]," ",_p16._1)));}
                                      }()));
                                   }
                             }
                       }()]))]));
    });
-   var init = function () {    var model = {hostname: "",offset: 0,limit: 20,results: $Maybe.Nothing};return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};}();
+   var init = function () {
+      var model = {hostname: "",offset: 0,limit: 20,current: $Maybe.Nothing,results: $Maybe.Nothing};
+      return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
+   }();
    var app = $StartApp.start({init: init,update: update,view: view,inputs: _U.list([])});
    var main = app.html;
    var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",app.tasks);
-   var Model = F4(function (a,b,c,d) {    return {hostname: a,offset: b,limit: c,results: d};});
+   var Model = F5(function (a,b,c,d,e) {    return {hostname: a,offset: b,limit: c,current: d,results: e};});
    return _elm.Main.values = {_op: _op
                              ,Model: Model
                              ,init: init
                              ,Hostname: Hostname
                              ,Limit: Limit
-                             ,QueryResults: QueryResults
+                             ,HostnameEdit: HostnameEdit
+                             ,Goto: Goto
                              ,Edit: Edit
                              ,Delete: Delete
+                             ,Save: Save
+                             ,Cancel: Cancel
                              ,Changed: Changed
-                             ,Goto: Goto
+                             ,QueryResults: QueryResults
                              ,update: update
                              ,onInput: onInput
                              ,renderPagination: renderPagination
@@ -11293,6 +11357,7 @@ Elm.Main.make = function (_elm) {
                              ,capitalize: capitalize
                              ,renderHead: renderHead
                              ,renderBody: renderBody
+                             ,isSelected: isSelected
                              ,renderRow: renderRow
                              ,renderForm: renderForm
                              ,view: view
