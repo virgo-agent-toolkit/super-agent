@@ -1,6 +1,6 @@
 module Main where
 
-import Aep exposing(..)
+import Aep exposing(Uuid, NewAep, Row, Query, Columns, Rows, Stats, Results)
 
 import Html exposing (form,div,ul,li,a,text,table,thead,tbody,tr,th,td,nav,button,span,label,input,h1)
 import Html.Events exposing (onClick,on,targetValue)
@@ -55,7 +55,7 @@ update action model =
     Edit id ->
       (model, Effects.none)
     Delete id ->
-      (model, do delete Changed id)
+      (model, do Aep.delete id Changed)
     Changed (Ok True) ->
       (model, doQuery model)
     Changed (Ok False) ->
@@ -246,19 +246,22 @@ view address model = div [] [
   ]
 -- EFFECTS --
 
-do: (a -> Task b c) -> (Result b c -> d) -> a -> Effects d
-do call wrap value =
+do: (a -> Task b c) -> a -> (Result b c -> d) -> Effects d
+do call value wrap =
   call value
   |> Task.toResult
   |> Task.map wrap
   |> Effects.task
 
-doQuery: Model -> Effects Action
-doQuery model = do query QueryResults {
+extractQuery: Model -> Query
+extractQuery model = {
     hostname = model.hostname,
     offset = model.offset,
     limit = model.limit
   }
+
+doQuery: Model -> Effects Action
+doQuery model = do Aep.query (extractQuery model) QueryResults
 
 -- MAIN --
 

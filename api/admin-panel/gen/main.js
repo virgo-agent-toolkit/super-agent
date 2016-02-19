@@ -11057,7 +11057,8 @@ Elm.Main.make = function (_elm) {
    $String = Elm.String.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var $do = F3(function (call,wrap,value) {    return $Effects.task(A2($Task.map,wrap,$Task.toResult(call(value))));});
+   var extractQuery = function (model) {    return {hostname: model.hostname,offset: model.offset,limit: model.limit};};
+   var $do = F3(function (call,value,wrap) {    return $Effects.task(A2($Task.map,wrap,$Task.toResult(call(value))));});
    var capitalize = function (s) {
       var _p0 = $String.uncons(s);
       if (_p0.ctor === "Just") {
@@ -11146,7 +11147,7 @@ Elm.Main.make = function (_elm) {
       _U.list([renderHead(columns),A2(renderBody,address,rows)]));
    });
    var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
-   var doQuery = function (model) {    return A3($do,$Aep.query,QueryResults,{hostname: model.hostname,offset: model.offset,limit: model.limit});};
+   var doQuery = function (model) {    return A3($do,$Aep.query,extractQuery(model),QueryResults);};
    var update = F2(function (action,model) {
       var _p9 = action;
       switch (_p9.ctor)
@@ -11161,7 +11162,7 @@ Elm.Main.make = function (_elm) {
               }
          case "QueryResults": return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just(_p9._0)}),_1: $Effects.none};
          case "Edit": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,Changed,_p9._0)};
+         case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,_p9._0,Changed)};
          case "Changed": if (_p9._0.ctor === "Ok") {
                  if (_p9._0._0 === true) {
                        return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
@@ -11291,6 +11292,7 @@ Elm.Main.make = function (_elm) {
                              ,renderForm: renderForm
                              ,view: view
                              ,$do: $do
+                             ,extractQuery: extractQuery
                              ,doQuery: doQuery
                              ,app: app
                              ,main: main};
