@@ -1,12 +1,12 @@
 module Main where
 
+import Aep exposing(..)
+
 import Html exposing (form,div,ul,li,a,text,table,thead,tbody,tr,th,td,nav,button,span,label,input,h1)
 import Html.Events exposing (onClick,on,targetValue)
 import Html.Attributes as Attr exposing (class,href,for,id,type',value,placeholder,step,title,key)
 import Http
 import Task exposing (Task, andThen)
-import Json.Decode as Decode
-import Json.Encode as Encode
 import StartApp as StartApp
 import Effects exposing (Effects, Never)
 import String exposing (toInt)
@@ -19,12 +19,6 @@ type alias Model =
   , limit: Int
   , results: Maybe (Result Http.Error Results)
   }
-
-type alias Columns = (String, String)
-type alias Rows = List Row
-type alias Row = (String, String)
-type alias Stats = (Int, Int, Int)
-type alias Results = (Columns, Rows, Stats)
 
 
 init : (Model, Effects Action)
@@ -61,7 +55,7 @@ update action model =
     Edit id ->
       (model, Effects.none)
     Delete id ->
-      (model, deleteNode id)
+      (model, do delete Changed id)
     Changed (Ok True) ->
       (model, doQuery model)
     Changed (Ok False) ->
@@ -252,38 +246,19 @@ view address model = div [] [
   ]
 -- EFFECTS --
 
-doQuery: Model -> Effects Action
-doQuery model =
-  let
-    decode = Decode.tuple3 (,,)
-      (Decode.tuple2 (,) Decode.string Decode.string)
-      (Decode.list (Decode.tuple2 (,) Decode.string Decode.string))
-      (Decode.tuple3 (,,) Decode.int Decode.int Decode.int)
-  in
-    Encode.list [Encode.object[
-      ("hostname",Encode.string ("*" ++ model.hostname ++ "*")),
-      ("offset",Encode.int model.offset),
-      ("limit",Encode.int model.limit)
-    ]]
-      |> Encode.encode 0
-      |> Http.string
-      |> Http.post decode "http://localhost:8080/api/aep.query"
-      |> Task.toResult
-      |> Task.map QueryResults
-      |> Effects.task
+do: (a -> Task b c) -> (Result b c -> d) -> a -> Effects d
+do call wrap value =
+  call value
+  |> Task.toResult
+  |> Task.map wrap
+  |> Effects.task
 
-deleteNode: String -> Effects Action
-deleteNode id =
-  let
-    decode = Decode.bool
-  in
-    Encode.list [Encode.string id]
-      |> Encode.encode 0
-      |> Http.string
-      |> Http.post decode "http://localhost:8080/api/aep.delete"
-      |> Task.toResult
-      |> Task.map Changed
-      |> Effects.task
+doQuery: Model -> Effects Action
+doQuery model = do query QueryResults {
+    hostname = model.hostname,
+    offset = model.offset,
+    limit = model.limit
+  }
 
 -- MAIN --
 

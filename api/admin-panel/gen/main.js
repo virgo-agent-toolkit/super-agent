@@ -10982,12 +10982,65 @@ Elm.StartApp.make = function (_elm) {
    var Config = F4(function (a,b,c,d) {    return {init: a,update: b,view: c,inputs: d};});
    return _elm.StartApp.values = {_op: _op,start: start,Config: Config,App: App};
 };
+Elm.Aep = Elm.Aep || {};
+Elm.Aep.make = function (_elm) {
+   "use strict";
+   _elm.Aep = _elm.Aep || {};
+   if (_elm.Aep.values) return _elm.Aep.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $Json$Encode = Elm.Json.Encode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm);
+   var _op = {};
+   var makeCall = F4(function (name,encoder,decoder,args) {
+      return A3($Http.post,decoder,A2($Basics._op["++"],"http://localhost:8080/api/",name),$Http.string(A2($Json$Encode.encode,0,encoder(args))));
+   });
+   var encodeUuid = function (id) {    return $Json$Encode.list(_U.list([$Json$Encode.string(id)]));};
+   var $delete = A3(makeCall,"aep.delete",encodeUuid,$Json$Decode.bool);
+   var encodeQuery = function (query) {
+      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(query.hostname)}
+                                                                    ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(query.offset)}
+                                                                    ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(query.limit)}]))]));
+   };
+   var encodeRow = function (row) {
+      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "id",_1: $Json$Encode.string(row.id)}
+                                                                    ,{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]))]));
+   };
+   var update = A3(makeCall,"aep.update",encodeRow,$Json$Decode.bool);
+   var encodeNewAep = function (row) {
+      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]))]));
+   };
+   var decodeResults = A4($Json$Decode.tuple3,
+   F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
+   A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string),
+   $Json$Decode.list(A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string)),
+   A4($Json$Decode.tuple3,F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),$Json$Decode.$int,$Json$Decode.$int,$Json$Decode.$int));
+   var create = A3(makeCall,"aep.create",encodeNewAep,decodeResults);
+   var query = A3(makeCall,"aep.query",encodeQuery,decodeResults);
+   var Query = F3(function (a,b,c) {    return {hostname: a,offset: b,limit: c};});
+   var Aep = F2(function (a,b) {    return {id: a,hostname: b};});
+   var decodeMaybeRow = $Json$Decode.maybe(A3($Json$Decode.object2,
+   Aep,
+   A2($Json$Decode._op[":="],"id",$Json$Decode.string),
+   A2($Json$Decode._op[":="],"hostname",$Json$Decode.string)));
+   var read = A3(makeCall,"aep.read",encodeUuid,decodeMaybeRow);
+   var NewAep = function (a) {    return {hostname: a};};
+   return _elm.Aep.values = {_op: _op,create: create,read: read,update: update,$delete: $delete,query: query,NewAep: NewAep,Query: Query};
+};
 Elm.Main = Elm.Main || {};
 Elm.Main.make = function (_elm) {
    "use strict";
    _elm.Main = _elm.Main || {};
    if (_elm.Main.values) return _elm.Main.values;
    var _U = Elm.Native.Utils.make(_elm),
+   $Aep = Elm.Aep.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Char = Elm.Char.make(_elm),
    $Debug = Elm.Debug.make(_elm),
@@ -10996,8 +11049,6 @@ Elm.Main.make = function (_elm) {
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
    $Http = Elm.Http.make(_elm),
-   $Json$Decode = Elm.Json.Decode.make(_elm),
-   $Json$Encode = Elm.Json.Encode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
@@ -11006,6 +11057,7 @@ Elm.Main.make = function (_elm) {
    $String = Elm.String.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
+   var $do = F3(function (call,wrap,value) {    return $Effects.task(A2($Task.map,wrap,$Task.toResult(call(value))));});
    var capitalize = function (s) {
       var _p0 = $String.uncons(s);
       if (_p0.ctor === "Just") {
@@ -11067,15 +11119,6 @@ Elm.Main.make = function (_elm) {
       _U.range(startPage,endPage)))))]));
    });
    var Changed = function (a) {    return {ctor: "Changed",_0: a};};
-   var deleteNode = function (id) {
-      var decode = $Json$Decode.bool;
-      return $Effects.task(A2($Task.map,
-      Changed,
-      $Task.toResult(A3($Http.post,
-      decode,
-      "http://localhost:8080/api/aep.delete",
-      $Http.string(A2($Json$Encode.encode,0,$Json$Encode.list(_U.list([$Json$Encode.string(id)]))))))));
-   };
    var Delete = function (a) {    return {ctor: "Delete",_0: a};};
    var Edit = function (a) {    return {ctor: "Edit",_0: a};};
    var renderRow = F2(function (address,_p6) {
@@ -11103,29 +11146,7 @@ Elm.Main.make = function (_elm) {
       _U.list([renderHead(columns),A2(renderBody,address,rows)]));
    });
    var QueryResults = function (a) {    return {ctor: "QueryResults",_0: a};};
-   var doQuery = function (model) {
-      var decode = A4($Json$Decode.tuple3,
-      F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
-      A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string),
-      $Json$Decode.list(A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string)),
-      A4($Json$Decode.tuple3,
-      F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
-      $Json$Decode.$int,
-      $Json$Decode.$int,
-      $Json$Decode.$int));
-      return $Effects.task(A2($Task.map,
-      QueryResults,
-      $Task.toResult(A3($Http.post,
-      decode,
-      "http://localhost:8080/api/aep.query",
-      $Http.string(A2($Json$Encode.encode,
-      0,
-      $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2"
-                                                              ,_0: "hostname"
-                                                              ,_1: $Json$Encode.string(A2($Basics._op["++"],"*",A2($Basics._op["++"],model.hostname,"*")))}
-                                                             ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(model.offset)}
-                                                             ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(model.limit)}]))]))))))));
-   };
+   var doQuery = function (model) {    return A3($do,$Aep.query,QueryResults,{hostname: model.hostname,offset: model.offset,limit: model.limit});};
    var update = F2(function (action,model) {
       var _p9 = action;
       switch (_p9.ctor)
@@ -11140,7 +11161,7 @@ Elm.Main.make = function (_elm) {
               }
          case "QueryResults": return {ctor: "_Tuple2",_0: _U.update(model,{results: $Maybe.Just(_p9._0)}),_1: $Effects.none};
          case "Edit": return {ctor: "_Tuple2",_0: model,_1: $Effects.none};
-         case "Delete": return {ctor: "_Tuple2",_0: model,_1: deleteNode(_p9._0)};
+         case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,Changed,_p9._0)};
          case "Changed": if (_p9._0.ctor === "Ok") {
                  if (_p9._0._0 === true) {
                        return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
@@ -11269,8 +11290,8 @@ Elm.Main.make = function (_elm) {
                              ,renderRow: renderRow
                              ,renderForm: renderForm
                              ,view: view
+                             ,$do: $do
                              ,doQuery: doQuery
-                             ,deleteNode: deleteNode
                              ,app: app
                              ,main: main};
 };
