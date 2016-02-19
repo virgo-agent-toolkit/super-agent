@@ -10999,24 +10999,25 @@ Elm.Aep.make = function (_elm) {
    $Signal = Elm.Signal.make(_elm),
    $Task = Elm.Task.make(_elm);
    var _op = {};
-   var makeCall = F4(function (name,encoder,decoder,args) {
-      return A3($Http.post,decoder,A2($Basics._op["++"],"http://localhost:8080/api/",name),$Http.string(A2($Json$Encode.encode,0,encoder(args))));
+   var makeCall = F4(function (name,encoder,decoder,arg) {
+      return A3($Http.post,
+      decoder,
+      A2($Basics._op["++"],"http://localhost:8080/api/",name),
+      $Http.string(A2($Json$Encode.encode,0,$Json$Encode.list(_U.list([encoder(arg)])))));
    });
-   var encodeUuid = function (id) {    return $Json$Encode.list(_U.list([$Json$Encode.string(id)]));};
+   var encodeUuid = $Json$Encode.string;
    var $delete = A3(makeCall,"aep.delete",encodeUuid,$Json$Decode.bool);
    var encodeQuery = function (query) {
-      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(query.hostname)}
-                                                                    ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(query.offset)}
-                                                                    ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(query.limit)}]))]));
+      return $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(query.hostname)}
+                                         ,{ctor: "_Tuple2",_0: "offset",_1: $Json$Encode.$int(query.offset)}
+                                         ,{ctor: "_Tuple2",_0: "limit",_1: $Json$Encode.$int(query.limit)}]));
    };
    var encodeRow = function (row) {
-      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "id",_1: $Json$Encode.string(row.id)}
-                                                                    ,{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]))]));
+      return $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "id",_1: $Json$Encode.string(row.id)}
+                                         ,{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]));
    };
    var update = A3(makeCall,"aep.update",encodeRow,$Json$Decode.bool);
-   var encodeNewAep = function (row) {
-      return $Json$Encode.list(_U.list([$Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]))]));
-   };
+   var encodeNewAep = function (row) {    return $Json$Encode.object(_U.list([{ctor: "_Tuple2",_0: "hostname",_1: $Json$Encode.string(row.hostname)}]));};
    var decodeResults = A4($Json$Decode.tuple3,
    F3(function (v0,v1,v2) {    return {ctor: "_Tuple3",_0: v0,_1: v1,_2: v2};}),
    A3($Json$Decode.tuple2,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),$Json$Decode.string,$Json$Decode.string),

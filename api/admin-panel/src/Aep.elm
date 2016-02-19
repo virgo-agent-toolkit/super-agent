@@ -38,41 +38,32 @@ decodeMaybeRow = Decode.maybe (Decode.object2 Aep
 
 encodeNewAep: NewAep -> Encode.Value
 encodeNewAep row =
-  Encode.list [
-    Encode.object [
-      ("hostname", Encode.string row.hostname)
-    ]
+  Encode.object [
+    ("hostname", Encode.string row.hostname)
   ]
 
 encodeRow: Aep -> Encode.Value
 encodeRow row =
-  Encode.list [
-    Encode.object [
-      ("id", Encode.string row.id),
-      ("hostname", Encode.string row.hostname)
-    ]
+  Encode.object [
+    ("id", Encode.string row.id),
+    ("hostname", Encode.string row.hostname)
   ]
 
 encodeQuery: Query -> Encode.Value
 encodeQuery query =
-  Encode.list [
-    Encode.object [
-      ("hostname", Encode.string query.hostname),
-      ("offset", Encode.int query.offset),
-      ("limit", Encode.int query.limit)
-    ]
+  Encode.object [
+    ("hostname", Encode.string query.hostname),
+    ("offset", Encode.int query.offset),
+    ("limit", Encode.int query.limit)
   ]
 encodeUuid: Uuid -> Encode.Value
-encodeUuid id =
-  Encode.list [
-   Encode.string id
-  ]
+encodeUuid = Encode.string
 
 -- HELPER --
 
 makeCall: String -> (a -> Value) -> Decoder b -> a -> Task Error b
-makeCall name encoder decoder args =
-    encoder args
+makeCall name encoder decoder arg =
+    Encode.list [ encoder arg ]
     |> Encode.encode 0
     |> Http.string
     |> Http.post decoder ("http://localhost:8080/api/" ++ name)
