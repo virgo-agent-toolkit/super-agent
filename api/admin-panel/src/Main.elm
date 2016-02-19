@@ -2,6 +2,7 @@ module Main where
 
 import Aep exposing(Uuid, NewAep, Row, Query, Columns, Rows, Stats, Results)
 
+import Maybe exposing (withDefault)
 import Html exposing (form,div,ul,li,a,text,table,thead,tbody,tr,th,td,nav,button,span,label,input,h1)
 import Html.Events exposing (onClick,on,targetValue)
 import Html.Attributes as Attr exposing (class,href,for,id,type',value,placeholder,step,title,key,disabled)
@@ -56,11 +57,12 @@ update action model =
           (model, doQuery model)
         Err _ -> (model, Effects.none)
     HostnameEdit name -> let
-      model = case model.current of
-        Just (currentId, _) -> {model|current = Just (currentId, name)}
-        Nothing -> model
-      in
-        (model, Effects.none)
+      model =
+        case model.current of
+          Just (currentId, _) -> {model|current = Just (currentId, name)}
+          Nothing -> model
+        in
+          (model, Effects.none)
     Goto page -> let model = { model | offset = page * model.limit } in
       (model, doQuery model)
     Edit row ->
@@ -69,8 +71,12 @@ update action model =
       ({model | current = Nothing}, Effects.none)
     Delete id ->
       (model, do Aep.delete id Changed)
-    Save ->
-      ({model | current = Nothing}, Effects.none)
+    Save -> (
+      {model | current = Nothing},
+      case model.current of
+        Just (id, hostname) ->
+           do Aep.update {id=id,hostname=hostname} Changed
+        Nothing -> Effects.none)
     Changed (Ok True) ->
       (model, doQuery model)
     Changed (Ok False) ->
@@ -173,18 +179,12 @@ renderRow address current (id, hostname) =
       isSelected current id
     then [
       td [] [
-
-
-
-
-
-
       form [ class "form" ] [
         div [class "form-group"] [
           input [
             class "form-control",
             type' "text",
-            value hostname ,
+            value (snd (withDefault (id, hostname) current)),
             placeholder "hostname",
               onInput address HostnameEdit
             ] []

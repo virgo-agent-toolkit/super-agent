@@ -11115,7 +11115,16 @@ Elm.Main.make = function (_elm) {
          case "Edit": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Just(_p4._0)}),_1: $Effects.none};
          case "Cancel": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Nothing}),_1: $Effects.none};
          case "Delete": return {ctor: "_Tuple2",_0: model,_1: A3($do,$Aep.$delete,_p4._0,Changed)};
-         case "Save": return {ctor: "_Tuple2",_0: _U.update(model,{current: $Maybe.Nothing}),_1: $Effects.none};
+         case "Save": return {ctor: "_Tuple2"
+                             ,_0: _U.update(model,{current: $Maybe.Nothing})
+                             ,_1: function () {
+                                var _p7 = model.current;
+                                if (_p7.ctor === "Just") {
+                                      return A3($do,$Aep.update,{id: _p7._0._0,hostname: _p7._0._1},Changed);
+                                   } else {
+                                      return $Effects.none;
+                                   }
+                             }()};
          case "Changed": if (_p4._0.ctor === "Ok") {
                  if (_p4._0._0 === true) {
                        return {ctor: "_Tuple2",_0: model,_1: doQuery(model)};
@@ -11132,12 +11141,12 @@ Elm.Main.make = function (_elm) {
    var Delete = function (a) {    return {ctor: "Delete",_0: a};};
    var Edit = function (a) {    return {ctor: "Edit",_0: a};};
    var Goto = function (a) {    return {ctor: "Goto",_0: a};};
-   var renderPagination = F2(function (address,_p7) {
-      var _p8 = _p7;
-      var _p9 = _p8._1;
-      var currentPage = _p8._0 / _p9 | 0;
+   var renderPagination = F2(function (address,_p8) {
+      var _p9 = _p8;
+      var _p10 = _p9._1;
+      var currentPage = _p9._0 / _p10 | 0;
       var startPage$ = A2($Basics.max,0,currentPage - 7);
-      var lastPage = _p8._2 / _p9 | 0;
+      var lastPage = _p9._2 / _p10 | 0;
       var endPage = A2($Basics.min,lastPage,startPage$ + 14);
       var startPage = A2($Basics.max,0,endPage - 14);
       return A2($Html.nav,
@@ -11171,15 +11180,15 @@ Elm.Main.make = function (_elm) {
       _U.range(startPage,endPage)))))]));
    });
    var HostnameEdit = function (a) {    return {ctor: "HostnameEdit",_0: a};};
-   var renderRow = F3(function (address,current,_p10) {
-      var _p11 = _p10;
-      var _p13 = _p11._0;
-      var _p12 = _p11._1;
+   var renderRow = F3(function (address,current,_p11) {
+      var _p12 = _p11;
+      var _p14 = _p12._0;
+      var _p13 = _p12._1;
       return A2($Html.tr,
-      _U.list([$Html$Attributes.key(_p13)]),
+      _U.list([$Html$Attributes.key(_p14)]),
       A2($List._op["::"],
-      A2($Html.td,_U.list([]),_U.list([$Html.text(_p13)])),
-      A2(isSelected,current,_p13) ? _U.list([A2($Html.td,
+      A2($Html.td,_U.list([]),_U.list([$Html.text(_p14)])),
+      A2(isSelected,current,_p14) ? _U.list([A2($Html.td,
                                             _U.list([]),
                                             _U.list([A2($Html.form,
                                             _U.list([$Html$Attributes.$class("form")]),
@@ -11188,7 +11197,7 @@ Elm.Main.make = function (_elm) {
                                             _U.list([A2($Html.input,
                                             _U.list([$Html$Attributes.$class("form-control")
                                                     ,$Html$Attributes.type$("text")
-                                                    ,$Html$Attributes.value(_p12)
+                                                    ,$Html$Attributes.value($Basics.snd(A2($Maybe.withDefault,{ctor: "_Tuple2",_0: _p14,_1: _p13},current)))
                                                     ,$Html$Attributes.placeholder("hostname")
                                                     ,A2(onInput,address,HostnameEdit)]),
                                             _U.list([]))]))]))]))
@@ -11206,7 +11215,7 @@ Elm.Main.make = function (_elm) {
                                                     _U.list([$Html$Attributes.$class("btn btn-danger"),$Html$Attributes.disabled(true)]),
                                                     _U.list([A2($Html.span,
                                                     _U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),
-                                                    _U.list([]))]))]))]))]) : _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(_p12)]))
+                                                    _U.list([]))]))]))]))]) : _U.list([A2($Html.td,_U.list([]),_U.list([$Html.text(_p13)]))
                                                                                       ,A2($Html.td,
                                                                                       _U.list([]),
                                                                                       _U.list([A2($Html.div,
@@ -11215,7 +11224,7 @@ Elm.Main.make = function (_elm) {
                                                                                               _U.list([$Html$Attributes.$class("btn btn-default")
                                                                                                       ,A2($Html$Events.onClick,
                                                                                                       address,
-                                                                                                      Edit({ctor: "_Tuple2",_0: _p13,_1: _p12}))]),
+                                                                                                      Edit({ctor: "_Tuple2",_0: _p14,_1: _p13}))]),
                                                                                               _U.list([A2($Html.span,
                                                                                               _U.list([$Html$Attributes.$class("glyphicon glyphicon-pencil")]),
                                                                                               _U.list([]))]))
@@ -11227,7 +11236,7 @@ Elm.Main.make = function (_elm) {
                                                                                               _U.list([]))]))
                                                                                               ,A2($Html.button,
                                                                                               _U.list([$Html$Attributes.$class("btn btn-danger")
-                                                                                                      ,A2($Html$Events.onClick,address,Delete(_p13))]),
+                                                                                                      ,A2($Html$Events.onClick,address,Delete(_p14))]),
                                                                                               _U.list([A2($Html.span,
                                                                                               _U.list([$Html$Attributes.$class("glyphicon glyphicon-trash")]),
                                                                                               _U.list([]))]))]))]))])));
@@ -11301,29 +11310,29 @@ Elm.Main.make = function (_elm) {
                       _U.list([A2($Html.h1,_U.list([]),_U.list([$Html.text("Agent Endpoints")]))]))]))
                       ,A2(renderForm,address,model)
                       ,function () {
-                         var _p14 = model.results;
-                         if (_p14.ctor === "Nothing") {
+                         var _p15 = model.results;
+                         if (_p15.ctor === "Nothing") {
                                return $Html.text("Loading...");
                             } else {
-                               if (_p14._0.ctor === "Ok") {
-                                     var _p15 = _p14._0._0._2;
+                               if (_p15._0.ctor === "Ok") {
+                                     var _p16 = _p15._0._0._2;
                                      return A2($Html.div,
                                      _U.list([]),
-                                     _U.list([A2(renderPagination,address,_p15)
-                                             ,A4(renderTable,address,model.current,_p14._0._0._0,_p14._0._0._1)
-                                             ,A2(renderPagination,address,_p15)]));
+                                     _U.list([A2(renderPagination,address,_p16)
+                                             ,A4(renderTable,address,model.current,_p15._0._0._0,_p15._0._0._1)
+                                             ,A2(renderPagination,address,_p16)]));
                                   } else {
                                      return $Html.text(A2($Basics._op["++"],
                                      "Error: ",
                                      function () {
-                                        var _p16 = _p14._0._0;
-                                        switch (_p16.ctor)
+                                        var _p17 = _p15._0._0;
+                                        switch (_p17.ctor)
                                         {case "Timeout": return "Timeout";
                                            case "NetworkError": return "Network Error";
-                                           case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p16._0);
+                                           case "UnexpectedPayload": return A2($Basics._op["++"],"Unexpected Payload: ",_p17._0);
                                            default: return A2($Basics._op["++"],
                                              "Bad Response: ",
-                                             A2($Basics._op["++"],$Basics.toString(_p16._0),A2($Basics._op["++"]," ",_p16._1)));}
+                                             A2($Basics._op["++"],$Basics.toString(_p17._0),A2($Basics._op["++"]," ",_p17._1)));}
                                      }()));
                                   }
                             }
