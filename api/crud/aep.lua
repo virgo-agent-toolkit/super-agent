@@ -102,7 +102,7 @@ return function (db, registry)
     local result = assert(query(sql))
     local count = result.rows[1].count
     sql = 'SELECT id, hostname FROM aep' .. where ..
-      ' ORDER BY hostname, id' ..
+      ' ORDER BY id' ..
       ' LIMIT ' .. limit ..
       ' OFFSET ' .. offset
     result = assert(query(sql))
