@@ -1,3 +1,0 @@
-[submodule "libs/schema"]
-	path = libs/schema
-	url = https://github.com/creationix/lua-schema.git
