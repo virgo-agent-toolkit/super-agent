@@ -4,7 +4,7 @@ local tokensPerAccount = 3 -- 10
 local agentsPerAccount = 5 -- 50
 local connectionsPerAgent = 20 -- 200
 
-local getUUID = require('./uuid4').getUUID
+local getUUID = require('uuid4').getUUID
 local jsonStringify = require('json').stringify
 
 local aeps = {}
