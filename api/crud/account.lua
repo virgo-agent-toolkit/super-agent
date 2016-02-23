@@ -9,16 +9,23 @@ return function (db, registry)
   local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
+  local Stats = registry.Stats
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
   local toTable = db.toTable
 
-  local Row = alias("Row",
+
+  local Columns = alias("Columns", "Column field names for query results.",
+    {String,String})
+  local Rows = alias("Rows", "Raw rows for query results.",
+    Array({String,String}))
+
+  local Account = alias("Account",
     "This alias is for existing Account entries that have an ID.",
     {id=Uuid,name=String})
 
-  local RowWithoutId = alias("RowWithoutId",
+  local AccountWithoutId = alias("AccountWithoutId",
     "This alias is for creating new Account entries that don't have an ID yet",
     {name=String})
 
@@ -35,12 +42,12 @@ return function (db, registry)
   This function creates a new Account entry in the database.  It will return
   the randomly generated UUID so you can reference the Account.
 
-  ]], {{"row", RowWithoutId}}, Uuid, function (row)
+  ]], {{"account", AccountWithoutId}}, Uuid, function (account)
     local id = getUUID()
     assert(query(string.format(
       "INSERT INTO account (id, name) VALUES (%s, %s)",
       quote(id),
-      quote(row['name']))))
+      quote(account.name))))
     return id
   end))
 
@@ -48,7 +55,7 @@ return function (db, registry)
 
   Given a UUID, return the corresponding row.
 
-  ]], {{"id", Uuid}}, Optional(Row), function (id)
+  ]], {{"id", Uuid}}, Optional(Account), function (id)
     local result = assert(query(string.format(
       "SELECT id, name FROM account WHERE id = %s",
       quote(id))))
@@ -59,11 +66,11 @@ return function (db, registry)
 
   Update an Account row in the database.
 
-  ]], {{"row", Row}}, Bool, function (row)
+  ]], {{"account", Account}}, Bool, function (account)
     local result = assert(query(string.format(
       "UPDATE account SET name = %s WHERE id = %s",
-      quote(row['name']),
-      quote(row['id']))))
+      quote(account.name),
+      quote(account.id))))
     return result.summary == 'UPDATE 1'
   end))
 
@@ -83,7 +90,7 @@ return function (db, registry)
   Query for existing Account rows.
   Optionally you can specify a filter and/or pagination parameters.
 
-  ]], { {"query", Query} }, {Array(Row),Int}, function (queryParameters)
+  ]], { {"query", Query} }, {Columns,Rows,Stats}, function (queryParameters)
     queryParameters = queryParameters or {}
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
