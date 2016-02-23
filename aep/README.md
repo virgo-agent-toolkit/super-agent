@@ -1,45 +1,19 @@
-All RPC commands are in the form of a typical function call in a programming language:
+# Agent Endpoint
 
+The AEP is deployed as a plain luajit process using the lit libraries.
 
-    name(arg1, arg1, ...) -> result
+- listens to connections from agents
+  - reports agent connections to the API server (and possibly logging system)
+- listens for connections from end clients
+  - verifies client authorization and proxies to agent
+  - reports all proxied data to logging system
+- We need to support having multiple instances running behind a load balancer
+  sharing the same public IP and port.
 
-RPC can be done over websockets or regular HTTP POST request/responses.
+## wss://hostname/agent/:agent_id
 
-- authentication will use headers
+This is the main endpoints. It's used to request a proxy connection to an agent.
 
-## REST Variant
-
-- HTTP message is POST
-- url path is name
-- request is always array of positional arguments.
-- response is single value
-- request and response can be encoded as JSON or msgpack.
-- defaults to JSON, but headers can specify otherwise.
-- Use `application/msgpack` in standard HTTP headers to
-  opt in to format in connection.
-
-## Websocket Variant
-
-- connect with same auth and encoding headers as REST
-- use subprotocol "virgo-rpc"
-- request looks like `[id, name, arg1, arg2...]`
-- response looks like `[-id, result]`
-
-The AEP will handle re-mapping between clients and agents
-and remapping IDs.
-
-Streams only work over msgpack and websocket.
-
-When agents reply with streams, they will be encoded as
-opaque stream IDs. `{__stream__: sid}`
-
-- agent sends `[sid, chunk]` (chunk is binary)
-- client sends `[-sid, chunk]`
-- to end a stream send nothing for chunk `[sid]`.
-
-The AEP will be responsible for cleaning up orphaned
-streams and sending proper shutdown messages if
-disconnects happen.
-
-- The aep will include a string reason if `[sid, reason]`
-(reason is string)
+Internally the AEP will have a single connection to the agent and will multiplex
+various external connections by translating request and response ids in the
+schema-rpc protocol.
