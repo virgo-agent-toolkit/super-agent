@@ -9,12 +9,19 @@ return function (db, registry)
   local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
+  local Stats = registry.Stats
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
   local toTable = db.toTable
 
-  local Row = alias("Agent",
+  local Columns = alias("Columns", "Column field names for query results.",
+    {String,String})
+  local Rows = alias("Rows", "Raw rows for query results.",
+    Array({String,String}))
+
+
+  local Agent = alias("Agent",
   "This alias is for existing agent entries that have an ID.",
   {
     id=Uuid,
@@ -24,7 +31,7 @@ return function (db, registry)
     account_id=Uuid
   })
 
-  local RowWithoutId = alias("AgentWithoutId",
+  local AgentWithoutId = alias("AgentWithoutId",
   "This alias creates a new agent",
   {
     name=String,
@@ -53,15 +60,15 @@ return function (db, registry)
 
   This function creates a new agent entry in the database.
   It will return the randomly generated UUID of the agent.
-  ]], {{"AgentWithoutId", RowWithoutId}}, Uuid, function (agent)
+  ]], {{"AgentWithoutId", AgentWithoutId}}, Uuid, function (agent)
     local id = getUUID()
     assert(query(
       string.format("INSERT INTO agent (id, name, token, account_id, aep_id) VALUES (%s, %s, %s, %s, %s)",
         quote(id),
-        quote(agent['name']),
-        quote(agent['token']),
-        quote(agent['account_id']),
-        quote(agent['aep_id']))))
+        quote(agent.name),
+        quote(agent.token),
+        quote(agent.account_id),
+        quote(agent.aep_id))))
 
     return id
   end))
@@ -71,7 +78,7 @@ return function (db, registry)
 
   TODO: document me
 
-  ]], {{"id", Uuid}}, Row, function (id)
+  ]], {{"id", Uuid}}, Agent, function (id)
     local result = assert(query(
       string.format("SELECT id, name, account_id, aep_id, token FROM agent WHERE id=%s",
         quote(id))))
@@ -82,16 +89,16 @@ return function (db, registry)
 
   TODO: document me
 
-  ]], {{"Agent", Row}}, Bool, function (agent)
+  ]], {{"Agent", Agent}}, Bool, function (agent)
     local result = assert(query(
       string.format(
         "UPDATE agent SET name = %s, "..
         "account_id = %s, token = %s, aep_id = %s WHERE id = %s",
-        quote(agent['name']),
-        quote(agent['account_id']),
-        quote(agent['token']),
-        quote(agent['aep_id']),
-        quote(agent['id']))))
+        quote(agent.name),
+        quote(agent.account_id),
+        quote(agent.token),
+        quote(agent.aep_id),
+        quote(agent.id))))
         -- are there other things we want to set?
 
     return result.summary == 'UPDATE 1'
@@ -116,7 +123,7 @@ return function (db, registry)
 
   ]], {
     {"query", Query}},
-    {Array(Row), Int}, function (queryParameters)
+    {Columns,Rows,Stats}, function (queryParameters)
       queryParameters = queryParameters or {}
       local offset = queryParameters.start or 0
       local limit = queryParameters.count or 20

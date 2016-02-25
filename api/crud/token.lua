@@ -9,10 +9,17 @@ return function (db, registry)
   local Bool = registry.Bool
   local Array = registry.Array
   local Uuid = registry.Uuid
+  local Stats = registry.Stats
   local query = db.query
   local quote = db.quote
   local conditionBuilder = db.conditionBuilder
   local toTable = db.toTable
+
+  local Columns = alias("Columns", "Column field names for query results.",
+    {String,String,String})
+  local Rows = alias("Rows", "Raw rows for query results.",
+    Array({String,String,String}))
+
 
   local Token = alias("Token",
   "This alias is for existing Token entries that has an ID.",
@@ -94,9 +101,8 @@ return function (db, registry)
 
   ]], {
     {'query', TokenQuery}
-  }, {
-    Array(Token),
-  }, function (queryParameters)
+  },
+  {{Columns, Rows, Stats}}, function (queryParameters)
     local offset = queryParameters.start or 0
     local limit = queryParameters.count or 20
     local where = conditionBuilder(

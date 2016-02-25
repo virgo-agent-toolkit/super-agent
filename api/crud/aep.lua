@@ -20,11 +20,11 @@ return function (db, registry)
   local Rows = alias("Rows", "Raw rows for query results.",
     Array({String,String}))
 
-  local Row = alias("Row",
+  local Aep = alias("Aep",
     "This alias is for existing AEP entries that have an ID.",
     {id=Uuid,hostname=String})
 
-  local RowWithoutId = alias("RowWithoutId",
+  local AepWithoutId = alias("AepWithoutId",
     "This alias is for creating new AEP entries that don't have an ID yet",
     {hostname=String})
 
@@ -41,12 +41,12 @@ return function (db, registry)
   This function creates a new AEP entry in the database.  It will return
   the randomly generated UUID so you can reference the AEP.
 
-  ]], {{"row", RowWithoutId}}, Uuid, function (row)
+  ]], {{"aep", AepWithoutId}}, Uuid, function (aep)
     local id = getUUID()
     assert(query(string.format(
       "INSERT INTO aep (id, hostname) VALUES (%s, %s)",
       quote(id),
-      quote(row['hostname']))))
+      quote(aep.hostname))))
     return id
   end))
 
@@ -54,7 +54,7 @@ return function (db, registry)
 
   Given a UUID, return the corresponding row.
 
-  ]], {{"id", Uuid}}, Optional(Row), function (id)
+  ]], {{"id", Uuid}}, Optional(Aep), function (id)
     local result = assert(query(string.format(
       "SELECT id, hostname FROM aep WHERE id = %s",
       quote(id))))
@@ -65,12 +65,12 @@ return function (db, registry)
 
   Update an AEP row in the database.
 
-  ]], {{"row", Row}}, Bool, function (row)
+  ]], {{"aep", Aep}}, Bool, function (aep)
 
     local result = assert(query(string.format(
       "UPDATE aep SET hostname = %s WHERE id = %s",
-      quote(row['hostname']),
-      quote(row['id']))))
+      quote(aep.hostname),
+      quote(aep.id))))
     return result.summary == 'UPDATE 1'
   end))
 
