@@ -6,10 +6,14 @@
     tags = { "lua", "luvit" },
     author = { name = "Adam", email = "harageth@gmail.com" },
     homepage = "https://github.com/virgo-agent-toolkit/super-agent",
-    dependencies = {"creationix/weblit"},
+    dependencies = {
+      "creationix/weblit",
+      "creationix/coro-split",
+      "luvit/pretty-print",
+      "creationix/uv",
+    },
     files = {
       "**.lua",
       "!test*"
     }
   }
-  
