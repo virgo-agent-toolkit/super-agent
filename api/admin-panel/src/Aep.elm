@@ -65,7 +65,7 @@ encodeUuid = Encode.string
 
 -- HELPER --
 
-makeCall: String -> (a -> Value) -> Decoder b -> a -> Task Error b
+makeCall: String -> Encoder a -> Decoder b -> a -> Task Error b
 makeCall name encoder decoder arg =
     Encode.list [ encoder arg ]
     |> Encode.encode 0
