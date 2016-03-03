@@ -1,53 +1,22 @@
+
 require 'weblit-websocket'
-local app = require 'weblit-app'
-local p = require('pretty-print').prettyPrint
-local split = require('coro-split')
+require 'weblit-app'
 
-local agents = {}
+  .bind {
+    port = 8000
+  }
 
-local function handleClient(req, read, write)
-  local agent = agents[req.params.agent_id]
-  if not agent then return end
-  local aread, awrite = unpack(agent)
-  split(function ()
-    for message in aread do
-      p("->", message)
-      write(message)
-    end
-    p("Agent disconnected")
-    write()
-  end, function ()
-    for message in read do
-      p("<-", message)
-      awrite(message)
-    end
-    p("Client disconnected")
-    awrite()
-  end)
+  .use(require 'weblit-logger')
+  .use(require 'weblit-auto-headers')
 
-end
+  .websocket({
+    path = "/request/:agent_id",
+    protocol = "schema-rpc"
+  }, require 'handle-client')
 
-local function handleAgent(req, read, write)
-  -- TODO: verify agent token
-  agents[req.params.agent_id] = {read, write, coroutine.running()}
-  return coroutine.yield()
-end
+  .websocket({
+    path = "/enlist/:agent_id/:token",
+    protocol = "schema-rpc"
+  }, require 'handle-client')
 
-app.bind {
-  port = 8000
-}
-
-app.use(require('weblit-logger'))
-app.use(require('weblit-auto-headers'))
-
-app.websocket({
-  path = "/request/:agent_id",
-  protocol = "schema-rpc"
-}, handleClient)
-
-app.websocket({
-  path = "/enlist/:agent_id/:token",
-  protocol = "schema-rpc"
-}, handleAgent)
-
-app.start()
+  .start()
