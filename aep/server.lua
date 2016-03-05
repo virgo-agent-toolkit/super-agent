@@ -17,6 +17,6 @@ require 'weblit-app'
   .websocket({
     path = "/enlist/:agent_id/:token",
     protocol = "schema-rpc"
-  }, require 'handle-client')
+  }, require 'handle-agent')
 
   .start()

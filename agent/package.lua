@@ -10,5 +10,7 @@ return {
   dependencies = {
     "creationix/websocket-client",
     "luvit/pretty-print",
+    "creationix/msgpack",
+    "luvit/json",
   }
 }
