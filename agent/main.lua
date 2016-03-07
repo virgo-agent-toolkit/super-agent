@@ -57,12 +57,14 @@ assert(register("echo", "Echo testing streams", {
   end)()
   return rid
 end))
--- assert(register("pty", "Create a pty with given shell and dimensions, returns stream", {
+-- assert(register("pty", "Create a pty with given shell and dimensions, uses streams", {
+--   {"shell", String},
 --   {"cols", Int},
 --   {"rows", Int},
---   {"shell", String},
---   {"onExit", Callback},
--- }, Stream, require('pty')))
+--   {"onExit", Int},
+--   {"onStdout", Int},
+--   {"onStderr", Int},
+-- }, Int, require('pty')))
 
 local function log(...)
   p("log", ...)
