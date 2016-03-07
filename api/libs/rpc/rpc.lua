@@ -1,21 +1,8 @@
 
 -- Request/Response is bidirectional and in the form:
 --  request [id, name, args...]
---  response [-id, result]
---  error response [-id, nil, error]
-
--- Stream packets are bidirectional and in the form:
---  packet-from-owner [0, sid, chunk]
---  packet-from-client [0, -sid, chunk]
---  end-from-owner [0, sid]
---  end-from-client [0, -sid]
---  error-from-owner [0, sid, nil, error]
---  error-from-client [0, -sid, nil, error]
-
--- Global shutdown/errors are in the form:
---  global-error [0, 0, error]
---  global-end [0, 0]
---  and will then terminate the stream.
+--  response [-id, result...]
+--  end-of-stream [0, context...]
 
 local magicMeta
 magicMeta = {
@@ -90,7 +77,7 @@ return function (call, log, read, write)
               args[i-2] = message[i]
             end
             local success, stack = xpcall(function ()
-              result, err = call(name, args)
+              result, err = call(name, unpack(args))
             end, debug.traceback)
             if not success then
               write {-id, nil, "Server Error"}
@@ -114,22 +101,12 @@ return function (call, log, read, write)
             log(1, err)
           end
 
-        -- global error or stream message (id == 0)
+        -- End of RPC stream (id == 0)
         else
-          local sid = message[2]
-          if sid == 0 then
-            graceful = true
-            error = message[3]
-            break
-          end
-          if type(sid) ~= "number" then
-            close "stream id must be integer"
-            break
-          else
-            error("TODO: handle stream packets")
-          end
+          graceful = true
+          error = message[2]
+          break
         end
-
       end
       if graceful and not closed then
         close()
@@ -161,11 +138,29 @@ return function (call, log, read, write)
     return coroutine.yield()
   end
 
+  local function wait(id)
+    waiting[id] = coroutine.running()
+    return coroutine.yield()
+  end
+
+  local function register()
+    local id = nextId
+    nextId = nextId + 1
+    return id
+  end
+
+  local function send(sid, ...)
+    return write {-sid, ...}
+  end
+
   -- Return the api magic object
   return setmetatable({
     call = callRemote,
     name = false,
     readLoop = readLoop,
     close = close,
+    wait = wait,
+    register = register,
+    send = send,
   }, magicMeta)
 end

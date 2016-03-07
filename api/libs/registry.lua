@@ -53,12 +53,12 @@ return function ()
     aliases[name] = {doc:match "^%s*(.-)%s*$", typ}
     return makeAlias(name, typ)
   end
-  local function call(name, args)
+  local function call(name, ...)
     local fn = functions[name]
     if not fn then
       return nil, "No such API function: " .. name
     end
-    local result, error = fn(unpack(args))
+    local result, error = fn(...)
     if error then
       return nil, error
     end

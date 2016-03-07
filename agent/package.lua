@@ -11,6 +11,8 @@ return {
     "creationix/websocket-client",
     "luvit/pretty-print",
     "creationix/msgpack",
+    "creationix/schema",
+    "creationix/coro-fs",
     "luvit/json",
   }
 }

@@ -1,0 +1,5 @@
+import Int from schema
+
+function add(a: Int, b: Int): Int
+
+    Add accepts two integers and adds them together.
