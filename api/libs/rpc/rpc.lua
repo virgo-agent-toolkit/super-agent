@@ -71,19 +71,15 @@ return function (call, log, read, write)
           end
           -- Call API function in background and continue processing
           coroutine.wrap(function ()
-            local result, err
-            local args = {}
-            for i = 3, #message do
-              args[i-2] = message[i]
-            end
+            local results
             local success, stack = xpcall(function ()
-              result, err = call(name, unpack(args))
+              results = {call(name, unpack(message, 3))}
             end, debug.traceback)
             if not success then
               write {-id, nil, "Server Error"}
               log(0, stack)
             else
-              write {-id, result, err}
+              write {-id, unpack(results)}
             end
           end)()
 
@@ -96,7 +92,7 @@ return function (call, log, read, write)
             break
           end
           waiting[id] = nil
-          local success, err = coroutine.resume(thread, message[2], message[3])
+          local success, err = coroutine.resume(thread, unpack(message, 2))
           if not success then
             log(1, err)
           end

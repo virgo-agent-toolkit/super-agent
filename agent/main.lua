@@ -15,8 +15,6 @@ local Int = registry.Int
 local Array = registry.Array
 local String = registry.String
 local Optional = registry.Optional
-local Callback = registry.Callback
-local Stream = registry.Stream
 
 assert(register("add", "Adds two integers", {{"a",Int}, {"b",Int}}, Int, function (a, b)
   return a + b
@@ -50,10 +48,12 @@ assert(register("echo", "Echo testing streams", {
     return remote.send(wid, ...)
   end
   coroutine.wrap(function ()
-    for message in read do
-      write(message)
-    end
-    write()
+
+    local results
+    repeat
+      results = {read()}
+      write(unpack(results))
+    until not results[1]
   end)()
   return rid
 end))
