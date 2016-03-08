@@ -15,6 +15,7 @@ local Int = registry.Int
 local Array = registry.Array
 local String = registry.String
 local Optional = registry.Optional
+local Function = registry.Function
 
 assert(register("add", "Adds two integers", {{"a",Int}, {"b",Int}}, Int, function (a, b)
   return a + b
@@ -38,24 +39,14 @@ end))
 
 local remote
 assert(register("echo", "Echo testing streams", {
-  {"write", Int}
-}, Int, function (wid)
-  local rid = remote.register()
-  local function read()
-    return remote.wait(rid)
+  {"onWrite", Function}
+}, Function, function (onWrite)
+  p("echo?", onWrite)
+  local function onRead(...)
+    p("someone sent me data", ...)
+    return onWrite(...)
   end
-  local function write(...)
-    return remote.send(wid, ...)
-  end
-  coroutine.wrap(function ()
-
-    local results
-    repeat
-      results = {read()}
-      write(unpack(results))
-    until not results[1]
-  end)()
-  return rid
+  return onRead
 end))
 -- assert(register("pty", "Create a pty with given shell and dimensions, uses streams", {
 --   {"shell", String},

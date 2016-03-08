@@ -29,14 +29,27 @@ magicMeta = {
 --   3 - warning - This is probably a problem, but maybe not.
 --   4 - notice - This is for informational purposes only
 --   5 - debug - This message is super chatty, but useful for debugging
-return function (call, log, read, write)
-  assert(type(read) == "function", "read should be function")
-  assert(type(write) == "function", "write should be function")
+return function (call, log, rawRead, rawWrite)
+  assert(type(rawRead) == "function", "read should be function")
+  assert(type(rawWrite) == "function", "write should be function")
   assert(type(call) == "function", "call should be function")
   assert(type(log) == "function", "log should be function")
 
   -- Map of request id to waiting thread.  Used to route responses to caller.
   local waiting = {}
+
+  local freeze, unfreeze
+
+  local function read()
+    local value, err = read()
+    p("**", value, err)
+    if value then value = unfreeze(value) end
+    return value, err
+  end
+
+  local function write(value)
+    return write(freeze(value))
+  end
 
   -- Run the read loop in a background thread
   local graceful, error, closed
@@ -124,8 +137,59 @@ return function (call, log, read, write)
     end
   end
 
-  -- Helper to make remote calls.  Blocks caller waiting for response.
   local nextId = 1
+
+  local idToFn = setmetatable({}, {
+    __mode = "v"
+  })
+  local fnToId = setmetatable({}, {
+    __mode = "k"
+  })
+
+  local function registerFunction(fn)
+    local id = fnToId[fn]
+    if id then return id end
+    id = nextId
+    nextId = nextId + 1
+    fnToId[fn] = id
+    idToFn[id] = fn
+    return id
+  end
+
+  local function getFunction(id)
+    return idToFn[id]
+  end
+
+  function freeze(val)
+    local t = type(val)
+    if t == "function" or (t == "table" and getmetatable(val).__call) then
+      return { [""] = registerFunction(val) }
+    end
+    if t ~= "table" then return val end
+    local copy = {}
+    for k, v in pairs(val) do
+      copy[k] = freeze(v)
+    end
+    return copy
+  end
+
+  function unfreeze(val)
+    local t = type(val)
+    if t ~= "table" then return val end
+    local id = val[""]
+    if type(id) == "integer" and next(val) == "" and next(val, "") == nil then
+      return function (...)
+        return write {-id, ...}
+      end
+    end
+    local copy = {}
+    for k, v in pairs(val) do
+      copy[k] = unfreeze(v)
+    end
+    return copy
+  end
+
+  -- Helper to make remote calls.  Blocks caller waiting for response.
   local function callRemote(name, ...)
     local id = nextId
     nextId = nextId + 1
@@ -134,29 +198,11 @@ return function (call, log, read, write)
     return coroutine.yield()
   end
 
-  local function wait(id)
-    waiting[id] = coroutine.running()
-    return coroutine.yield()
-  end
-
-  local function register()
-    local id = nextId
-    nextId = nextId + 1
-    return id
-  end
-
-  local function send(sid, ...)
-    return write {-sid, ...}
-  end
-
   -- Return the api magic object
   return setmetatable({
     call = callRemote,
     name = false,
     readLoop = readLoop,
     close = close,
-    wait = wait,
-    register = register,
-    send = send,
   }, magicMeta)
 end
