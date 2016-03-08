@@ -7,6 +7,7 @@ return function (req, read, write)
   if not agent then return end
   local aread, awrite = unpack(agent)
   split(function ()
+    p("Agent connected")
     for message in aread do
       p("->", message)
       write(message)
@@ -14,6 +15,7 @@ return function (req, read, write)
     p("Agent disconnected")
     write()
   end, function ()
+    p("Client connected")
     for message in read do
       p("<-", message)
       awrite(message)
