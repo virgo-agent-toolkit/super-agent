@@ -1,3 +1,5 @@
+
+
 echo(onEcho: Function(data: String))
   -> send: Function(data: String)
 
@@ -78,8 +80,8 @@ pty(
   rows: Integer,
   onTitle: Function(title: String),
   onOut: Function(chunk: Buffer),
-  onClose: Function())
-  -> error: Optional(String),
+  onClose: Function()
+) -> error: Optional(String),
      write: Function(chunk: Buffer),
      close: Function(error: Optional(String)),
      resize: Function(cols: Integer, rows: Integer)
