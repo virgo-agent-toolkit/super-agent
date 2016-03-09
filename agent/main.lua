@@ -11,43 +11,31 @@ local makeRpc = require('rpc')
 local codec = require('websocket-to-message')
 local registry = require('registry')()
 local register = registry.register
-local Int = registry.Int
-local Array = registry.Array
 local String = registry.String
-local Optional = registry.Optional
 local Function = registry.Function
+local Optional = registry.Optional
+local Boolean = registry.Boolean
 
-assert(register("add", "Adds two integers", {{"a",Int}, {"b",Int}}, Int, function (a, b)
-  return a + b
-end))
-
-assert(register("readdir", "Reads a directory", {{"path",String}}, Optional(Array(String)), function (path)
-  local names = {}
+assert(register("scandir", "Reads a directory, calling onEntry for each name/type pair", {
+  {"path", String},
+  {"onEntry", Function},
+}, {Boolean, Optional(String)}, function (path, onEntry)
   local req, err = fs.scandir(path)
-  if not req then
-    if not err or err:match("^ENOENT:") then return end
-    error(err)
-  end
-
-  local i = 0
+  if not req then return {false, err} end
   for entry in req do
-    i = i + 1
-    names[i] = entry.name
+    onEntry(entry.name, entry.type)
   end
-  return names
+  return {true}
 end))
 
-local remote
 assert(register("echo", "Echo testing streams", {
-  {"onWrite", Function}
-}, Function, function (onWrite)
-  p("echo?", onWrite)
-  local function onRead(...)
-    p("someone sent me data", ...)
-    return onWrite(...)
-  end
-  return onRead
+  {"echo", Function}
+}, Function, function (echo)
+  -- This is echo as simple as it gets.
+  return echo
 end))
+
+
 -- assert(register("pty", "Create a pty with given shell and dimensions, uses streams", {
 --   {"shell", String},
 --   {"cols", Int},
@@ -65,8 +53,7 @@ coroutine.wrap(function ()
   local url = "ws://localhost:8000/enlist/" .. agentId .. "/" .. token
   local read, write = assert(wsConnect(url , "schema-rpc", {}))
   read, write = codec(read, write, true)
-  remote = makeRpc(registry.call, log, read, write)
-  remote.readLoop()
+  makeRpc(registry.call, log, read, write).readLoop()
 end)()
 
 require('uv').run()
