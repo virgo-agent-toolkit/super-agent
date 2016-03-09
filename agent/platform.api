@@ -4,41 +4,32 @@ echo(onEcho: Function(data: String))
   -> send: Function(data: String)
 
 scandir(path: String, onEntry: Function(name: String, type: String))
-  -> error: Optional(String)
 
 readstream(
   path: String,
   onRead: Function(chunk: Buffer),
   onEnd: Function(error: Optional(String))
-) -> error: Optional(String)
+)
 
 writestream(path: String, mode: Integer)
-  -> error: Optional(String),
-     write: Function(chunk: Optional(Buffer)),
+  -> write: Function(chunk: Buffer),
      close: Function(error: Optional(String))
 
-readfile(path: String)
-  -> error: Optional(String), data: Buffer
+readfile(path: String) -> data: Buffer
 
 writefile(path: String, mode: Integer, data: Buffer)
-  -> error: Optional(String)
 
-readlink(path: String)
-  -> error: Optional(String), target: String
+readlink(path: String) -> target: String
 
 symlink(path: String, target: String)
-  -> error: Optional(String)
 
 unlink(path: String)
-  -> error: Optional(String)
 
 mkdir(path: String, recursive: Boolean)
-  -> error: Optional(String)
 
 rmdir(path: String, recursive: Boolean)
-  -> error: Optional(String)
 
-lstat(path: String) -> error: Optional(String), stat: {
+lstat(path: String) -> stat: {
   mtime: Number,
   atime: Number,
   size: Integer,
@@ -49,25 +40,20 @@ lstat(path: String) -> error: Optional(String), stat: {
 }
 
 chmod(path: String, mode: Integer)
-  -> error: Optional(String)
 
 chown(path: String, uid: Integer, gid: Integer)
-  -> error: Optional(String)
 
 utime(path: String, atime: Number, mtime: Number)
-  -> error: Optional(String)
 
 rename(path: String, newPath: String)
-  -> error: Optional(String)
 
-realpath(path: String) ->
-  -> error: Optional(String), fullPath: String
+realpath(path: String) -> fullPath: String
 
 diskusage(
   path: String,
   depth: Integer,
   onEntry: Callback(name: String, size: Integer)
-) -> error: Optional(String)
+)
 
 user(uid: Integer) -> username: String
 group(gid: Integer) -> groupname: String
@@ -80,8 +66,7 @@ pty(
   rows: Integer,
   onTitle: Function(title: String),
   onOut: Function(chunk: Buffer),
-  onClose: Function()
-) -> error: Optional(String),
-     write: Function(chunk: Buffer),
+  onExit: Function(code: Integer, signal: Integer)
+) -> write: Function(chunk: Buffer),
      close: Function(error: Optional(String)),
      resize: Function(cols: Integer, rows: Integer)
