@@ -21,11 +21,10 @@ assert(register("scandir", "Reads a directory, calling onEntry for each name/typ
   {"onEntry", Function},
 }, Optional(String), function (path, onEntry)
   local iter, err = fs.scandir(path)
-  if not iter then return {false, err} end
+  if not iter then return err end
   for entry in iter do
     onEntry(entry.name, entry.type)
   end
-  return {true}
 end))
 
 assert(register("echo", "Echo testing streams", {
@@ -39,26 +38,39 @@ end))
 --   path: String,
 --   depth: Integer,
 --   onEntry: Callback(path: String, size: Integer)
+--   onError: Callback(path: String, error: String)
 -- ) -> error: Optional(String)
 assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
   {"path", String},
   {"maxDepth", Int},
-  {"onEntry", Function}
-}, Optional(String), function (rootPath, maxDepth, onEntry)
+  {"onEntry", Function},
+  {"onError", Function}
+}, Optional(String), function (rootPath, maxDepth, onEntry, onError)
   local function scan(path, depth)
-    local stat, err = fs.stat(path)
+    local stat, err = fs.lstat(path)
     if not stat then
-      return nil, err
+      if err then
+        onError(path, err)
+      end
+      return 0
     end
     local total = stat.size
     if stat.type == "directory" then
       local iter, err2 = fs.scandir(path)
-      if not iter then return nil, err2 end
+      if not iter then
+        if err2 then
+          onError(path, err2)
+        end
+        return total
+      end
       for entry in iter do
         local subpath = (path == "/" and "" or path) .. "/" .. entry.name
         local subtotal, err3 = scan(subpath, depth - 1)
-        if not subtotal then return nil, err3 end
-        total = total + subtotal
+        if subtotal then
+          total = total + subtotal
+        elseif err3 then
+          onError(subpath, err3)
+        end
       end
     end
     if depth >= 0 then
