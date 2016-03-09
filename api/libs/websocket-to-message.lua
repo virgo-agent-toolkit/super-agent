@@ -21,10 +21,16 @@ return function (read, write, jsonFirst)
     return message
   end, function (message)
     p("->", message)
-    local frame = {
+    if message == nil then
+      write {
+        opcode = 8,
+        payload = ""
+      }
+      return write()
+    end
+    return write {
       opcode = encode == jsonEncode and 1 or 2,
       payload = encode(message),
     }
-    return write(frame)
   end
 end

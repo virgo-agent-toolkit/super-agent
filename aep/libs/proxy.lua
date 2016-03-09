@@ -5,7 +5,6 @@ local p = require('pretty-print').prettyPrint
 - aep has api endpoints
 - agent connects to aep
 - aep also forwards requests from and responses to clients
-- TODO: figure out how streams will multiplex between multiple clients.
 
 Example:
 
@@ -15,55 +14,37 @@ Example:
   Agent responds with -1 and -2
   Aep forwards responses as -1 on to client1 and -1 to client2
 
-  Client 1 sends [2,"echo",3]
-  *** Somehow aep needs to know `3` needs mapping
-      so that 2 become 3 and 3 becomes 4 ***
-  aep sends [3,"echo",4] to agent
+  Client 1 sends [2,"echo",{"":3}]
+    aep maps 2 to 3 and 3 to 4
+  aep sends [3,"echo",{"":4}] to agent
   agent responds with [-3,1]
   aep maps to [-2,1] and forwards to client 1.
       note: there is no need to map the agent's stream IDs
-
-
 ]]
 
---[[
-agent = {
-  id = "145174859", -- agent_id
-  clients = {} -- set of clients
-  write = write -- send message to this agent
-  nextId = 1 -- nextId for allocating mappings
-  mappings = {} -- mapping from agent req id to client and client id
-}
+local clientHandlers = {}
 
-client = {
-  mappings = {} -- map from client req id to agent req id
-  write = write -- send message to client
-}
-]]
-
-local agents = {}
-
-local function getAgent(agent_id)
-  local agent = agents[agent_id]
-  if agent then return agent end
+local function getClientHandler(agent_id)
+  local clientHandler = clientHandlers[agent_id]
+  if clientHandler then return clientHandler end
   return nil, "No such agent: " .. agent_id
 end
 
 local function newAgent(agent_id, read, write, socket)
   local address = socket:getpeername()
-  local agent = {}
-  agents[agent_id] = agent
   p("Agent connect", agent_id, address)
 
-  local nextId = 10
+  local nextId = 1
   local rmappings = {}
   local cmappings = setmetatable({}, {
-    __mode="k"
+    __mode = "k"
   })
+  local clients = {}
 
-  function agent.newClient(cread, cwrite, csocket)
+  clientHandlers[agent_id] = function (cread, cwrite, csocket)
     local caddress = csocket:getpeername()
     p("new client", agent_id, caddress)
+    clients[cwrite] = true
     local mappings = {}
 
     local function mapRequest(id)
@@ -100,6 +81,7 @@ local function newAgent(agent_id, read, write, socket)
       write(message)
     end
     cwrite()
+    clients[cwrite] = nil
     p("Client disconnect", agent_id, caddress)
   end
 
@@ -122,60 +104,14 @@ local function newAgent(agent_id, read, write, socket)
   end
   write()
   p("Agent disconnect", agent_id, address)
+  for cwrite in pairs(clients) do
+    p(cwrite)
+    cwrite {0, "Agent disconnected"}
+    cwrite()
+  end
 end
 
 return {
-  getAgent = getAgent,
+  getClientHandler = getClientHandler,
   newAgent = newAgent,
 }
---
--- local p = require('pretty-print').prettyPrint
---
--- local agents = {}
---
--- local function agentConnect(agent)
---   agents[agent.id] = agent
---   p("New agent connected", agent.id, agent.socket:getpeername())
--- end
---
--- local function clientDisconnect(agent, client)
---   agent.clients[client] = nil
---   client.write()
---   p("Client disconnect", client)
--- end
---
--- local function agentDisconnect(agent)
---   agents[agent.id] = nil
---   agent.write()
---   p("Agent disconnect", agent.id)
---   local list = agent.clients[agent.id]
---   if list then
---     for client in pairs(list) do
---       clientDisconnect(agent, client)
---     end
---   end
--- end
---
--- local function getAgent(id)
---   return agents[id]
--- end
---
--- local function clientConnect(client)
---   local clientList = clients[client.agent_id]
---   if not clientList then
---     clientList = {}
---     clients[client.agent_id] = clientList
---   end
---   clientList[client] = true
---   p("New client connected", client.agent_id, client.socket:getpeername())
--- end
---
--- return {
---   agentConnect = agentConnect,
---   agentDisconnect = agentDisconnect,
---   agentMessage = agentMessage,
---   getAgent = getAgent,
---   clientConnect = clientConnect,
---   clientDisconnect = clientDisconnect,
---   clientMessage = clientMessage,
--- }

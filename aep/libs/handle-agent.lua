@@ -1,5 +1,5 @@
 local codec = require('websocket-to-message')
-local newAgent = require('state').newAgent
+local newAgent = require('proxy').newAgent
 
 -- Token to account mapping
 local tokenMap = {

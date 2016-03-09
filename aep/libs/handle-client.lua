@@ -1,9 +1,9 @@
 local codec = require('websocket-to-message')
-local getAgent = require('state').getAgent
+local getClientHandler = require('proxy').getClientHandler
 
 return function (req, read, write)
   -- TODO: verify client's authentication and authorization
-  local agent = assert(getAgent(req.params.agent_id))
+  local newClient = assert(getClientHandler(req.params.agent_id))
   read, write = codec(read, write)
-  agent.newClient(read, write, req.socket)
+  newClient(read, write, req.socket)
 end
