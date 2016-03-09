@@ -1,72 +1,131 @@
+type Stream = Emitter(chunk: Optional(Buffer))
 
+echo (data: Stream) -> (data: Stream)
 
-echo(onEcho: Function(data: String))
-  -> send: Function(data: String)
+scandir (
+  path: String
+  entry: Emitter(
+    name: String
+    type: String
+  )
+) -> (exists: Boolean)
 
-scandir(path: String, onEntry: Function(name: String, type: String))
+readstream (
+  path: String
+  data: Stream
+) -> (exists: Boolean)
 
-readstream(
-  path: String,
-  onRead: Function(chunk: Buffer),
-  onEnd: Function(error: Optional(String))
+readfile (path: String) -> (data: Optional(Buffer))
+
+readlink (path: String) -> (target: Optional(String))
+
+writestream (path: String) -> (data: Stream)
+
+writefile (
+  path: String
+  data: Buffer
+) -> (created: Boolean)
+
+symlink (
+  path: String
+  target: String
+) -> (created: Boolean)
+
+mkdir (
+  path: String
+  recursive: Boolean
+) -> (created: Boolean)
+
+unlink (path: String) -> (existed: Boolean)
+
+rmdir (path: String) -> (existed: Boolean)
+
+rm (
+  path: String
+  recursive: Boolean
+) -> (existed: Boolean)
+
+lstat (path: String) -> (
+  mtime: Number
+  atime: Number
+  size: Integer
+  type: String
+  mode: Integer
+  uid: Integer
+  gid: Integer
 )
 
-writestream(path: String, mode: Integer)
-  -> write: Function(chunk: Buffer),
-     close: Function(error: Optional(String))
+chmod (
+  path: String
+  mode: Integer
+) -> ()
 
-readfile(path: String) -> data: Buffer
-
-writefile(path: String, mode: Integer, data: Buffer)
-
-readlink(path: String) -> target: String
-
-symlink(path: String, target: String)
-
-unlink(path: String)
-
-mkdir(path: String, recursive: Boolean)
-
-rmdir(path: String, recursive: Boolean)
-
-lstat(path: String) -> stat: {
-  mtime: Number,
-  atime: Number,
-  size: Integer,
-  type: String,
-  mode: Integer,
-  uid: Integer,
+chown (
+  path: String
+  uid: Integer
   gid: Integer
+) -> ()
+
+utime (
+  path: String
+  atime: Number
+  mtime: Number
+) -> ()
+
+rename (
+  path: String
+  newPath: String
+) -> ()
+
+realpath (path: String) -> (fullPath: String)
+
+diskusage (
+  path: String
+  depth: Integer
+  onEntry: Emitter(
+    path: String
+    size: Integer
+  )
+  onError: Emitter(
+    path: String
+    error: String
+  )
+) -> ()
+
+user (uid: Integer) -> (username: Optional(String))
+
+group (gid: Integer) -> (groupname: Optional(String))
+
+uid (username: String) -> (uid: Optional(Integer))
+
+gid(groupname: String) -> (gid: Optional(Integer))
+
+type SpawnOptions = {
+  args: Optional(Array(String))
+  env: Optional(Array(String))
+  cwd: Optional(String)
+  uid: Optional(Integer)
+  gid: Optional(Integer)
+  user: Optional(String)
+  group: Optional(String)
 }
 
-chmod(path: String, mode: Integer)
-
-chown(path: String, uid: Integer, gid: Integer)
-
-utime(path: String, atime: Number, mtime: Number)
-
-rename(path: String, newPath: String)
-
-realpath(path: String) -> fullPath: String
-
-diskusage(
-  path: String,
-  depth: Integer,
-  onEntry: Callback(name: String, size: Integer)
+type WinSize = (
+  cols: Integer
+  rows: Integer
 )
 
-user(uid: Integer) -> username: String
-group(gid: Integer) -> groupname: String
-
-pty(
-  shell: String,
-  uid: Integer,
-  gid: Integer,
-  cols: Integer,
-  rows: Integer,
-  onTitle: Function(title: String),
-  onOut: Function(chunk: Buffer),
-  onExit: Function(code: Integer, signal: Integer)
-) -> write: Function(chunk: Buffer),
-     close: Function(error: Optional(String)),
-     resize: Function(cols: Integer, rows: Integer)
+pty (
+  shell: String
+  size: Winsize
+  options: SpawnOptions
+  data: Stream
+  exit: Emitter(
+    code: Integer
+    signal: Integer
+  )
+) -> (
+  data: Stream
+  kill: Emitter(signal: Integer)
+  resize: Emitter(WinSize)
+)
