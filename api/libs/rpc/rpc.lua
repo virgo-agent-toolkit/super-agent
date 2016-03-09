@@ -1,4 +1,3 @@
-
 -- Request/Response is bidirectional and in the form:
 --  request [id, name, args...]
 --  response [-id, result...]
@@ -40,15 +39,20 @@ return function (call, log, rawRead, rawWrite)
 
   local freeze, unfreeze
 
+  local idToFn = setmetatable({}, {
+    __mode = "v"
+  })
+  local fnToId = setmetatable({}, {
+    __mode = "k"
+  })
+
   local function read()
-    local value, err = read()
-    p("**", value, err)
-    if value then value = unfreeze(value) end
-    return value, err
+    local value, err = rawRead()
+    return unfreeze(value), err
   end
 
   local function write(value)
-    return write(freeze(value))
+    return rawWrite(freeze(value))
   end
 
   -- Run the read loop in a background thread
@@ -61,7 +65,7 @@ return function (call, log, rawRead, rawWrite)
       log(1, err)
     end
 
-    return write {0,0,err}
+    return write {0,err}
   end
 
   local function readLoop()
@@ -100,12 +104,21 @@ return function (call, log, rawRead, rawWrite)
         elseif id < 0 then
           id = -id
           local thread = waiting[id]
+          local fn
           if not thread then
-            close "Unexpected response id"
-            break
+            fn = idToFn[id]
+            if not fn then
+              close "Unexpected response id"
+              break
+            end
           end
           waiting[id] = nil
-          local success, err = coroutine.resume(thread, unpack(message, 2))
+          local success, err
+          if thread then
+            success, err = coroutine.resume(thread, unpack(message, 2))
+          else
+            success, err = pcall(fn, unpack(message, 2))
+          end
           if not success then
             log(1, err)
           end
@@ -139,13 +152,6 @@ return function (call, log, rawRead, rawWrite)
 
   local nextId = 1
 
-  local idToFn = setmetatable({}, {
-    __mode = "v"
-  })
-  local fnToId = setmetatable({}, {
-    __mode = "k"
-  })
-
   local function registerFunction(fn)
     local id = fnToId[fn]
     if id then return id end
@@ -156,13 +162,16 @@ return function (call, log, rawRead, rawWrite)
     return id
   end
 
-  local function getFunction(id)
-    return idToFn[id]
+  local function isCallable(fn, t)
+    if t == "function" then return true end
+    if t ~= "table" then return false end
+    local meta = getmetatable(fn)
+    return meta and meta.__call
   end
 
   function freeze(val)
     local t = type(val)
-    if t == "function" or (t == "table" and getmetatable(val).__call) then
+    if isCallable(val, t) then
       return { [""] = registerFunction(val) }
     end
     if t ~= "table" then return val end
@@ -177,7 +186,7 @@ return function (call, log, rawRead, rawWrite)
     local t = type(val)
     if t ~= "table" then return val end
     local id = val[""]
-    if type(id) == "integer" and next(val) == "" and next(val, "") == nil then
+    if type(id) == "number" and next(val) == "" and next(val, "") == nil then
       return function (...)
         return write {-id, ...}
       end
