@@ -24,15 +24,33 @@ local function openpty(rows, cols)
   local winp = ffi.new("struct winsize")
   winp.ws_row = rows
   winp.ws_col = cols
-  util.openpty(amaster, aslave, nil, nil, winp)
+  if util.openpty(amaster, aslave, nil, nil, winp) < 0 then
+    return nil, "Problem creating pty"
+  end
   -- And later extract the single value that was placed in the array.
   return amaster[0], aslave[0]
 end
 
-return function (cols, rows, program, onexit)
+-- pty(
+--   shell: String,
+--   uid: Integer,
+--   gid: Integer,
+--   cols: Integer,
+--   rows: Integer,
+--   onTitle: Function(title: String),
+--   onOut: Function(chunk: Buffer),
+--   onExit: Function()
+-- ) -> error: Optional(String),
+--      write: Function(chunk: Buffer),
+--      close: Function(error: Optional(String)),
+--      resize: Function(cols: Integer, rows: Integer)
+return function (shell, uid, gid, cols, rows, onTitle, onOut, onExit)
 
   -- Create the pair of file descriptors
   local master, slave = openpty(cols, rows)
+  if not master then
+    return nil, slave
+  end
 
   -- Spawn the child process that inherits the slave fd as it's stdio.
   local child = uv.spawn(program, {

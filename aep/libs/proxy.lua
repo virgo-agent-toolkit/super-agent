@@ -97,7 +97,10 @@ local function newAgent(agent_id, read, write, socket)
       local cwrite = cmappings[id]
       cwrite(message)
     elseif id == 0 then
-      p("TODO: disconnect all clients")
+      if message[2] then
+        print(message[2])
+      end
+      break
     elseif id > 0 then
       p("Handle requests from agent", message)
     end
