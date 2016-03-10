@@ -393,16 +393,14 @@ if ffi.os ~= "Windows" then
   -- user (uid: Integer) -> (username: Optional(String))
   function platform.user(uid)
     local s = ffi.C.getpwuid(uid)
-    if s == nil then return nil end
-    if s.pw_name == nil then return nil end
+    if s == nil or s.pw_name == nil then return nil end
     return ffi.string(s.pw_name)
   end
 
   -- group (gid: Integer) -> (groupname: Optional(String))
   function platform.group(gid)
     local s = ffi.C.getgrgid(gid)
-    if s == nil then return nil end
-    if s.gr_name == nil then return nil end
+    if s == nil or s.gr_name == nil then return nil end
     return ffi.string(s.gr_name)
   end
 
