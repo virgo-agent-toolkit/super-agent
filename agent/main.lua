@@ -11,11 +11,13 @@ local makeRpc = require('rpc')
 local codec = require('websocket-to-message')
 local registry = require('registry')()
 local register = registry.register
+local alias = registry.alias
 local String = registry.String
 local Function = registry.Function
 local Optional = registry.Optional
 local Int = registry.Int
 local Number = registry.Number
+local Array = registry.Array
 local NamedTuple = registry.NamedTuple
 local Bool = registry.Bool
 
@@ -179,20 +181,38 @@ if platform.gid then
   }, platform.gid))
 end
 
--- pty(
---   shell: String,
---   uid: Integer,
---   gid: Integer,
---   cols: Integer,
---   rows: Integer,
---   onTitle: Function(title: String),
---   onOut: Function(chunk: Buffer),
---   onExit: Function()
--- ) -> error: Optional(String),
---      write: Function(chunk: Buffer),
---      close: Function(error: Optional(String)),
---      resize: Function(cols: Integer, rows: Integer)
+if platform.pty then
+  local SpawnOptions = assert(alias("SpawnOptions", "Options for spawning child processes", {
+    args = Optional(Array(String)),
+    env = Optional(Array(String)),
+    cwd = Optional(String),
+    uid = Optional(Int),
+    gid = Optional(Int),
+    user = Optional(String),
+    group = Optional(String),
+  }))
 
+  local WinSize = assert(alias("WinSize", "Cols/Rows pair for pty window size", NamedTuple {
+    {"cols", Int},
+    {"rows", Int},
+  }))
+
+  assert(register("pty", "Create a new pty and spawn a shell with streaming access.", {
+    {"shell", String},
+    {"size", WinSize},
+    {"options", SpawnOptions},
+    {"data", Function},
+    {"error", Function},
+    {"exit", Function},
+  }, {
+    {"child", NamedTuple {
+      {"write", Function},
+      {"kill", Function},
+      {"resize", Function},
+    }}
+  }, platform.pty))
+
+end
 
 local function log(...)
   p("log", ...)

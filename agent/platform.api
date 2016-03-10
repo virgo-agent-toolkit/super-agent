@@ -1,6 +1,4 @@
-type Stream = Emitter(chunk: Optional(Buffer))
-
-echo (data: Stream) -> (data: Stream)
+echo (data: Emitter(Any)) -> (data: Emitter(Any))
 
 scandir (
   path: String
@@ -12,14 +10,14 @@ scandir (
 
 readstream (
   path: String
-  data: Stream
+  data: Emitter(Buffer)
 ) -> (exists: Boolean)
 
 readfile (path: String) -> (data: Optional(Buffer))
 
 readlink (path: String) -> (target: Optional(String))
 
-writestream (path: String) -> (data: Stream)
+writestream (path: String) -> (data: Emitter(Optional(Buffer)))
 
 writefile (
   path: String
@@ -121,13 +119,14 @@ pty (
   shell: String
   size: Winsize
   options: SpawnOptions
-  data: Stream
+  data: Emitter(data: Optional(Buffer)),
+  error: Emitter(err: String),
   exit: Emitter(
     code: Integer
     signal: Integer
   )
 ) -> (
-  data: Stream
+  data: Emitter(chunk: Optional(Buffer))
   kill: Emitter(signal: Integer)
   resize: Emitter(WinSize)
 )

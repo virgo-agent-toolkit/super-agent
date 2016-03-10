@@ -420,34 +420,143 @@ if ffi.os ~= "Windows" then
 
 end
 
--- type SpawnOptions = {
---   args: Optional(Array(String))
---   env: Optional(Array(String))
---   cwd: Optional(String)
---   uid: Optional(Integer)
---   gid: Optional(Integer)
---   user: Optional(String)
---   group: Optional(String)
--- }
---
--- type WinSize = (
---   cols: Integer
---   rows: Integer
--- )
---
--- pty (
---   shell: String
---   size: Winsize
---   options: SpawnOptions
---   data: Stream
---   exit: Emitter(
---     code: Integer
---     signal: Integer
---   )
--- ) -> (
---   data: Stream
---   kill: Emitter(signal: Integer)
---   resize: Emitter(WinSize)
--- )
+if ffi.os == "OSX" or ffi.os == "Linux" then
+  -- Define the bits of the system API we need.
+  ffi.cdef[[
+    struct winsize {
+      unsigned short ws_row;
+      unsigned short ws_col;
+      unsigned short ws_xpixel;
+      unsigned short ws_ypixel;
+    };
+    int openpty(int *amaster, int *aslave, char *name,
+      void *termp, const struct winsize *winp);
+    int ioctl(int fd, unsigned long request, struct winsize* size);
+  ]]
+  local TIOCSWINSZ
+  if ffi.os == "OSX" then
+    TIOCSWINSZ = 2148037735
+  elseif ffi.os == "Linux" then
+    TIOCSWINSZ = 21524
+  end
+
+  -- Load the system library that contains the symbol.
+  local util = ffi.load("util")
+
+  local function openpty(cols, rows)
+    -- Lua doesn't have out-args so we create short arrays of numbers.
+    local amaster = ffi.new("int[1]")
+    local aslave = ffi.new("int[1]")
+    local winp = ffi.new("struct winsize")
+    winp.ws_row = rows
+    winp.ws_col = cols
+    if util.openpty(amaster, aslave, nil, nil, winp) < 0 then
+      return nil, "Problem creating pty"
+    end
+    -- And later extract the single value that was placed in the array.
+    return amaster[0], aslave[0]
+  end
+
+
+  -- type SpawnOptions = {
+  --   args: Optional(Array(String))
+  --   env: Optional(Array(String))
+  --   cwd: Optional(String)
+  --   uid: Optional(Integer)
+  --   gid: Optional(Integer)
+  --   user: Optional(String)
+  --   group: Optional(String)
+  -- }
+  --
+  -- type WinSize = (
+  --   cols: Integer
+  --   rows: Integer
+  -- )
+  --
+  -- pty (
+  --   shell: String
+  --   size: Winsize
+  --   options: SpawnOptions
+  --   data: Emitter(data: Optional(Buffer)),
+  --   error: Emitter(err: String),
+  --   exit: Emitter(
+  --     code: Integer
+  --     signal: Integer
+  --   )
+  -- ) -> (
+  --   data: Emitter(chunk: Optional(Buffer))
+  --   kill: Emitter(signal: Integer)
+  --   resize: Emitter(WinSize)
+  -- )
+  function platform.pty(shell, size, options, onData, onError, onExit)
+    local master, slave = openpty(unpack(size))
+
+    local uid = options.uid
+    if options.user then
+      uid = platform.uid(options.user)
+    end
+    local gid = options.gid
+    if options.group then
+      gid = platform.gid(options.group)
+    end
+
+    -- Spawn the child process that inherits the slave fd as it's stdio.
+    local child = uv.spawn(shell, {
+      stdio = {slave, slave, slave},
+      env = options.env,
+      args = options.args,
+      cwd = options.cwd,
+      uid = uid,
+      gid = gid,
+      detached = true
+    }, function (...)
+      local args = {...}
+      coroutine.wrap(function ()
+        return onExit(unpack(args))
+      end)()
+    end)
+
+    local pipe = uv.new_pipe(false)
+    pipe:open(master)
+    pipe:read_start(function (err, data)
+      coroutine.wrap(function ()
+        if err then
+          return onError(err)
+        else
+          return onData(data)
+        end
+      end)()
+    end)
+
+    local function write(chunk)
+      local err
+      if chunk then
+        err = async(pipe.write, pipe, chunk)
+      else
+        err = async(pipe.shutdown, pipe)
+        pipe:close()
+      end
+      -- TODO: handle err in own callback
+      if err then
+        onError(err)
+      end
+    end
+
+    local function kill(signal)
+      child:kill(signal)
+    end
+
+    local function resize(newsize)
+      local s = ffi.new("struct winsize")
+      s.ws_col, s.ws_row = unpack(newsize)
+      if ffi.C.ioctl(master, TIOCSWINSZ, s) < 0 then
+        onError("Problem resizing pty")
+      end
+    end
+
+    return {write, kill, resize}
+
+  end
+end
 
 return platform
