@@ -22,6 +22,7 @@ local function dirname(path)
 end
 
 local function pathjoin(path, name)
+  if path == "/" then path = "" end
   return path .. (path:match("\\") and  "\\" or "/") .. name
 end
 
@@ -331,19 +332,17 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
         return total
       end
       while true do
-        local name, typ = uv.fs_scandir_next(req)
+        local name = uv.fs_scandir_next(req)
         if not name then break end
-        if typ == "directory" then
-          local subpath = pathjoin(path, name)
-          local subtotal
-          subtotal, err = scan(subpath, depth - 1)
-          if subtotal then
-            total = total + subtotal
-          elseif err then
-            onError(subpath, err)
-          else
-            error("Unknown problem scanning " .. subpath)
-          end
+        local subpath = pathjoin(path, name)
+        local subtotal
+        subtotal, err = scan(subpath, depth - 1)
+        if subtotal then
+          total = total + subtotal
+        elseif err then
+          onError(subpath, err)
+        else
+          error("Unknown problem scanning " .. subpath)
         end
       end
     end
