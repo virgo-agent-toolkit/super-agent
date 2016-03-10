@@ -29,7 +29,7 @@ writefile (
 symlink (
   path: String
   target: String
-) -> (created: Boolean)
+) -> ()
 
 mkdir (
   path: String

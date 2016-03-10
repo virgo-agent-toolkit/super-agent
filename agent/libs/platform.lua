@@ -1,4 +1,5 @@
 local uv = require('uv')
+-- local p = require('pretty-print').prettyPrint
 
 local pack = table.pack
 
@@ -10,10 +11,18 @@ local function async(fn, ...)
   local thread = coroutine.running()
   local args = pack(...)
   args[args.n + 1] = function (...)
-    return coroutine.resume(thread, ...)
+    return assert(coroutine.resume(thread, ...))
   end
   fn(unpack(args))
   return coroutine.yield()
+end
+
+local function dirname(path)
+  return path:match("^(.*)[/\\][^/\\]*$")
+end
+
+local function pathjoin(path, name)
+  return path .. (path:match("\\") and  "\\" or "/") .. name
 end
 
 local platform = {}
@@ -105,32 +114,118 @@ function platform.writestream(path, onError)
   end
 end
 
---
 -- writefile (
 --   path: String
 --   data: Buffer
 -- ) -> (created: Boolean)
---
+function platform.writefile(path, data)
+  local created = true
+  local err, fd = async(uv.fs_open, path, "wx", 438)
+  if err and err:match("^EEXIST:") then
+    err, fd = async(uv.fs_open, path, "w", 438)
+    created = false
+  end
+  if not fd then error(err or "Unknown problem opening file: " .. path) end
+  err = async(uv.fs_write, fd, data, 0)
+  assert(not err, err)
+  uv.fs_close(fd)
+  return created
+end
+
 -- symlink (
---   path: String
 --   target: String
--- ) -> (created: Boolean)
---
+--   path: String
+-- ) -> ()
+function platform.symlink(target, path)
+  local err = async(uv.fs_symlink, target, path)
+  assert(not err, err)
+end
+
 -- mkdir (
 --   path: String
 --   recursive: Boolean
 -- ) -> (created: Boolean)
---
+function platform.mkdir(finalPath, recursive)
+  local function mkdir(path)
+    local err = async(uv.fs_mkdir, path, 493)
+    if err then
+      if err:match("^EEXIST:") then return false end
+      if recursive and err:match("^ENOENT:") then
+        local parent = dirname(path)
+        if parent then
+          mkdir(parent)
+          recursive = false
+          return mkdir(path)
+        end
+      end
+      error(err)
+    end
+    return true
+  end
+  return mkdir(finalPath)
+end
+
 -- unlink (path: String) -> (existed: Boolean)
---
+function platform.unlink(path)
+  local err = async(uv.fs_unlink, path)
+  if err then
+    if err:match("^ENOENT:") then return false end
+    error(err)
+  end
+  return true
+end
+
 -- rmdir (path: String) -> (existed: Boolean)
---
+function platform.rmdir(path)
+  local err = async(uv.fs_rmdir, path)
+  if err then
+    if err:match("^ENOENT:") then return false end
+    error(err)
+  end
+  return true
+end
+
 -- rm (
 --   path: String
 --   recursive: Boolean
 -- ) -> (existed: Boolean)
---
--- lstat (path: String) -> (
+function platform.rm(rootPath, recursive)
+  local function deltree(path, recurse)
+    local err = async(uv.fs_rmdir, path)
+    if err then
+      if recurse and err:match("^ENOTEMPTY:") then
+        local req
+        err, req = async(uv.fs_scandir, path)
+        if not req then
+          error(err or "Unknown problem scanning " .. path)
+        end
+        while true do
+          local name, typ = uv.fs_scandir_next(req)
+          if not name then break end
+          local subpath = pathjoin(path, name)
+          if typ == "directory" then
+            deltree(subpath, recurse)
+          else
+            err = async(uv.fs_unlink, subpath)
+            assert(not err, err)
+          end
+        end
+        return deltree(path, false)
+      end
+      error(err)
+    end
+    return true
+  end
+  local err = async(uv.fs_unlink, rootPath)
+  if err then
+    if err:match("^ENOENT:") then return false end
+    if err:match("^EPERM:") then return deltree(rootPath, recursive) end
+    error(err)
+  end
+  return true
+end
+
+-- lstat (path: String) -> (stat: Optional((
 --   mtime: Number
 --   atime: Number
 --   size: Integer
@@ -138,7 +233,24 @@ end
 --   mode: Integer
 --   uid: Integer
 --   gid: Integer
--- )
+-- )))
+function platform.lstat(path)
+  local err, stat = async(uv.fs_lstat, path)
+  if not stat then
+    if err and err:match("^ENOENT:") then return nil end
+    error(err or "Unknown error statting " .. path)
+  end
+  return {
+    stat.mtime.sec,
+    stat.atime.sec,
+    stat.size,
+    stat.type,
+    stat.mode,
+    stat.uid,
+    stat.gid
+  }
+ end
+
 --
 -- chmod (
 --   path: String

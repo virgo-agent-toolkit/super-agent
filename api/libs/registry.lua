@@ -37,6 +37,7 @@ return function ()
     Array = schema.Array,
     Optional = schema.Optional,
     Type = schema.Type,
+    NamedTuple = schema.NamedTuple,
   }}
 
   local function register(name, doc, args, ret, fn)
@@ -58,11 +59,7 @@ return function ()
     if not fn then
       return nil, "No such API function: " .. name
     end
-    local result, error = fn(...)
-    if error then
-      return nil, error
-    end
-    return result
+    return fn(...)
   end
 
   local function section(prefix)

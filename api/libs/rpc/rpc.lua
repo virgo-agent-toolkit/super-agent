@@ -1,3 +1,4 @@
+
 -- Request/Response is bidirectional and in the form:
 --  request [id, name, args...]
 --  response [-id, result...]
@@ -93,8 +94,9 @@ return function (call, log, rawRead, rawWrite)
               results = {call(name, unpack(message, 3))}
             end, debug.traceback)
             if not success then
-              write {-id, nil, "Server Error"}
-              log(0, stack)
+              local e = stack:match("(E[A-Z]+:[^\n]+)\n")
+              write {-id, nil, e or "Server Error"}
+              if not e then log(0, stack) end
             else
               write {-id, unpack(results)}
             end

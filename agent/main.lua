@@ -14,7 +14,9 @@ local register = registry.register
 local String = registry.String
 local Function = registry.Function
 local Optional = registry.Optional
--- local Int = registry.Int
+local Int = registry.Int
+local Number = registry.Number
+local NamedTuple = registry.NamedTuple
 local Bool = registry.Bool
 
 assert(register("scandir", "Reads a directory, calling onEntry for each name/type pair", {
@@ -56,7 +58,58 @@ assert(register("writestream", "Write a file in chunks, pass nill to end", {
   {"data", Function},
 }, platform.writestream))
 
---
+assert(register("writefile", "Write a file from a buffer", {
+  {"path", String},
+  {"data", String},
+}, {
+  {"created", Bool}
+}, platform.writefile))
+
+assert(register("symlink", "Create a symlink", {
+  {"target", String},
+  {"path", String},
+}, {}, platform.symlink))
+
+assert(register("mkdir", "Create a directory, optionally creating parents", {
+  {"path", String},
+  {"recursive", Bool},
+}, {
+  {"created", Bool},
+}, platform.mkdir))
+
+assert(register("unlink", "Remove a file", {
+  {"path", String},
+}, {
+  {"existed", Bool},
+}, platform.unlink))
+
+assert(register("rmdir", "Remove an empty directory", {
+  {"path", String},
+}, {
+  {"existed", Bool},
+}, platform.rmdir))
+
+assert(register("rm", "Remove a file or directory (optionally recursivly)", {
+  {"path", String},
+  {"recursive", Bool},
+}, {
+  {"existed", Bool},
+}, platform.rm))
+
+assert(register("lstat", "Get stats for a file or directory", {
+  {"path", String},
+}, {
+  {"stat", Optional(NamedTuple{
+    {"mtime", Number},
+    {"atime", Number},
+    {"size", Int},
+    {"type", String},
+    {"mode", Int},
+    {"uid", Int},
+    {"gid", Int},
+  })}
+}, platform.lstat))
+
 -- -- diskusage(
 -- --   path: String,
 -- --   depth: Integer,
