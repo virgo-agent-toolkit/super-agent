@@ -1,4 +1,6 @@
 local uv = require('uv')
+local ffi = require('ffi')
+
 -- local p = require('pretty-print').prettyPrint
 
 local pack = table.pack
@@ -362,14 +364,64 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
   return true
 end
 
--- user (uid: Integer) -> (username: Optional(String))
---
--- group (gid: Integer) -> (groupname: Optional(String))
---
--- uid (username: String) -> (uid: Optional(Integer))
---
--- gid(groupname: String) -> (gid: Optional(Integer))
---
+if ffi.os ~= "Windows" then
+
+  ffi.cdef[[
+    typedef int uid_t;
+    typedef int gid_t;
+    struct passwd {
+      char   *pw_name;
+      char   *pw_passwd;
+      uid_t   pw_uid;
+      gid_t   pw_gid;
+      char   *pw_gecos;
+      char   *pw_dir;
+      char   *pw_shell;
+    };
+    struct group {
+      char   *gr_name;
+      char   *gr_passwd;
+      gid_t   gr_gid;
+      char  **gr_mem;
+    };
+    struct passwd *getpwnam(const char *name);
+    struct passwd *getpwuid(uid_t uid);
+    struct group *getgrnam(const char *name);
+    struct group *getgrgid(gid_t gid);
+  ]]
+
+  -- user (uid: Integer) -> (username: Optional(String))
+  function platform.user(uid)
+    local s = ffi.C.getpwuid(uid)
+    if s == nil then return nil end
+    if s.pw_name == nil then return nil end
+    return ffi.string(s.pw_name)
+  end
+
+  -- group (gid: Integer) -> (groupname: Optional(String))
+  function platform.group(gid)
+    local s = ffi.C.getgrgid(gid)
+    if s == nil then return nil end
+    if s.gr_name == nil then return nil end
+    return ffi.string(s.gr_name)
+  end
+
+  -- uid (username: String) -> (uid: Optional(Integer))
+  function platform.uid(username)
+    local s = ffi.C.getpwnam(username)
+    if s == nil then return nil end
+    return s.pw_uid
+  end
+
+  -- gid(groupname: String) -> (gid: Optional(Integer))
+  function platform.gid(groupname)
+    local s = ffi.C.getgrnam(groupname)
+    if s == nil then return nil end
+    return s.gr_gid
+  end
+
+end
+
 -- type SpawnOptions = {
 --   args: Optional(Array(String))
 --   env: Optional(Array(String))

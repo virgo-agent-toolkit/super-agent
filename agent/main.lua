@@ -147,6 +147,37 @@ assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
   {"exists", Bool},
 }, platform.diskusage))
 
+if platform.user then
+  assert(register("user", "Get username from user id", {
+    {"uid", Int},
+  }, {
+    {"username", Optional(String)},
+  }, platform.user))
+end
+
+if platform.group then
+  assert(register("group", "Get group from group id", {
+    {"gid", Int},
+  }, {
+    {"group", Optional(String)},
+  }, platform.group))
+end
+
+if platform.uid then
+  assert(register("uid", "Get user id from username", {
+    {"username", String},
+  }, {
+    {"uid", Optional(Int)},
+  }, platform.uid))
+end
+
+if platform.gid then
+  assert(register("gid", "Get user id from group name", {
+    {"group", String},
+  }, {
+    {"gid", Optional(Int)},
+  }, platform.gid))
+end
 
 -- pty(
 --   shell: String,
