@@ -90,7 +90,9 @@ diskusage (
     path: String
     error: String
   )
-) -> ()
+) -> (
+  exists: Bool
+)
 
 user (uid: Integer) -> (username: Optional(String))
 

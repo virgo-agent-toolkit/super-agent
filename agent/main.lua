@@ -13,23 +13,31 @@ local registry = require('registry')()
 local register = registry.register
 local String = registry.String
 local Function = registry.Function
-local Optional = registry.Optional
 local Int = registry.Int
+local Bool = registry.Bool
 
 assert(register("scandir", "Reads a directory, calling onEntry for each name/type pair", {
   {"path", String},
   {"onEntry", Function},
-}, Optional(String), function (path, onEntry)
+}, {
+  {"exists", Bool},
+}, function (path, onEntry)
   local iter, err = fs.scandir(path)
-  if not iter then return err end
+  if not iter then
+    if err:match("^ENOENT:") then return false end
+    error(err)
+  end
   for entry in iter do
     onEntry(entry.name, entry.type)
   end
+  return true
 end))
 
 assert(register("echo", "Echo testing streams", {
-  {"echo", Function}
-}, Function, function (echo)
+  {"data", Function}
+}, {
+  {"data", Function}
+}, function (echo)
   -- This is echo as simple as it gets.
   return echo
 end))
@@ -42,10 +50,12 @@ end))
 -- ) -> error: Optional(String)
 assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
   {"path", String},
-  {"maxDepth", Int},
+  {"depth", Int},
   {"onEntry", Function},
   {"onError", Function}
-}, Optional(String), function (rootPath, maxDepth, onEntry, onError)
+}, {
+  {"exists", Bool},
+}, function (rootPath, maxDepth, onEntry, onError)
   local function scan(path, depth)
     local stat, err = fs.lstat(path)
     if not stat then
@@ -78,8 +88,15 @@ assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
     end
     return total
   end
-  local _, err = scan(rootPath, maxDepth)
-  return err
+  local stat, err = fs.stat(rootPath)
+  if not stat then
+    if not err or err:match("^ENOENT:") then
+      return false
+    end
+    error(err)
+  end
+  scan(rootPath, maxDepth)
+  return true
 end))
 
 
@@ -91,7 +108,7 @@ end))
 --   rows: Integer,
 --   onTitle: Function(title: String),
 --   onOut: Function(chunk: Buffer),
---   onClose: Function()
+--   onExit: Function()
 -- ) -> error: Optional(String),
 --      write: Function(chunk: Buffer),
 --      close: Function(error: Optional(String)),
