@@ -251,31 +251,53 @@ function platform.lstat(path)
   }
  end
 
---
 -- chmod (
 --   path: String
 --   mode: Integer
 -- ) -> ()
---
+function platform.chmod(path, mode)
+  local err = async(uv.fs_chmod, path, mode)
+  assert(not err, err)
+end
+
 -- chown (
 --   path: String
 --   uid: Integer
 --   gid: Integer
 -- ) -> ()
---
+function platform.chown(path, uid, gid)
+  local err = async(uv.fs_chown, path, uid, gid)
+  assert(not err, err)
+end
+
 -- utime (
 --   path: String
 --   atime: Number
 --   mtime: Number
 -- ) -> ()
---
+function platform.utime(path, atime, mtime)
+  local err = async(uv.fs_utime, path, atime, mtime)
+  assert(not err, err)
+end
+
 -- rename (
 --   path: String
 --   newPath: String
 -- ) -> ()
---
+function platform.rename(path, newPath)
+  local err = async(uv.fs_rename, path, newPath)
+  assert(not err, err)
+end
+
 -- realpath (path: String) -> (fullPath: String)
---
+function platform.realpath(path)
+  local err, fullPath = async(uv.fs_realpath, path)
+  if not fullPath then
+    error(err or "Unknown problem getting fullPath for " .. path)
+  end
+  return path
+end
+
 -- diskusage (
 --   path: String
 --   depth: Integer
@@ -287,10 +309,60 @@ function platform.lstat(path)
 --     path: String
 --     error: String
 --   )
--- ) -> (
---   exists: Bool
--- )
---
+-- ) -> (exists: Bool)
+function platform.diskusage(rootPath, maxDepth, onEntry, onError)
+  local function scan(path, depth)
+    local err, stat = async(uv.fs_lstat, path)
+    if not stat then
+      if err then
+        onError(path, err)
+      end
+      return 0
+    end
+    local total = stat.size
+    if stat.type == "directory" then
+      local req
+      err, req = async(uv.fs_scandir, path)
+      if not req then
+        if not err then
+          error("Unknown problem scanning " .. path)
+        end
+        onError(path, err)
+        return total
+      end
+      while true do
+        local name, typ = uv.fs_scandir_next(req)
+        if not name then break end
+        if typ == "directory" then
+          local subpath = pathjoin(path, name)
+          local subtotal
+          subtotal, err = scan(subpath, depth - 1)
+          if subtotal then
+            total = total + subtotal
+          elseif err then
+            onError(subpath, err)
+          else
+            error("Unknown problem scanning " .. subpath)
+          end
+        end
+      end
+    end
+    if depth >= 0 then
+      onEntry(path, total)
+    end
+    return total
+  end
+  local err, stat = async(uv.fs_stat, rootPath)
+  if not stat then
+    if not err or err:match("^ENOENT:") then
+      return false
+    end
+    error(err)
+  end
+  scan(rootPath, maxDepth)
+  return true
+end
+
 -- user (uid: Integer) -> (username: Optional(String))
 --
 -- group (gid: Integer) -> (groupname: Optional(String))

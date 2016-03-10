@@ -110,62 +110,42 @@ assert(register("lstat", "Get stats for a file or directory", {
   })}
 }, platform.lstat))
 
--- -- diskusage(
--- --   path: String,
--- --   depth: Integer,
--- --   onEntry: Callback(path: String, size: Integer)
--- --   onError: Callback(path: String, error: String)
--- -- ) -> error: Optional(String)
--- assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
---   {"path", String},
---   {"depth", Int},
---   {"onEntry", Function},
---   {"onError", Function}
--- }, {
---   {"exists", Bool},
--- }, function (rootPath, maxDepth, onEntry, onError)
---   local function scan(path, depth)
---     local stat, err = fs.lstat(path)
---     if not stat then
---       if err then
---         onError(path, err)
---       end
---       return 0
---     end
---     local total = stat.size
---     if stat.type == "directory" then
---       local iter, err2 = fs.scandir(path)
---       if not iter then
---         if err2 then
---           onError(path, err2)
---         end
---         return total
---       end
---       for entry in iter do
---         local subpath = (path == "/" and "" or path) .. "/" .. entry.name
---         local subtotal, err3 = scan(subpath, depth - 1)
---         if subtotal then
---           total = total + subtotal
---         elseif err3 then
---           onError(subpath, err3)
---         end
---       end
---     end
---     if depth >= 0 then
---       onEntry(path, total)
---     end
---     return total
---   end
---   local stat, err = fs.stat(rootPath)
---   if not stat then
---     if not err or err:match("^ENOENT:") then
---       return false
---     end
---     error(err)
---   end
---   scan(rootPath, maxDepth)
---   return true
--- end))
+assert(register("chmod", "Change the mode/permissions of a file", {
+  {"path", String},
+  {"mode", Int},
+}, {}, platform.chmod))
+
+assert(register("chown", "Change the user id and group id of a file", {
+  {"path", String},
+  {"uid", Int},
+  {"gid", Int},
+}, {}, platform.chown))
+
+assert(register("utime", "Update access and modification times for a file", {
+  {"path", String},
+  {"atime", Number},
+  {"mtime", Number},
+}, {}, platform.utime))
+
+assert(register("rename", "Rename or move a file", {
+  {"path", String},
+  {"newPath", String},
+}, {}, platform.rename))
+
+assert(register("realpath", "Gets the realpath by resolving symlinks", {
+  {"path", String},
+}, {
+  {"fullPath", String}
+}, platform.realpath))
+
+assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
+  {"path", String},
+  {"depth", Int},
+  {"onEntry", Function},
+  {"onError", Function}
+}, {
+  {"exists", Bool},
+}, platform.diskusage))
 
 
 -- pty(
