@@ -499,6 +499,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
     if options.group then
       gid = platform.gid(options.group)
     end
+    local write, kill, resize
 
     -- Spawn the child process that inherits the slave fd as it's stdio.
     local child = uv.spawn(shell, {
@@ -510,6 +511,8 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       gid = gid,
       detached = true
     }, function (...)
+      write, kill, resize = write, kill, resize
+
       local args = {...}
       coroutine.wrap(function ()
         return onExit(unpack(args))
@@ -528,7 +531,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       end)()
     end)
 
-    local function write(chunk)
+    function write(chunk)
       local err
       if chunk then
         err = async(pipe.write, pipe, chunk)
@@ -542,11 +545,11 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       end
     end
 
-    local function kill(signal)
+    function kill(signal)
       child:kill(signal)
     end
 
-    local function resize(newsize)
+    function resize(newsize)
       local s = ffi.new("struct winsize")
       s.ws_col, s.ws_row = unpack(newsize)
       if ffi.C.ioctl(master, TIOCSWINSZ, s) < 0 then
