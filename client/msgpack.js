@@ -169,10 +169,13 @@ Decoder.prototype.map = function (length) {
   return value;
 };
 Decoder.prototype.bin = function (length) {
-  var value = new ArrayBuffer(length);
-  (new Uint8Array(value)).set(new Uint8Array(this.view.buffer, this.offset, length), 0);
+  console.log("length", length);
+  var array = new Uint8Array(length);
+  var source = new Uint8Array(this.view.buffer)
+  array.set(source.slice(this.offset, this.offset + length), 0);
   this.offset += length;
-  return value;
+  console.log(array);
+  return array.buffer;
 };
 Decoder.prototype.str = function (length) {
   var value = utf8Read(this.view, this.offset, length);

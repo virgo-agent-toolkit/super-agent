@@ -65,6 +65,12 @@ function* rpc(url) {
     if (Array.isArray(value)) {
       return value.map(thaw);
     }
+    if (value instanceof ArrayBuffer) {
+      return new Uint8Array(value);
+    }
+    if (Object.getPrototypeOf(value) !== Object.prototype) {
+      return value;
+    }
     let keys = Object.keys(value);
     let l = keys.length;
     if (l === 1 && keys[0] === '') {
@@ -91,6 +97,12 @@ function* rpc(url) {
     if (!value || type !== 'object') { return value; }
     if (Array.isArray(value)) {
       return value.map(freeze);
+    }
+    if (value instanceof Uint8Array) {
+      return value.buffer;
+    }
+    if (Object.getPrototypeOf(value) !== Object.prototype) {
+      return value;
     }
     let copy = {};
     let keys = Object.keys(value);
