@@ -1,4 +1,5 @@
 local p = require('pretty-print').prettyPrint
+local sha1 = require('sha1')
 --[[
 
 - agent has api endpoints
@@ -39,12 +40,15 @@ local function newAgent(agent_id, read, write, socket)
   local cmappings = setmetatable({}, {
     __mode = "k"
   })
-  local clients = {}
+  local clients = setmetatable({}, {
+    __mode = "v"
+  })
 
   clientHandlers[agent_id] = function (cread, cwrite, csocket)
     local caddress = csocket:getpeername()
     p("new client", agent_id, caddress)
-    clients[cwrite] = true
+    local key = sha1(caddress.ip .. '-' .. caddress.port)
+    clients[key] = cwrite
     local mappings = {}
 
     local function mapRequest(id)
@@ -59,14 +63,20 @@ local function newAgent(agent_id, read, write, socket)
     end
 
     local function recursiveMap(value)
-      if type(value) ~= "table" then return end
+      if type(value) ~= "table" then return value end
       if next(value) ~= '' or next(value, '') then
-        for _, v in pairs(value) do
-          recursiveMap(v)
+        for k, v in pairs(value) do
+          value[k] = recursiveMap(v)
         end
-        return
+        return value
       end
-      value[''] = mapRequest(value[''])
+      local id = value['']
+      if id == 0 then
+        return key
+      else
+        value[''] = mapRequest(id)
+      end
+      return value
     end
 
     for message in cread do
@@ -74,14 +84,18 @@ local function newAgent(agent_id, read, write, socket)
         cwrite {0, "Invalid message"}
         break
       end
-      if message[1] > 0 then
-        message[1] = mapRequest(message[1])
+      if message[1] > 0 and message[2] == 'key' then
+        cwrite({-message[1],key})
+      else
+        if message[1] > 0 then
+          message[1] = mapRequest(message[1])
+        end
         recursiveMap(message)
+        write(message)
       end
-      write(message)
     end
     cwrite()
-    clients[cwrite] = nil
+    clients[key] = nil
     p("Client disconnect", agent_id, caddress)
   end
 
@@ -102,13 +116,15 @@ local function newAgent(agent_id, read, write, socket)
       end
       break
     elseif id > 0 then
-      p("Handle requests from agent", message)
+      local key = message[2]
+      local cwrite = clients[key]
+      cwrite({id, unpack(message, 3)})
     end
   end
   write()
   p("Agent disconnect", agent_id, address)
-  for cwrite in pairs(clients) do
-    p(cwrite)
+  for key, cwrite in pairs(clients) do
+    p(key, cwrite)
     cwrite {0, "Agent disconnected"}
     cwrite()
   end
