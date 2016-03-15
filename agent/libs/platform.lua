@@ -30,9 +30,9 @@ end
 
 local platform = {}
 
--- echo (data: Emitter(value: Any)) -> (data: Emitter(value: Any))
-function platform.echo(onData)
-  return onData
+-- echo returns whatever it was given
+function platform.echo(...)
+  return ...
 end
 
 -- scandir (
