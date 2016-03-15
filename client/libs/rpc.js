@@ -49,7 +49,7 @@ function* rpc(url) {
       return;
     }
     if (id > 0) {
-      console.log('TODO: route request', id);
+      console.log("Got request from agent!", message[1], message.slice(2));
       return;
     }
     if (id === 0) {

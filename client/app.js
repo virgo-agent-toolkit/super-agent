@@ -1,58 +1,37 @@
-/*global rpc*/
-/*global run*/
-/*global Terminal*/
-// /*global virtualDom*/
+/*global rpc,run*/
 'use strict';
 
-let agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
-let url = 'ws://localhost:8000/request/' + agentId;
-run(main);
+window.RaxClient = (function () {
+  let agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
+  let url = 'ws://localhost:8000/request/' + agentId;
+  let applications = {};
+  let call;
+  window.onload = function () { run(main); };
 
-function* main() {
-  let call = yield* rpc(url);
-  let echo = yield* call('echo', function (...value) {
-    console.log('Echo!', ...value);
-  });
-  echo(1, 2, 3);
-  echo({name: 'Tim', age: 33});
-  echo(new Uint8Array([1,2,3,4]));
-  echo({data:new Uint8Array([1,2,3,4]),fancy:true,bad:false});
+  return {
+    registerApp: registerApp,
+    call: onRequest,
+  };
 
-  let [write, kill, resize] = yield* call('pty',
-    '/bin/bash',
-    [80,24],
-    {},
-    function onData(chunk) {
-      if (chunk !== undefined) {
-        term.write(chunk);
-      }
-      else {
-        console.log('Pty stream closed');
-        kill(8);
-      }
-    },
-    function onError(error) {
-      console.error(error);
-    },
-    function onExit(code, signal) {
-      console.log('child exited', code, signal);
+  function onRequest(name, ...args) {
+    let app = applications[name];
+    if (!app) {
+      throw new Error('No such application: ' + name);
     }
-  );
-  let term = new Terminal({
-    cols: 80,
-    rows: 24,
-    screenKeys: true
-  });
+    function update(vdom) {
+      console.log("TODO: update vdom");
+      console.log(vdom);
+    }
+    run(function* () {
+      yield* app(call, update, ...args);
+    });
+  }
 
-  term.on('data', write);
+  function registerApp(name, init) {
+    applications[name] = init;
+  }
 
-  term.on('title', function(title) {
-    document.title = title;
-  });
-
-  document.body.textContent = '';
-  term.open(document.body);
-
-  term.write('\x1b[31mWelcome to term.js!\x1b[m\r\n');
-
-}
+  function* main() {
+    call = yield* rpc(url, onRequest);
+  }
+})();
