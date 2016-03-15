@@ -14,5 +14,6 @@ return {
     "creationix/schema",
     "creationix/coro-fs",
     "luvit/json",
+    "luvit/secure-socket",
   }
 }

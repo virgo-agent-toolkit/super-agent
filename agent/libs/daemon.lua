@@ -5,6 +5,7 @@ local p = require('pretty-print').prettyPrint
 
 local msgpackDecode = require('msgpack').decode
 local wsConnect = require('websocket-client')
+local loadResource = require('resource').load
 local makeRpc = require('rpc')
 local codec = require('websocket-to-message')
 local createServer = require('coro-net').createServer
@@ -237,9 +238,19 @@ local function onCLI(read, write, socket)
 
 end
 
+
+
+
+
 coroutine.wrap(function ()
-  local url = "ws://localhost:8000/enlist/" .. agentId .. "/" .. token
-  local read, write = assert(wsConnect(url , "schema-rpc", {}))
+  local url = "wss://localhost:8443/enlist/" .. agentId .. "/" .. token
+  local read, write = assert(wsConnect(
+    url ,
+    "schema-rpc", 
+    {
+      tls = {ca = assert(loadResource("./../agent-cert/new.cert.cert"))}
+    }
+    ))
   read, write = codec(read, write)
   api = makeRpc(registry.call, log, read, write)
   createServer({
