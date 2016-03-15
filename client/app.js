@@ -1,37 +1,81 @@
-/*global rpc,run*/
-'use strict';
-
-window.RaxClient = (function () {
-  let agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
-  let url = 'ws://localhost:8000/request/' + agentId;
-  let applications = {};
-  let call;
-  window.onload = function () { run(main); };
-
-  return {
-    registerApp: registerApp,
-    call: onRequest,
+// Simple, but powerful require system
+(function () {
+  'use strict';
+  let defs = {};
+  let mods = {};
+  let pending = {};
+  window.define = function define(name, fn) {
+    defs[name] = fn;
+    console.log('defining', name);
+    if (pending[name]) {
+      let cb = pending[name];
+      delete pending[name];
+      scanDeps(fn.toString(), cb);
+    }
   };
 
-  function onRequest(name, ...args) {
-    let app = applications[name];
-    if (!app) {
-      throw new Error('No such application: ' + name);
+  window.require = require;
+  require.async = requireAsync;
+
+  function require(name) {
+    if (name in mods) {
+      return mods[name];
     }
-    function update(vdom) {
-      console.log("TODO: update vdom");
-      console.log(vdom);
+    if (name in defs) {
+      return (mods[name] = defs[name](require));
     }
-    run(function* () {
-      yield* app(call, update, ...args);
-    });
+    throw new Error('No such module: ' + name);
   }
 
-  function registerApp(name, init) {
-    applications[name] = init;
+  function requireAsync(name, cb) {
+    if (!cb) { return requireAsync.bind(null, name); }
+    if (name in defs) {
+      return onDefined();
+    }
+    loadDef(name, onDefined);
+
+    function onDefined() {
+      cb(null, require(name));
+    }
   }
 
-  function* main() {
-    call = yield* rpc(url, onRequest);
+  function scanDeps(js, cb) {
+    let matches = js.match(/require\('[^']+'\)/g);
+    if (!matches) { return cb(); }
+    let left = matches.length;
+    for (let i = 0, l = left; i < l)
+    function getNext() {
+      if (!matches.length) { return cb(); }
+      let name = matches.pop().match(/'(.+)'/)[1];
+      if (name in defs) { return getNext(); }
+      loadDef(name, getNext);
+    }
+    getNext();
+  }
+
+  function loadDef(name, cb) {
+    console.log('loading def', name);
+    let tag = document.createElement('script');
+    tag.setAttribute('async', true);
+    tag.setAttribute('src', name + '.js');
+    document.head.appendChild(tag);
+    pending[name] = function () {
+      document.head.removeChild(tag);
+      console.log('loaded', name);
+      return cb();
+    };
   }
 })();
+
+window.onload = function () {
+  'use strict';
+  let require = window.require;
+  require.async('libs/run', function (err, run) {
+    run(function* () {
+      let rpc = yield require.async('libs/rpc');
+      console.log(rpc);
+    }, function (err) {
+      if (err) { throw err; }
+    });
+  });
+};

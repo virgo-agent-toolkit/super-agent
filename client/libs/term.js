@@ -30,7 +30,8 @@
  *   other features.
  */
 
-;(function() {
+/*jshint laxcomma:true, varstmt:false, curly:false, eqeqeq:false*/
+define('libs/term', function () {
 
 /**
  * Terminal Emulation References:
@@ -89,6 +90,7 @@ EventEmitter.prototype.removeAllListeners = function(type) {
 
 EventEmitter.prototype.once = function(type, listener) {
   function on() {
+    /*validthis:true*/
     var args = Array.prototype.slice.call(arguments);
     this.removeListener(type, on);
     return listener.apply(this, args);
@@ -5966,12 +5968,6 @@ Terminal.on = on;
 Terminal.off = off;
 Terminal.cancel = cancel;
 
-if (typeof module !== 'undefined') {
-  module.exports = Terminal;
-} else {
-  this.Terminal = Terminal;
-}
+return Terminal;
 
-}).call(function() {
-  return this || (typeof window !== 'undefined' ? window : global);
-}());
+});

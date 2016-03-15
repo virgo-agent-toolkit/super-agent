@@ -10,3 +10,12 @@
   color: #000;
   background: #f0f0f0;
 }
+body {
+  background-color: #555;
+  background: url("wallpaper.jpg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  overflow: hidden;
+  margin: 0;
+}
