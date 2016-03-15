@@ -11,6 +11,10 @@
       "creationix/coro-split",
       "luvit/pretty-print",
       "creationix/uv",
+      "luvit/resource",
+      "luvit/json",
+      "creationix/msgpack",
+      "luvit/secure-socket",
     },
     files = {
       "**.lua",
