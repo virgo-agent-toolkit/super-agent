@@ -4,16 +4,18 @@ define('apps/Terminal', function (require) {
   // Load the terminal emulator library.
   var Term = require('libs/term');
 
-  // win.title = newTitle -- Update a window title
-  // win.close() -- Close a window
-  // win.focus() -- Steal focus to own window
-  // win.container - container element
-  // win.width - width in pixels of container
-  // win.height - height of container in pixels
-  return function* (win, call, cwd) {
+  return function* (call, cwd) {
 
     var clientKey = yield* call('key');
-    var winsize = getWinsize(win.width, win.height);
+    app.initialWidth = 593; // Magic width for 80 cols?
+    app.initialHeight = 431; // Magic height for 24 rows?
+    var winsize = getWinsize(app.initialWidth, app.initialHeight);
+
+    var term = new Term({
+      cols: winsize[0],
+      rows: winsize[1],
+      screenKeys: true
+    });
 
     // [write, kill, resize]
     var write, kill, resize;
@@ -39,7 +41,7 @@ define('apps/Terminal', function (require) {
       }
       else {
         console.log('Pty stream closed');
-        kill(8);
+        kill(15);
       }
     }
     function onError(error) {
@@ -49,27 +51,32 @@ define('apps/Terminal', function (require) {
       console.log('child exited', code, signal);
     }
 
-    var term = new Term({
-      cols: winsize[0],
-      rows: winsize[1],
-      screenKeys: true
-    });
 
     term.on('data', write);
 
-    term.on('title', function (title) {
-      win.title = title;
-    });
+    // win.title = newTitle -- Update a window title
+    // win.close() -- Close a window
+    // win.focus() -- Steal focus to own window
+    // win.container - container element
+    // win.width - width in pixels of container
+    // win.height - height of container in pixels
+    return app;
 
-    win.container.textContent = '';
-    term.open(win.container);
+    function app(win) {
+      term.on('title', function (title) {
+        win.title = title;
+      });
 
-    return {
+      win.container.textContent = '';
+      console.log(win.container);
+      term.open(win.container);
+
       // Called when the app's container is resized.
-      resize: onResize,
+      win.onResize = onResize;
       // Called when the app is closed.
-      close: onClose,
-    };
+      win.onClose = onClose;
+    }
+
 
     function getWinsize(w, h) {
       return [
@@ -89,6 +96,7 @@ define('apps/Terminal', function (require) {
 
     function onClose() {
       term.destroy();
+      kill(15);
     }
   };
 });

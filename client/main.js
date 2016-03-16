@@ -1,16 +1,16 @@
 define('main', function (require) {
   'use strict';
-  // var rpc = require('libs/rpc');
-  // var commands = {
-  //   'terminal': require('apps/Terminal'),
-  //   'browse-files': require('apps/FileBrowser'),
-  //   'edit': require('apps/Editor'),
-  // };
   var makeWindow = require('libs/window');
+  var rpc = require('libs/rpc');
+  var Terminal = require('apps/Terminal');
+  var run = require('libs/run');
 
-  var win = makeWindow(10, 10, 100, 100, 'Terminal');
-  document.body.textContent = '';
-  document.body.appendChild(win.el);
-  console.log(win);
-
+  var aepUrl = 'ws://localhost:8000/request/fc1eb9f7-69f0-4079-9e74-25ffd091022a';
+  run(function* () {
+    var call = yield* rpc(aepUrl);
+    var app = yield* Terminal(call, '/Users/tim8019/Code/');
+    var win = makeWindow('Terminal', app);
+    document.body.textContent = '';
+    document.body.appendChild(win.el);
+  }, console.log.bind(console));
 });

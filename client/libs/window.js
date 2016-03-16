@@ -16,13 +16,20 @@ define('libs/window', function (require) {
     windowWidth = newWidth;
     windowHeight = newHeight;
     windows.forEach(function (win) {
-      if (win.refresh) { win.refresh(); }
+      win.refresh();
     });
   });
 
   return makeWindow;
 
-  function makeWindow(left, top, width, height, title) {
+  // app.width - desired initial width
+  // app.height - desired initial height
+  function makeWindow(title, app) {
+
+    var width = app.initialWidth || 320;
+    var height = app.initialHeight || 200;
+    var left = app.initialLeft || ((windowWidth - width) >> 1);
+    var top = app.initialTop || ((windowHeight - height) >> 1);
 
     var northProps = drag(north);
     var northEastProps = drag(northEast);
@@ -45,6 +52,7 @@ define('libs/window', function (require) {
       },
       close: close,
       focus: focus,
+      refresh: refresh,
     };
 
     windows.push(win);
@@ -57,7 +65,7 @@ define('libs/window', function (require) {
       {
         onmousedown: focus, ontouchstart: focus,
       },
-      ['article.content$container'],
+      ['.content$container'],
       ['.resize.n', northProps],
       ['.resize.ne', northEastProps],
       ['.resize.e', eastProps],
@@ -71,6 +79,7 @@ define('libs/window', function (require) {
       ['.close-box', {onclick:onCloseClick},'✖'],
     ], win);
     refresh();
+    app(win);
 
     return win;
 
