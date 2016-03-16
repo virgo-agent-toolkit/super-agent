@@ -1,17 +1,7 @@
 define("main", function (require) {
   'use strict';
+  let run = require('libs/run');
+  let rpc = require('libs/rpc');
+  console.log(rpc);
 
 });
-
-window.onload = function () {
-  'use strict';
-  let require = window.require;
-  require.async('libs/run', function (err, run) {
-    run(function* () {
-      let rpc = yield require.async('libs/rpc');
-      console.log(rpc);
-    }, function (err) {
-      if (err) { throw err; }
-    });
-  });
-};
