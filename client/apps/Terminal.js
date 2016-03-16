@@ -15,7 +15,9 @@ define('apps/Terminal', function (require) {
     var clientKey = yield* call('key');
     var winsize = getWinsize(win.width, win.height);
 
-    var [write, kill, resize] = yield* call('pty',
+    // [write, kill, resize]
+    var write, kill, resize;
+    var out = yield* call('pty',
       '/bin/bash',
       winsize,
       {
@@ -25,22 +27,28 @@ define('apps/Terminal', function (require) {
           'RAX_CLIENT_KEY=' + clientKey
         ]
       },
-      function onData(chunk) {
-        if (chunk !== undefined) {
-          term.write(chunk);
-        }
-        else {
-          console.log('Pty stream closed');
-          kill(8);
-        }
-      },
-      function onError(error) {
-        console.error(error);
-      },
-      function onExit(code, signal) {
-        console.log('child exited', code, signal);
-      }
+      onData, onError, onExit
     );
+    write = out[0];
+    kill = out[1];
+    resize = out[2];
+
+    function onData(chunk) {
+      if (chunk !== undefined) {
+        term.write(chunk);
+      }
+      else {
+        console.log('Pty stream closed');
+        kill(8);
+      }
+    }
+    function onError(error) {
+      console.error(error);
+    }
+    function onExit(code, signal) {
+      console.log('child exited', code, signal);
+    }
+
     var term = new Term({
       cols: winsize[0],
       rows: winsize[1],
