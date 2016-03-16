@@ -1,21 +1,21 @@
 define('libs/rpc', function (require) {
   'use strict';
 
-  let msgpack = require('libs/msgpack');
+  var msgpack = require('libs/msgpack');
 
-  let agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
-  let url = 'ws://localhost:8000/request/' + agentId;
+  var agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
+  var url = 'ws://localhost:8000/request/' + agentId;
 
   return rpc;
 
   function* rpc() {
-    let socket = new WebSocket(url, ['schema-rpc']);
+    var socket = new WebSocket(url, ['schema-rpc']);
     socket.binaryType = 'arraybuffer';
     socket.onmessage = onMessage;
 
-    let fns = {};
-    let nextId = 1;
-    let waiting = {};
+    var fns = {};
+    var nextId = 1;
+    var waiting = {};
     return yield function (callback) {
       socket.onopen = function () {
         callback(null, call);
@@ -26,7 +26,7 @@ define('libs/rpc', function (require) {
     };
 
     function onMessage(evt) {
-      let message;
+      var message;
       if (typeof evt.data === 'string') {
         message = JSON.parse(evt.data);
       }
@@ -39,16 +39,16 @@ define('libs/rpc', function (require) {
         return;
       }
       message = thaw(message);
-      let id = message[0];
+      var id = message[0];
       if (id < 0) {
         id = -id;
-        let callback = waiting[id];
+        var callback = waiting[id];
         if (callback) {
           delete waiting[id];
           message[0] = null;
           return callback.apply(null, message);
         }
-        let emitter = fns[id];
+        var emitter = fns[id];
         if (emitter) {
           return emitter.apply(null, message.slice(1));
         }
@@ -67,7 +67,7 @@ define('libs/rpc', function (require) {
     }
 
     function thaw(value) {
-      let type = typeof value;
+      var type = typeof value;
       if (!value || type !== 'object') { return value; }
       if (Array.isArray(value)) {
         return value.map(thaw);
@@ -78,26 +78,26 @@ define('libs/rpc', function (require) {
       if (Object.getPrototypeOf(value) !== Object.prototype) {
         return value;
       }
-      let keys = Object.keys(value);
-      let l = keys.length;
+      var keys = Object.keys(value);
+      var l = keys.length;
       if (l === 1 && keys[0] === '') {
-        let id = -value[''];
+        var id = -value[''];
         return function (...args) {
           write([id, ...args]);
         };
       }
-      let copy = {};
-      for (let i = 0; i < l; ++i) {
-        let key = keys[i];
+      var copy = {};
+      for (var i = 0; i < l; ++i) {
+        var key = keys[i];
         copy[key] = thaw(value[key]);
       }
       return copy;
     }
 
     function freeze(value) {
-      let type = typeof value;
+      var type = typeof value;
       if (type === 'function') {
-        let id = nextId++;
+        var id = nextId++;
         fns[id] = value;
         return {'': id};
       }
@@ -111,10 +111,10 @@ define('libs/rpc', function (require) {
       if (Object.getPrototypeOf(value) !== Object.prototype) {
         return value;
       }
-      let copy = {};
-      let keys = Object.keys(value);
-      for (let i = 0, l = keys.length; i < l; ++i) {
-        let key = keys[i];
+      var copy = {};
+      var keys = Object.keys(value);
+      for (var i = 0, l = keys.length; i < l; ++i) {
+        var key = keys[i];
         copy[key] = freeze(value[key]);
       }
       return copy;
@@ -127,7 +127,7 @@ define('libs/rpc', function (require) {
     }
 
     function* call(name, ...args) {
-      let id = nextId++;
+      var id = nextId++;
       return yield function (callback) {
         write([id, name, ...args]);
         waiting[id] = callback;

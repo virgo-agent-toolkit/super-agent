@@ -1,23 +1,23 @@
 define('ui/app-window', function (require) {
   'use strict';
-  let drag = require('ui/drag-helper');
+  var drag = require('ui/drag-helper');
 
   return AppWindow;
 
   function AppWindow(emit, refresh) {
-    let width, height, left, top;
-    let maximized = false;
-    let id;
+    var width, height, left, top;
+    var maximized = false;
+    var id;
 
-    let northProps = drag(north);
-    let northEastProps = drag(northEast);
-    let eastProps = drag(east);
-    let southEastProps = drag(southEast);
-    let southProps = drag(south);
-    let southWestProps = drag(southWest);
-    let westProps = drag(west);
-    let northWestProps = drag(northWest);
-    let titleBarProps = drag(titleBar);
+    var northProps = drag(north);
+    var northEastProps = drag(northEast);
+    var eastProps = drag(east);
+    var southEastProps = drag(southEast);
+    var southProps = drag(south);
+    var southWestProps = drag(southWest);
+    var westProps = drag(west);
+    var northWestProps = drag(northWest);
+    var titleBarProps = drag(titleBar);
 
     return { render: render };
 
@@ -33,10 +33,10 @@ define('ui/app-window', function (require) {
 
       // Manually run constraints that edges must be inside desktop and
       // window must be at least 200x100
-      let right = left + width;
+      var right = left + width;
       if (right < 10) { right = 10; }
       if (left > windowWidth - 10) { left = windowWidth - 10; }
-      let mid = ((left + right) / 2) | 0;
+      var mid = ((left + right) / 2) | 0;
       if (mid < ((windowWidth / 2) | 0)) {
         if (right < left + 200) { right = left + 200; }
         width = right - left;
@@ -51,7 +51,7 @@ define('ui/app-window', function (require) {
         if (width > windowWidth) { width = windowWidth; }
       }
 
-      let bottom = top + height;
+      var bottom = top + height;
       if (bottom < 10) { bottom = 10; }
       if (top > windowHeight - 10) { top = windowHeight - 10; }
       mid = ((top + bottom) / 2) | 0;
@@ -69,7 +69,7 @@ define('ui/app-window', function (require) {
         if (height > windowHeight) { height = windowHeight; }
       }
 
-      let style = maximized ? {
+      var style = maximized ? {
         top: '-10px',
         left: '-10px',
         right: '-10px',
@@ -80,7 +80,7 @@ define('ui/app-window', function (require) {
         transform: 'translate3d(' + left + 'px,' + top + 'px,0)',
         webkitTransform: 'translate3d(' + left + 'px,' + top + 'px,0)',
       };
-      let classes = [isDark ? 'dark' : 'light'];
+      var classes = [isDark ? 'dark' : 'light'];
       if (props.focused) { classes.push('focused'); }
       return ['.window', {
           onmousedown: onAnyClick, ontouchstart: onAnyClick,

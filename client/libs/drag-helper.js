@@ -1,13 +1,13 @@
 define('libs/drag-helper', function () {
   'use strict';
-  let dragging = {};
+  var dragging = {};
 
   // Given a move handler, call it while dragging with delta-x and delta-y
   // Supports mouse-events, touch-events and pointer-events.
   // Returns a map of event handlers for use in domchanger
   // Usage: drag(onMove(dx, dy){}) -> props
 
-  let usePointer = !!window.PointerEvent;
+  var usePointer = !!window.PointerEvent;
 
   // Need global events for up and move since the target often changes.
   if (usePointer) {
@@ -32,17 +32,17 @@ define('libs/drag-helper', function () {
     };
 
     function onPointerDown(evt) {
-      let id = evt.pointerId;
+      var id = evt.pointerId;
       if (dragging[id]) { return; }
       evt.preventDefault();
       start(id, evt.clientX, evt.clientY, fn);
     }
 
     function onTouchStart(evt) {
-      let found = false;
-      for (let i = 0; i < evt.changedTouches.length; i++) {
-        let touch = evt.changedTouches[i];
-        let id = touch.identifier;
+      var found = false;
+      for (var i = 0; i < evt.changedTouches.length; i++) {
+        var touch = evt.changedTouches[i];
+        var id = touch.identifier;
         if (!dragging[id]) {
           found = true;
           start(id, touch.clientX, touch.clientY, fn);
@@ -61,7 +61,7 @@ define('libs/drag-helper', function () {
   }
 
   function onPointerMove(evt) {
-    let id = evt.pointerId;
+    var id = evt.pointerId;
     if (!dragging[id]) { return; }
     evt.preventDefault();
     evt.stopPropagation();
@@ -69,7 +69,7 @@ define('libs/drag-helper', function () {
   }
 
   function onPointerUp(evt) {
-    let id = evt.pointerId;
+    var id = evt.pointerId;
     if (!dragging[id]) { return; }
     evt.preventDefault();
     evt.stopPropagation();
@@ -77,10 +77,10 @@ define('libs/drag-helper', function () {
   }
 
   function onTouchMove(evt) {
-    let found = false;
-    for (let i = 0; i < evt.changedTouches.length; i++) {
-      let touch = evt.changedTouches[i];
-      let id = touch.identifier;
+    var found = false;
+    for (var i = 0; i < evt.changedTouches.length; i++) {
+      var touch = evt.changedTouches[i];
+      var id = touch.identifier;
       if (dragging[id]) {
         found = true;
         move(id, touch.clientX, touch.clientY);
@@ -93,10 +93,10 @@ define('libs/drag-helper', function () {
   }
 
   function onTouchEnd(evt) {
-    let found = false;
-    for (let i = 0; i < evt.changedTouches.length; i++) {
-      let touch = evt.changedTouches[i];
-      let id = touch.identifier;
+    var found = false;
+    for (var i = 0; i < evt.changedTouches.length; i++) {
+      var touch = evt.changedTouches[i];
+      var id = touch.identifier;
       if (dragging[id]) {
         found = true;
         stop(id);
@@ -132,7 +132,7 @@ define('libs/drag-helper', function () {
   }
 
   function move(id, x, y) {
-    let data = dragging[id];
+    var data = dragging[id];
     data.fn(x - data.x, y - data.y);
     data.x = x;
     data.y = y;

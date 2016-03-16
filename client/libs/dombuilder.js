@@ -30,26 +30,26 @@ define('libs/dombuilder', function () {
       return document.createDocumentFragment();
     }
 
-    let node, first;
-    for (let i = 0, l = json.length; i < l; i++) {
-      let part = json[i];
+    var node, first;
+    for (var i = 0, l = json.length; i < l; i++) {
+      var part = json[i];
 
       if (!node) {
         if (typeof part === 'string') {
           // Create a new dom node by parsing the tagline
-          let tag = part.match(TAG_MATCH);
+          var tag = part.match(TAG_MATCH);
           tag = tag ? tag[0] : 'div';
           node = document.createElement(tag);
           first = true;
-          let classes = part.match(CLASS_MATCH);
+          var classes = part.match(CLASS_MATCH);
           if (classes) {
             node.setAttribute('class', classes.map(stripFirst).join(' '));
           }
-          let id = part.match(ID_MATCH);
+          var id = part.match(ID_MATCH);
           if (id) {
             node.setAttribute('id', id[0].substr(1));
           }
-          let ref = part.match(REF_MATCH);
+          var ref = part.match(REF_MATCH);
           if (refs && ref) {
             refs[ref[0].substr(1)] = node;
           }
@@ -73,10 +73,10 @@ define('libs/dombuilder', function () {
   }
 
   function setAttrs(node, attrs) {
-    let keys = Object.keys(attrs);
-    for (let i = 0, l = keys.length; i < l; i++) {
-      let key = keys[i];
-      let value = attrs[key];
+    var keys = Object.keys(attrs);
+    for (var i = 0, l = keys.length; i < l; i++) {
+      var key = keys[i];
+      var value = attrs[key];
       if (key === '$') {
         value(node);
       } else if (key === 'css' || key === 'style' && value.constructor === Object) {
@@ -92,14 +92,14 @@ define('libs/dombuilder', function () {
   }
 
   function setStyle(style, attrs) {
-    let keys = Object.keys(attrs);
-    for (let i = 0, l = keys.length; i < l; i++) {
-      let key = keys[i];
+    var keys = Object.keys(attrs);
+    for (var i = 0, l = keys.length; i < l; i++) {
+      var key = keys[i];
       style[key] = attrs[key];
     }
   }
 
-  let CLASS_MATCH = /\.[^.#$]+/g,
+  var CLASS_MATCH = /\.[^.#$]+/g,
       ID_MATCH = /#[^.#$]+/,
       REF_MATCH = /\$[^.#$]+/,
       TAG_MATCH = /^[^.#$]+/;

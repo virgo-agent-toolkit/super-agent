@@ -2,7 +2,7 @@ define('libs/run', function () {
   'use strict';
   return run;
   function run(generator, callback) {
-    let iterator;
+    var iterator;
     if (typeof generator === 'function') {
       // Pass in resume for no-wrap function calls
       iterator = generator(resume);
@@ -15,15 +15,15 @@ define('libs/run', function () {
       throw new TypeError('Expected generator or iterator and got ' + typeof generator);
     }
 
-    let data = null, yielded = false;
+    var data = null, yielded = false;
 
-    let next = callback ? nextSafe : nextPlain;
+    var next = callback ? nextSafe : nextPlain;
 
     next();
     check();
 
     function nextSafe(err, item) {
-      let n;
+      var n;
       try {
         n = (err ? iterator.throw(err) : iterator.next(item));
         if (!n.done) {
@@ -39,7 +39,7 @@ define('libs/run', function () {
     }
 
     function nextPlain(err, item) {
-      let cont = (err ? iterator.throw(err) : iterator.next(item)).value;
+      var cont = (err ? iterator.throw(err) : iterator.next(item)).value;
       if (cont) { start(cont); }
       yielded = true;
     }
@@ -49,15 +49,15 @@ define('libs/run', function () {
       if (typeof cont === 'function') { return cont(resume()); }
       // If an array of continuables is yielded, run in parallel
       if (Array.isArray(cont)) {
-        for (let i = 0, l = cont.length; i < l; ++i) {
+        for (var i = 0, l = cont.length; i < l; ++i) {
           if (typeof cont[i] !== 'function') { return; }
         }
         return parallel(cont, resume());
       }
       // Also run hash of continuables in parallel, but name results.
       if (typeof cont === 'object' && Object.getPrototypeOf(cont) === Object.prototype) {
-        let keys = Object.keys(cont);
-        for (let i = 0, l = keys.length; i < l; ++i) {
+        var keys = Object.keys(cont);
+        for (var i = 0, l = keys.length; i < l; ++i) {
           if (typeof cont[keys[i]] !== 'function') { return; }
         }
         return parallelNamed(keys, cont, resume());
@@ -65,7 +65,7 @@ define('libs/run', function () {
     }
 
     function resume() {
-      let done = false;
+      var done = false;
       return function () {
         if (done) { return; }
         done = true;
@@ -76,8 +76,8 @@ define('libs/run', function () {
 
     function check() {
       while (data && yielded) {
-        let err = data[0];
-        let item = data[1];
+        var err = data[0];
+        var item = data[1];
         data = null;
         yielded = false;
         next(err, item);
@@ -88,10 +88,10 @@ define('libs/run', function () {
   }
 
   function parallel(array, callback) {
-    let length = array.length;
-    let left = length;
-    let results = new Array(length);
-    let done = false;
+    var length = array.length;
+    var left = length;
+    var results = new Array(length);
+    var done = false;
     return array.forEach(function (cont, i) {
       cont(function (err, result) {
         if (done) { return; }
@@ -108,12 +108,12 @@ define('libs/run', function () {
   }
 
   function parallelNamed(keys, obj, callback) {
-    let length = keys.length;
-    let left = length;
-    let results = {};
-    let done = false;
+    var length = keys.length;
+    var left = length;
+    var results = {};
+    var done = false;
     return keys.forEach(function (key) {
-      let cont = obj[key];
+      var cont = obj[key];
       results[key] = null;
       cont(function (err, result) {
         if (done) { return; }

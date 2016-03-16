@@ -2,9 +2,9 @@
 (function () {
   'use strict';
 
-  let defs = {};
-  let mods = {};
-  let pending = {};
+  var defs = {};
+  var mods = {};
+  var pending = {};
 
   window.define = define;
   window.require = require;
@@ -13,13 +13,13 @@
   return bootstrap();
 
   function bootstrap() {
-    let tag = document.querySelector('script[bootloader]');
+    var tag = document.querySelector('script[bootloader]');
     if (!tag) { return; }
     document.head.removeChild(tag);
-    let prefetch = tag.getAttribute('prefetch');
-    let main = tag.getAttribute('main');
+    var prefetch = tag.getAttribute('prefetch');
+    var main = tag.getAttribute('main');
     if (!main) { main = 'main'; }
-    let deps = prefetch ? prefetch.split(/ *, */) : [];
+    var deps = prefetch ? prefetch.split(/ *, */) : [];
     loadDefs(deps, function () {
       require.async(main, function () {
         console.log('Main bootstrapped');
@@ -30,7 +30,7 @@
   function define(name, fn) {
     defs[name] = fn;
     if (pending[name]) {
-      let cb = pending[name];
+      var cb = pending[name];
       delete pending[name];
       scanDeps(fn.toString(), cb);
     }
@@ -47,7 +47,7 @@
   }
 
   function scanDeps(js, cb) {
-    let matches = js.match(/require\('[^']+'\)/g);
+    var matches = js.match(/require\('[^']+'\)/g);
     if (!matches) { return cb(); }
     return loadDefs(matches.map(function (match) {
       return match.match(/'(.+)'/)[1];
@@ -58,9 +58,9 @@
     names = names.filter(function (name) {
       return !((name in pending) || (name in defs));
     });
-    let left = names.length;
+    var left = names.length;
     if (!left) { return cb(); }
-    for (let i = 0, l = left; i < l; i++) {
+    for (var i = 0, l = left; i < l; i++) {
       loadDef(names[i], decrement);
     }
     function decrement() {
@@ -76,7 +76,7 @@
 
   function loadDef(name, cb) {
     if ((name in pending) || (name in defs)) { return cb(); }
-    let tag = document.createElement('script');
+    var tag = document.createElement('script');
     tag.setAttribute('src', name + '.js');
     tag.setAttribute('charset', 'utf8');
     tag.setAttribute('async', 'async');

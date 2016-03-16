@@ -1,7 +1,7 @@
 define('ui/code-mirror-editor', function (require) {
   'use strict';
 
-  let CodeMirror = require('codemirror/lib/codemirror');
+  var CodeMirror = require('codemirror/lib/codemirror');
   require('codemirror/addon/edit/closebrackets');
   require('codemirror/addon/comment/comment');
   require('codemirror/keymap/sublime');
@@ -13,10 +13,10 @@ define('ui/code-mirror-editor', function (require) {
   return CodeMirrorEditor;
 
   function CodeMirrorEditor(emit) {
-    let id;
-    let code, mode, theme;
-    let el;
-    let cm = new CodeMirror(function (root) {
+    var id;
+    var code, mode, theme;
+    var el;
+    var cm = new CodeMirror(function (root) {
       el = root;
     }, {
       keyMap: 'sublime',
@@ -35,7 +35,7 @@ define('ui/code-mirror-editor', function (require) {
       emit('focus', id);
     });
 
-    let replacements = {
+    var replacements = {
       'lambda': 'λ',
       '*': '×',
       '/': '÷',
@@ -46,12 +46,12 @@ define('ui/code-mirror-editor', function (require) {
 
     cm.on('change', function (cm, change) {
       if (mode !== 'jackl' || change.text[0] !== ' ') { return; }
-      let type = cm.getTokenTypeAt(change.from);
+      var type = cm.getTokenTypeAt(change.from);
       if (type !== 'operator' && type !== 'builtin') { return; }
-      let token = cm.getTokenAt(change.from, true);
-      let replacement = replacements[token.string];
+      var token = cm.getTokenAt(change.from, true);
+      var replacement = replacements[token.string];
       if (!replacement) { return; }
-      let line = change.to.line;
+      var line = change.to.line;
       cm.replaceRange(replacement, {
         ch: token.start,
         line: line
@@ -65,7 +65,7 @@ define('ui/code-mirror-editor', function (require) {
 
     function render(isDark, props) {
       id = props.id;
-      let newTheme = isDark ? 'notebook-dark' : 'notebook';
+      var newTheme = isDark ? 'notebook-dark' : 'notebook';
       if (newTheme !== theme) {
         theme = newTheme;
         cm.setOption('theme', theme);

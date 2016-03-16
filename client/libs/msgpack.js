@@ -2,13 +2,13 @@ define('libs/msgpack', function () {
 
   'use strict';
 
-  let exports = {};
+  var exports = {};
 
   exports.inspect = inspect;
   function inspect(buffer) {
     if (buffer === undefined) { return 'undefined'; }
-    let view;
-    let type;
+    var view;
+    var type;
     if (buffer instanceof ArrayBuffer) {
       type = 'ArrayBuffer';
       view = new DataView(buffer);
@@ -18,13 +18,13 @@ define('libs/msgpack', function () {
       view = buffer;
     }
     if (!view) { return JSON.stringify(buffer); }
-    let bytes = [];
-    for (let i = 0; i < buffer.byteLength; i++) {
+    var bytes = [];
+    for (var i = 0; i < buffer.byteLength; i++) {
       if (i > 20) {
         bytes.push('...');
         break;
       }
-      let byte = view.getUint8(i).toString(16);
+      var byte = view.getUint8(i).toString(16);
       if (byte.length === 1) { byte = '0' + byte; }
       bytes.push(byte);
     }
@@ -35,8 +35,8 @@ define('libs/msgpack', function () {
   exports.utf8Write = utf8Write;
   function utf8Write(view, offset, string) {
 
-    for(let i = 0, l = string.length; i < l; i++) {
-      let codePoint = string.charCodeAt(i);
+    for(var i = 0, l = string.length; i < l; i++) {
+      var codePoint = string.charCodeAt(i);
 
       // One byte of UTF-8
       if (codePoint < 0x80) {
@@ -73,9 +73,9 @@ define('libs/msgpack', function () {
 
   exports.utf8Read = utf8Read;
   function utf8Read(view, offset, length) {
-    let string = '';
-    for (let i = offset, end = offset + length; i < end; i++) {
-      let byte = view.getUint8(i);
+    var string = '';
+    for (var i = offset, end = offset + length; i < end; i++) {
+      var byte = view.getUint8(i);
       // One byte character
       if ((byte & 0x80) === 0x00) {
         string += String.fromCharCode(byte);
@@ -115,9 +115,9 @@ define('libs/msgpack', function () {
 
   exports.utf8ByteCount = utf8ByteCount;
   function utf8ByteCount(string) {
-    let count = 0;
-    for(let i = 0, l = string.length; i < l; i++) {
-      let codePoint = string.charCodeAt(i);
+    var count = 0;
+    for(var i = 0, l = string.length; i < l; i++) {
+      var codePoint = string.charCodeAt(i);
       if (codePoint < 0x80) {
         count += 1;
         continue;
@@ -140,8 +140,8 @@ define('libs/msgpack', function () {
   }
 
   exports.encode = function (value) {
-    let buffer = new ArrayBuffer(encodedSize(value));
-    let view = new DataView(buffer);
+    var buffer = new ArrayBuffer(encodedSize(value));
+    var view = new DataView(buffer);
     encode(value, view, 0);
     return buffer;
   };
@@ -156,37 +156,37 @@ define('libs/msgpack', function () {
     this.view = view;
   }
   Decoder.prototype.map = function (length) {
-    let value = {};
-    for (let i = 0; i < length; i++) {
-      let key = this.parse();
+    var value = {};
+    for (var i = 0; i < length; i++) {
+      var key = this.parse();
       value[key] = this.parse();
     }
     return value;
   };
   Decoder.prototype.bin = function (length) {
     console.log('length', length);
-    let array = new Uint8Array(length);
-    let source = new Uint8Array(this.view.buffer);
+    var array = new Uint8Array(length);
+    var source = new Uint8Array(this.view.buffer);
     array.set(source.slice(this.offset, this.offset + length), 0);
     this.offset += length;
     console.log(array);
     return array.buffer;
   };
   Decoder.prototype.str = function (length) {
-    let value = utf8Read(this.view, this.offset, length);
+    var value = utf8Read(this.view, this.offset, length);
     this.offset += length;
     return value;
   };
   Decoder.prototype.array = function (length) {
-    let value = new Array(length);
-    for (let i = 0; i < length; i++) {
+    var value = new Array(length);
+    for (var i = 0; i < length; i++) {
       value[i] = this.parse();
     }
     return value;
   };
   Decoder.prototype.parse = function () {
-    let type = this.view.getUint8(this.offset);
-    let value, length;
+    var type = this.view.getUint8(this.offset);
+    var value, length;
     // FixStr
     if ((type & 0xe0) === 0xa0) {
       length = type & 0x1f;
@@ -281,8 +281,8 @@ define('libs/msgpack', function () {
       return value;
     // uint 64
     case 0xcf: {
-      let high = this.view.getUint32(this.offset + 1);
-      let low = this.view.getUint32(this.offset + 5);
+      var high = this.view.getUint32(this.offset + 1);
+      var low = this.view.getUint32(this.offset + 5);
       value = high*0x100000000 + low;
       this.offset += 9;
       return value;
@@ -304,8 +304,8 @@ define('libs/msgpack', function () {
       return value;
     // int 64
     case 0xd3:
-      let high = this.view.getInt32(this.offset + 1);
-      let low = this.view.getUint32(this.offset + 5);
+      var high = this.view.getInt32(this.offset + 1);
+      var low = this.view.getUint32(this.offset + 5);
       value = high*0x100000000 + low;
       this.offset += 9;
       return value;
@@ -343,9 +343,9 @@ define('libs/msgpack', function () {
     throw new Error('Unknown type 0x' + type.toString(16));
   };
   function decode(buffer) {
-    let view = new DataView(buffer);
-    let decoder = new Decoder(view);
-    let value = decoder.parse();
+    var view = new DataView(buffer);
+    var decoder = new Decoder(view);
+    var value = decoder.parse();
     if (decoder.offset !== buffer.byteLength) {
       throw new Error((buffer.byteLength - decoder.offset) + ' trailing bytes');
     }
@@ -353,11 +353,11 @@ define('libs/msgpack', function () {
   }
 
   function encode(value, view, offset) {
-    let type = typeof value;
+    var type = typeof value;
 
     // Strings Bytes
     if (type === 'string') {
-      let length = utf8ByteCount(value);
+      var length = utf8ByteCount(value);
       // fix str
       if (length < 0x20) {
         view.setUint8(offset, length | 0xa0);
@@ -388,7 +388,7 @@ define('libs/msgpack', function () {
     }
 
     if (value instanceof ArrayBuffer) {
-      let length = value.byteLength;
+      var length = value.byteLength;
       // bin 8
       if (length < 0x100) {
         view.setUint8(offset, 0xc4);
@@ -495,9 +495,9 @@ define('libs/msgpack', function () {
 
     // Container Types
     if (type === 'object') {
-      let length, size = 0;
-      let isArray = Array.isArray(value);
-      let keys;
+      var length, size = 0;
+      var isArray = Array.isArray(value);
+      var keys;
 
       if (isArray) {
         length = value.length;
@@ -523,13 +523,13 @@ define('libs/msgpack', function () {
       }
 
       if (isArray) {
-        for (let i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
           size += encode(value[i], view, offset + size);
         }
       }
       else {
-        for (let i = 0; i < length; i++) {
-          let key = keys[i];
+        for (var i = 0; i < length; i++) {
+          var key = keys[i];
           size += encode(key, view, offset + size);
           size += encode(value[key], view, offset + size);
         }
@@ -541,11 +541,11 @@ define('libs/msgpack', function () {
   }
 
   function encodedSize(value) {
-    let type = typeof value;
+    var type = typeof value;
 
     // Raw Bytes
     if (type === 'string') {
-      let length = utf8ByteCount(value);
+      var length = utf8ByteCount(value);
       if (length < 0x20) {
         return 1 + length;
       }
@@ -561,7 +561,7 @@ define('libs/msgpack', function () {
     }
 
     if (value instanceof ArrayBuffer) {
-      let length = value.byteLength;
+      var length = value.byteLength;
       if (length < 0x100) {
         return 2 + length;
       }
@@ -614,18 +614,18 @@ define('libs/msgpack', function () {
 
     // Container Types
     if (type === 'object') {
-      let length, size = 0;
+      var length, size = 0;
       if (Array.isArray(value)) {
         length = value.length;
-        for (let i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
           size += encodedSize(value[i]);
         }
       }
       else {
-        let keys = Object.keys(value);
+        var keys = Object.keys(value);
         length = keys.length;
-        for (let i = 0; i < length; i++) {
-          let key = keys[i];
+        for (var i = 0; i < length; i++) {
+          var key = keys[i];
           size += encodedSize(key) + encodedSize(value[key]);
         }
       }

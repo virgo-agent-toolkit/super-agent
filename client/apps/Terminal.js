@@ -2,7 +2,7 @@ define('apps/Terminal', function (require) {
   'use strict';
 
   // Load the terminal emulator library.
-  let Term = require('libs/term');
+  var Term = require('libs/term');
 
   // win.title = newTitle -- Update a window title
   // win.close() -- Close a window
@@ -12,10 +12,10 @@ define('apps/Terminal', function (require) {
   // win.height - height of container in pixels
   return function* (win, call, cwd) {
 
-    let clientKey = yield* call('key');
-    let winsize = getWinsize(win.width, win.height);
+    var clientKey = yield* call('key');
+    var winsize = getWinsize(win.width, win.height);
 
-    let [write, kill, resize] = yield* call('pty',
+    var [write, kill, resize] = yield* call('pty',
       '/bin/bash',
       winsize,
       {
@@ -41,7 +41,7 @@ define('apps/Terminal', function (require) {
         console.log('child exited', code, signal);
       }
     );
-    let term = new Term({
+    var term = new Term({
       cols: winsize[0],
       rows: winsize[1],
       screenKeys: true
@@ -71,8 +71,8 @@ define('apps/Terminal', function (require) {
     }
 
     function onResize(w, h) {
-      let winsize = getWinsize(w, h);
-      let cols = winsize[0], rows = winsize[1];
+      var winsize = getWinsize(w, h);
+      var cols = winsize[0], rows = winsize[1];
       // Send a resize to the remote PTY
       resize(cols, rows);
       // Tell the local terminal client to resize

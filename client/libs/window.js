@@ -1,22 +1,22 @@
 define('libs/window', function (require) {
   'use strict';
 
-  let domBuilder = require('libs/dombuilder');
-  let drag = require('libs/drag-helper');
+  var domBuilder = require('libs/dombuilder');
+  var drag = require('libs/drag-helper');
 
-  let windowWidth = window.innerWidth,
+  var windowWidth = window.innerWidth,
       windowHeight = window.innerHeight;
 
-  let windows = [];
+  var windows = [];
 
   window.addEventListener('resize', function () {
-    let newWidth = window.innerWidth;
-    let newHeight = window.innerHeight;
+    var newWidth = window.innerWidth;
+    var newHeight = window.innerHeight;
     if (newWidth === windowWidth && newHeight === windowHeight) { return; }
     windowWidth = newWidth;
     windowHeight = newHeight;
-    windows.forEach(function (window) {
-      window.refresh();
+    windows.forEach(function (win) {
+      if (win.refresh) { win.refresh(); }
     });
   });
 
@@ -24,17 +24,17 @@ define('libs/window', function (require) {
 
   function makeWindow(left, top, width, height, title) {
 
-    let northProps = drag(north);
-    let northEastProps = drag(northEast);
-    let eastProps = drag(east);
-    let southEastProps = drag(southEast);
-    let southProps = drag(south);
-    let southWestProps = drag(southWest);
-    let westProps = drag(west);
-    let northWestProps = drag(northWest);
-    let titleBarProps = drag(titleBar);
+    var northProps = drag(north);
+    var northEastProps = drag(northEast);
+    var eastProps = drag(east);
+    var southEastProps = drag(southEast);
+    var southProps = drag(south);
+    var southWestProps = drag(southWest);
+    var westProps = drag(west);
+    var northWestProps = drag(northWest);
+    var titleBarProps = drag(titleBar);
 
-    let win = {
+    var win = {
       get width() { return width; },
       get height() { return height; },
       get title() { return title; },
@@ -49,9 +49,9 @@ define('libs/window', function (require) {
 
     windows.push(win);
 
-    let maximized = false;
-    let isDark = false;
-    let focused = false;
+    var maximized = false;
+    var isDark = false;
+    var focused = false;
 
     domBuilder(['$el',
       {
@@ -77,10 +77,10 @@ define('libs/window', function (require) {
     function refresh() {
       // Manually run constraints that edges must be inside desktop and
       // window must be at least 200x100
-      let right = left + width;
+      var right = left + width;
       if (right < 10) { right = 10; }
       if (left > windowWidth - 10) { left = windowWidth - 10; }
-      let mid = ((left + right) / 2) | 0;
+      var mid = ((left + right) / 2) | 0;
       if (mid < ((windowWidth / 2) | 0)) {
         if (right < left + 200) { right = left + 200; }
         width = right - left;
@@ -95,7 +95,7 @@ define('libs/window', function (require) {
         if (width > windowWidth) { width = windowWidth; }
       }
 
-      let bottom = top + height;
+      var bottom = top + height;
       if (bottom < 10) { bottom = 10; }
       if (top > windowHeight - 10) { top = windowHeight - 10; }
       mid = ((top + bottom) / 2) | 0;
@@ -113,7 +113,7 @@ define('libs/window', function (require) {
         if (height > windowHeight) { height = windowHeight; }
       }
 
-      let style = maximized ? (
+      var style = maximized ? (
         'top: -10px;' +
         'left: -10px;' +
         'right: -10px;' +
@@ -124,7 +124,7 @@ define('libs/window', function (require) {
         'transform: translate3d(' + left + 'px,' + top + 'px,0);' +
         'webkitTransform: translate3d(' + left + 'px,' + top + 'px,0);'
       );
-      let classes = ['window', isDark ? 'dark' : 'light'];
+      var classes = ['window', isDark ? 'dark' : 'light'];
       if (focused) { classes.push('focused'); }
 
 

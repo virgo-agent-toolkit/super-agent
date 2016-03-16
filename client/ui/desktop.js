@@ -1,23 +1,23 @@
 define('ui/desktop', function (require) {
   'use strict';
 
-  let AppWindow = require('ui/app-window');
-  let commands = {
+  var AppWindow = require('ui/app-window');
+  var commands = {
     'terminal': require('apps/Terminal'),
     'browse': require('apps/Browser'),
     'edit': require('apps/Editor')
   };
-  let rpc = require('libs/rpc');
+  var rpc = require('libs/rpc');
 
   return Desktop;
 
   function Desktop(emit, refresh) {
-    let isDark = false;
+    var isDark = false;
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', onResize);
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    let windows = [
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+    var windows = [
       { id: genId(),
 
         title: 'config.jon', code: config.get(), mode: 'jon' },
@@ -35,7 +35,7 @@ define('ui/desktop', function (require) {
     };
 
     function findWindow(id) {
-      for (let i = 0; i < windows.length; i++) {
+      for (var i = 0; i < windows.length; i++) {
         if (windows[i].id === id) { return i; }
       }
       throw new Error('Invalid window id: ' + id);
@@ -47,10 +47,10 @@ define('ui/desktop', function (require) {
     }
 
     function onWindowFocus(id) {
-      let dirty = false;
-      for (let i = 0; i < windows.length; i++) {
-        let window = windows[i];
-        let focused = window.id === id;
+      var dirty = false;
+      for (var i = 0; i < windows.length; i++) {
+        var window = windows[i];
+        var focused = window.id === id;
         if (focused !== window.focused) {
           window.focused = focused;
           dirty = true;
@@ -61,8 +61,8 @@ define('ui/desktop', function (require) {
     }
 
     function onResize() {
-      let newWidth = window.innerWidth;
-      let newHeight = window.innerHeight;
+      var newWidth = window.innerWidth;
+      var newHeight = window.innerHeight;
       if (newWidth !== width || newHeight !== height) {
         width = newWidth;
         height = newHeight;
@@ -71,7 +71,7 @@ define('ui/desktop', function (require) {
     }
 
     function onKeyDown(evt) {
-      let mod = (evt.ctrlKey  ? 1 : 0) |
+      var mod = (evt.ctrlKey  ? 1 : 0) |
                 (evt.shiftKey ? 2 : 0) |
                 (evt.altKey   ? 4 : 0) |
                 (evt.metaKey  ? 8 : 0);
@@ -85,7 +85,7 @@ define('ui/desktop', function (require) {
 
     function render() {
       return windows.map(function (props) {
-        let ui = [AppWindow, width, height, isDark, props,
+        var ui = [AppWindow, width, height, isDark, props,
           [props.App, isDark, props]
         ];
         ui.key = props.id;
