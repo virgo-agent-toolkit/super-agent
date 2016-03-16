@@ -41,7 +41,7 @@
       return mods[name];
     }
     if (name in defs) {
-      return (mods[name] = defs[name](require));
+      return (mods[name] = defs[name].call(window, require));
     }
     throw new Error('No such module: ' + name);
   }
