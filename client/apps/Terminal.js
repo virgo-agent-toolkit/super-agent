@@ -7,10 +7,9 @@ define('apps/Terminal', function (require) {
   return function* (call, cwd) {
 
     var clientKey = yield* call('key');
-    app.initialWidth = 593; // Magic width for 80 cols?
-    app.initialHeight = 431; // Magic height for 24 rows?
+    app.initialWidth = 682; // Magic width for 80 cols?
+    app.initialHeight = 394; // Magic height for 24 rows?
     var winsize = getWinsize(app.initialWidth, app.initialHeight);
-
     var term = new Term({
       cols: winsize[0],
       rows: winsize[1],
@@ -68,6 +67,7 @@ define('apps/Terminal', function (require) {
       });
 
       win.container.textContent = '';
+      win.container.style.backgroundColor = '#000';
       console.log(win.container);
       term.open(win.container);
 
@@ -80,8 +80,8 @@ define('apps/Terminal', function (require) {
 
     function getWinsize(w, h) {
       return [
-        Math.floor((w - 4.8 - 4.8) / 6.6125),
-        Math.floor((h - 4.8 - 4.8) / 12.8)
+        Math.floor((w - 10) / 8.4),
+        Math.floor((h - 10) / 16)
       ];
     }
 

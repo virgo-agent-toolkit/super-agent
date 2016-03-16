@@ -128,8 +128,8 @@ define('libs/window', function (require) {
         'right: -10px;' +
         'bottom: -10px;'
       ) : (
-        'width: ' + width + 'px;' +
-        'height: ' + height + 'px;' +
+        'width: ' + (width + 20 )+ 'px;' +
+        'height: ' + (height + 52) + 'px;' +
         'transform: translate3d(' + left + 'px,' + top + 'px,0);' +
         'webkitTransform: translate3d(' + left + 'px,' + top + 'px,0);'
       );
@@ -140,6 +140,9 @@ define('libs/window', function (require) {
       win.maxBox.textContent = maximized ? '▼' : '▲';
       win.el.setAttribute('style', style);
       win.el.setAttribute('class', classes.join(' '));
+      if (win.onResize) {
+        win.onResize(width, height);
+      }
     }
 
     function focus() {
