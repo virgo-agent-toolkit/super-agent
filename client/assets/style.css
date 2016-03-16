@@ -47,6 +47,15 @@ body {
   background-color: #000;
   color: #fff;
 }
+.content {
+  position: absolute;
+  overflow: auto;
+  top: 42px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+}
+
 .title-bar {
   touch-action: none;
   -webkit-user-select: none;

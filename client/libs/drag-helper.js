@@ -1,4 +1,4 @@
-define('ui/drag-helper', function () {
+define('libs/drag-helper', function () {
   'use strict';
   let dragging = {};
 

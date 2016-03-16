@@ -2,7 +2,12 @@ define('ui/desktop', function (require) {
   'use strict';
 
   let AppWindow = require('ui/app-window');
-  let CodeMirrorEditor = require('ui/code-mirror-editor');
+  let commands = {
+    'terminal': require('apps/Terminal'),
+    'browse': require('apps/Browser'),
+    'edit': require('apps/Editor')
+  };
+  let rpc = require('libs/rpc');
 
   return Desktop;
 
@@ -13,11 +18,13 @@ define('ui/desktop', function (require) {
     let width = window.innerWidth;
     let height = window.innerHeight;
     let windows = [
-      // { id: genId(),
-      //   title: 'config.jon', code: config.get(), mode: 'jon' },
+      { id: genId(),
+
+        title: 'config.jon', code: config.get(), mode: 'jon' },
+
+    ];
       // { id: genId(),
       //   title: 'bananas/samples/maze.jkl', code: jkl, mode: 'jackl' },
-    ];
 
     return {
       render: render,
@@ -79,7 +86,7 @@ define('ui/desktop', function (require) {
     function render() {
       return windows.map(function (props) {
         let ui = [AppWindow, width, height, isDark, props,
-          [CodeMirrorEditor, isDark, props]
+          [props.App, isDark, props]
         ];
         ui.key = props.id;
         return ui;
