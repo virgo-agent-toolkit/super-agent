@@ -4,7 +4,10 @@ define('apps/Terminal', function (require) {
   // Load the terminal emulator library.
   var Term = require('libs/term');
 
-  return function* (call, cwd) {
+  Terminal.title = 'Terminal';
+  return Terminal;
+
+  function* Terminal(call, cwd) {
 
     var clientKey = yield* call('key');
     app.initialWidth = 682; // Magic width for 80 cols?
@@ -22,6 +25,7 @@ define('apps/Terminal', function (require) {
       '/bin/bash',
       winsize,
       {
+        args: ['--login'],
         cwd: cwd,
         env: [
           'TERM=xterm-256color',

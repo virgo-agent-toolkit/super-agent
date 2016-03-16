@@ -31,6 +31,10 @@ define('libs/window', function (require) {
     var left = app.initialLeft || ((windowWidth - width) >> 1);
     var top = app.initialTop || ((windowHeight - height) >> 1);
 
+    var maximized = false;
+    var isDark = false;
+    var focused = false;
+
     var northProps = drag(north);
     var northEastProps = drag(northEast);
     var eastProps = drag(east);
@@ -55,12 +59,6 @@ define('libs/window', function (require) {
       refresh: refresh,
     };
 
-    windows.push(win);
-
-    var maximized = false;
-    var isDark = false;
-    var focused = false;
-
     domBuilder(['$el',
       {
         onmousedown: focus, ontouchstart: focus,
@@ -78,6 +76,8 @@ define('libs/window', function (require) {
       ['.max-box$maxBox', {onclick:onMaxClick}],
       ['.close-box', {onclick:onCloseClick},'✖'],
     ], win);
+
+    windows.push(win);
     refresh();
     app(win);
 
