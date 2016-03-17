@@ -13,6 +13,7 @@ define('apps/Terminal', function (require) {
 
   function* Terminal(call, cwd) {
 
+    var win;
     var clientKey = yield* call('key');
     app.initialWidth = 80 * charWidth + 10; // Magic width for 80 cols?
     app.initialHeight = 24 * charHeight + 10; // Magic height for 24 rows?
@@ -22,6 +23,7 @@ define('apps/Terminal', function (require) {
       rows: winsize[1],
       screenKeys: true
     });
+    var oldCols, oldRows;
 
     // [write, kill, resize]
     var write, kill, resize;
@@ -57,20 +59,21 @@ define('apps/Terminal', function (require) {
     }
     function onExit(code, signal) {
       console.log('child exited', code, signal);
+      onClose();
     }
-
 
     term.on('data', write);
 
     // win.title = newTitle -- Update a window title
-    // win.close() -- Close a window
+    // win.destroy() -- Close a window
     // win.focus() -- Steal focus to own window
     // win.container - container element
     // win.width - width in pixels of container
     // win.height - height of container in pixels
     return app;
 
-    function app(win) {
+    function app(w) {
+      win = w;
       term.on('title', function (title) {
         win.title = title;
       });
@@ -78,7 +81,6 @@ define('apps/Terminal', function (require) {
       win.container.textContent = '';
       win.container.style.backgroundColor = '#000';
       win.container.style.overflow = 'hidden';
-      console.log(win.container);
       term.open(win.container);
 
       // Called when the app's container is resized.
@@ -98,15 +100,23 @@ define('apps/Terminal', function (require) {
     function onResize(w, h) {
       var winsize = getWinsize(w, h);
       var cols = winsize[0], rows = winsize[1];
-      // Send a resize to the remote PTY
-      resize(cols, rows);
-      // Tell the local terminal client to resize
-      term.resize(cols, rows);
+      if (cols !== oldCols || rows !== oldRows) {
+        // Send a resize to the remote PTY
+        resize(cols, rows);
+        // Tell the local terminal client to resize
+        term.resize(cols, rows);
+      }
+      oldCols = cols;
+      oldRows = rows;
     }
 
+    var closed;
     function onClose() {
-      term.destroy();
+      if (closed) { return; }
+      closed = true;
       kill(15);
+      term.destroy();
+      win.destroy();
     }
   }
 });

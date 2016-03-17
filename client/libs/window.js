@@ -36,6 +36,7 @@ define('libs/window', function (require) {
 
     var maximized = false;
     var isDark = false;
+    var state = {};
 
     var northProps = drag(north);
     var northEastProps = drag(northEast);
@@ -56,7 +57,7 @@ define('libs/window', function (require) {
         refresh();
         return title;
       },
-      close: close,
+      destroy: destroy,
       focus: focus,
       refresh: refresh,
     };
@@ -124,6 +125,16 @@ define('libs/window', function (require) {
         if (height > windowHeight) { height = windowHeight; }
       }
 
+      var ewidth, eheight;
+      if (maximized) {
+        ewidth = windowWidth;
+        eheight = windowHeight - 32;
+      }
+      else {
+        ewidth = width;
+        eheight = height;
+      }
+
       var style = maximized ? (
         'top: -10px;' +
         'left: -10px;' +
@@ -136,18 +147,38 @@ define('libs/window', function (require) {
         'webkitTransform: translate3d(' + left + 'px,' + top + 'px,0);'
       );
       style += 'z-index: ' + zIndex + ';';
+
       var classes = ['window', isDark ? 'dark' : 'light'];
       if (focused === win) {
         classes.push('focused');
       }
+      classes = classes.join(' ');
 
-      win.maxBox.textContent = maximized ? '▼' : '▲';
-      win.el.setAttribute('style', style);
-      win.el.setAttribute('class', classes.join(' '));
-      if (win.onResize) {
-        win.onResize(width, height);
+      if (title !== state.title) {
+        win.titleBar.textContent = title;
       }
-      win.titleBar.textContent = title;
+      if (win.onResize && (ewidth !== state.ewidth || eheight !== state.eheight)) {
+        win.onResize(ewidth, eheight);
+      }
+      if (maximized !== state.maximized) {
+        win.maxBox.textContent = maximized ? '▼' : '▲';
+      }
+      if (style !== state.style) {
+        win.el.setAttribute('style', style);
+      }
+      if (classes !== state.classes) {
+        win.el.setAttribute('class', classes);
+      }
+
+      state = {
+        title: title,
+        maximized: maximized,
+        style: style,
+        ewidth: ewidth,
+        eheight: eheight,
+        classes: classes,
+      };
+
     }
 
     function focus() {
@@ -155,12 +186,17 @@ define('libs/window', function (require) {
       var old = focused;
       focused = win;
       zIndex = nextZ++;
-      old.refresh();
+      if (old) { old.refresh(); }
       refresh();
     }
 
+    var destroyed;
     function destroy() {
-
+      if (destroyed) { return; }
+      destroyed = true;
+      if (app.onClose) { app.onClose(); }
+      windows.splice(windows.indexOf(win), 1);
+      win.el.parentElement.removeChild(win.el);
     }
 
     function onMaxClick(evt) {

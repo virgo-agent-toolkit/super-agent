@@ -114,7 +114,10 @@ define('libs/rpc', function (require) {
       var keys = Object.keys(value);
       for (var i = 0, l = keys.length; i < l; ++i) {
         var key = keys[i];
-        copy[key] = freeze(value[key]);
+        var item = value[key];
+        if (item !== undefined) {
+          copy[key] = freeze(item);
+        }
       }
       return copy;
     }
@@ -122,6 +125,7 @@ define('libs/rpc', function (require) {
     function write(message) {
       message = freeze(message);
       console.log('-> ' + JSON.stringify(message));
+      console.log(message);
       socket.send(msgpack.encode(message));
     }
 

@@ -216,11 +216,6 @@ define('libs/msgpack', function () {
       this.offset++;
       return value;
     }
-    // Undefined as FixExt1
-    if (type === 0xd4 && this.view.getUint8(this.offset + 1) === 0x00) {
-      this.offset += 3;
-      return undefined;
-    }
     switch (type) {
     // str 8
     case 0xd9:
@@ -473,14 +468,6 @@ define('libs/msgpack', function () {
       throw new Error('Number too small -0x' + (-value).toString(16).substr(1));
     }
 
-    // undefined
-    if (type === 'undefined') {
-      view.setUint8(offset, 0xd4);  // fixext 1
-      view.setUint8(offset + 1, 0); // type (undefined)
-      view.setUint8(offset + 2, 0); // data (ignored)
-      return 3;
-    }
-
     // null
     if (value === null) {
       view.setUint8(offset, 0xc0);
@@ -537,7 +524,7 @@ define('libs/msgpack', function () {
 
       return size;
     }
-    throw new Error('Unknown type ' + type);
+    throw new Error('Cannot serialize type to msgpack: ' + type);
   }
 
   function encodedSize(value) {
