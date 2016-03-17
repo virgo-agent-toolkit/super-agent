@@ -549,10 +549,10 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       child:kill(signal)
     end
 
-    function resize(newsize)
-      local s = ffi.new("struct winsize")
-      s.ws_col, s.ws_row = unpack(newsize)
-      if ffi.C.ioctl(master, TIOCSWINSZ, s) < 0 then
+    local size_s = ffi.new("struct winsize")
+    function resize(cols, rows)
+      size_s.ws_col, size_s.ws_row = cols, rows
+      if ffi.C.ioctl(slave, TIOCSWINSZ, size_s) < 0 then
         onError("Problem resizing pty")
       end
     end

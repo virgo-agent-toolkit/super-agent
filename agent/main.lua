@@ -1,6 +1,5 @@
 local bundle = require('luvi').bundle
 loadstring(bundle.readfile("luvit-loader.lua"), "bundle:luvit-loader.lua")()
-local p = require('pretty-print').prettyPrint
 local msgpackEncode = require('msgpack').encode
 local connect = require('coro-net').connect
 local pathJoin = require('pathjoin').pathJoin
@@ -24,12 +23,12 @@ local function parseArgs(command, ...)
   end
   coroutine.wrap(function ()
     local key = getenv("RAX_CLIENT_KEY")
-    p(key,command, args)
+    print("Sending '" .. command .. "' command to client")
     local _, write = assert(connect({
       host = "127.0.0.1",
       port = 13377,
     }))
-    write(msgpackEncode{key, command,unpack(args)})
+    write(msgpackEncode{key, command, unpack(args)})
   end)()
 end
 
