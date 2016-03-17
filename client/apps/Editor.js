@@ -32,7 +32,7 @@ define('apps/Editor', function (require) {
   Editor.title = 'Editor';
   return Editor;
   function* Editor(call, file) {
-    let content = yield* call('readfile', file);
+    var content = yield* call('readfile', file);
     return function (win) {
       var root = domBuilder(['textarea', {
         style: {

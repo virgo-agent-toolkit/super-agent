@@ -228,8 +228,8 @@ local function onCLI(read, write, socket)
       data = data .. chunk
     end
     local message = msgpackDecode(data)
-    p(message)
-    p(api.call(unpack(message)))
+    print("Forwarding command from CLI to client: " .. message[1])
+    api.call(unpack(message))
     write()
   end, debug.traceback)
   if not success then
@@ -246,7 +246,7 @@ coroutine.wrap(function ()
   local url = "wss://localhost:8443/enlist/" .. agentId .. "/" .. token
   local read, write = assert(wsConnect(
     url ,
-    "schema-rpc", 
+    "schema-rpc",
     {
       tls = {ca = assert(loadResource("./../agent-cert/new.cert.cert"))}
     }
