@@ -4,7 +4,7 @@ return {
   description = "A super agent",
   luvi = {
     version = "2.6.1",
-    flavor = "tiny",
+    flavor = "regular",
   },
   homepage = "https://github.com/virgo-agent-toolkit/super-agent",
   dependencies = {
