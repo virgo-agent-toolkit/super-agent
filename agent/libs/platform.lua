@@ -586,4 +586,21 @@ function platform.homedir()
   return assert(uv.os_homedir())
 end
 
+platform.getuid = uv.getuid
+
+platform.getgid = uv.getgid
+
+platform.getpid = uv.getpid
+
+platform.uptime = uv.uptime
+
+platform.loadavg = uv.loadavg
+
+platform.freemem = uv.get_free_memory
+
+platform.totalmem = uv.get_total_memory
+
+platform.getrss = uv.resident_set_memory
+
+
 return platform

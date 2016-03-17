@@ -233,11 +233,54 @@ if platform.getuser then
   }, platform.getuser))
 end
 
--- homedir() -> (home: String)
-assert(register("homedir", "Get the user's home directory", {
-}, {
-  {"home", String},
-}, platform.homedir))
+if platform.getuid then
+  assert(register("getuid", "Get the userid of the agent", {
+  }, {
+    {"uid", Optional(Int)}
+  }, platform.getuid))
+end
+
+if platform.getgid then
+  assert(register("getgid", "Get the groupid of the agent", {
+  }, {
+    {"gid", Optional(Int)}
+  }, platform.getgid))
+end
+
+if platform.getpid then
+  assert(register("getpid", "Get the processid of the agent", {
+  }, {
+    {"pid", Optional(Int)}
+  }, platform.getpid))
+end
+
+if platform.uptime then
+  assert(register("uptime", "Get system uptime", {
+  }, {
+    {"uptime", Optional(Int)}
+  }, platform.uptime))
+end
+
+if platform.freemem then
+  assert(register("freemem", "Get free memory", {
+  }, {
+    {"freemem", Optional(Int)}
+  }, platform.freemem))
+end
+
+if platform.totalmem then
+  assert(register("totalmem", "Get total memory", {
+  }, {
+    {"totalmem", Optional(Int)}
+  }, platform.totalmem))
+end
+
+if platform.getrss then
+  assert(register("getrss", "Get resident set memory", {
+  }, {
+    {"getrss", Optional(Int)}
+  }, platform.getrss))
+end
 
 local function log(...)
   p("log", ...)

@@ -138,3 +138,17 @@ getos() -> (os: String)
 getuser() -> (username: Optional(String))
 
 homedir() -> (home: String)
+
+getpid() -> (pid: Integer)
+
+getuid() -> (uid: Integer)
+
+getgid() -> (gid: Integer)
+
+freemem() -> (freeMemory: Integer)
+
+totalmem() -> (totalMemory: Integer)
+
+getrss() -> (rss: Integer)
+
+uptime() -> (uptime: Integer)
