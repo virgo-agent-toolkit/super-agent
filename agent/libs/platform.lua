@@ -573,15 +573,9 @@ end
 
 if ffi.os ~= "Windows" then
 
-  ffi.cdef[[
-    char *cuserid(char *string);
-  ]]
-
   -- getuser() -> (username: Optional(String))
   function platform.getuser()
-    local username = ffi.C.cuserid(nil)
-    if username == nil then return nil end
-    return ffi.string(username)
+    return platform.user(uv.getuid())
   end
 
 end
