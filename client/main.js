@@ -29,21 +29,19 @@ define('main', function (require) {
 
   document.body.textContent = '';
 
-  // runCommand('terminal');
-  // runCommand('edit', );
-  // runCommand('edit', );
-  runCommand('edit',
+  runCommand('terminal');
+  // runCommand('edit',
     // '/Users/tim8019/Code/super-agent/client/main.js',
     // '/Users/tim8019/Code/super-agent/client/index.html',
     // '/Users/tim8019/Code/super-agent/client/assets/style.css',
     // '/Users/tim8019/Code/ele/contrib/alarm_loading_metrics.rb',
     // '/Users/tim8019/Code/super-agent/api/admin-panel/src/Main.elm',
-    '/Users/tim8019/Code/ele/java/graphs.py'
+    // '/Users/tim8019/Code/ele/java/graphs.py'
     // '/Users/tim8019/Code/jack.rs/src/main.rs'
     // '/Users/tim8019/Code/luv/src/luv.c',
     // '/Users/tim8019/Code/luv/src/luv.h',
     // '/Users/tim8019/Code/lit/get-lit.sh'
-  );
+  // );
 
   function runCommand(name, ...args) {
     var command = commands[name];

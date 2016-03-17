@@ -55,7 +55,7 @@ define('apps/Editor', function () {
         showCursorWhenSelecting: true,
         styleActiveLine: true,
       });
-      win.title = file + ' - Editor';
+      win.title = file;
       setTimeout(function () {
         cm.refresh();
       }, 0);
