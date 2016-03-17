@@ -27,7 +27,7 @@ define('libs/rpc', function (require) {
 
     function getId() {
       var id = nextId;
-      while (fns[id] && waiting[id]) {
+      while (fns[id] || waiting[id]) {
         id++;
       }
       nextId = id + 1;

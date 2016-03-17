@@ -26,6 +26,7 @@ body {
 .window {
   position: absolute;
   overflow: hidden;
+  background: rgba(120,120,120,0.2);
 }
 .window.maximized {
   position: static;
