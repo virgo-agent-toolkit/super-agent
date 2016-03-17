@@ -130,3 +130,5 @@ pty (
   kill: Emitter(signal: Integer)
   resize: Emitter(WinSize)
 )
+
+getenv(varName: String) -> (data: Optional(String))
