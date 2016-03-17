@@ -1,5 +1,6 @@
 local uv = require('uv')
 local ffi = require('ffi')
+local p = require('pretty-print').prettyPrints
 
 local pack = table.pack
 
@@ -47,7 +48,7 @@ function platform.scandir(path, onEntry)
     error(err)
   end
   while true do
-    local name, typ = uv.fs_scandir_next(req)
+    local name, typ = assert(uv.fs_scandir_next(req))
     if not name then return true end
     onEntry(name, typ)
   end
@@ -201,7 +202,7 @@ function platform.rm(rootPath, recursive)
           error(err or "Unknown problem scanning " .. path)
         end
         while true do
-          local name, typ = uv.fs_scandir_next(req)
+          local name, typ = assert(uv.fs_scandir_next(req))
           if not name then break end
           local subpath = pathjoin(path, name)
           if typ == "directory" then
@@ -332,7 +333,7 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
         return total
       end
       while true do
-        local name = uv.fs_scandir_next(req)
+        local name = assert(uv.fs_scandir_next(req))
         if not name then break end
         local subpath = pathjoin(path, name)
         local subtotal
@@ -500,7 +501,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
     local write, kill, resize
 
     -- Spawn the child process that inherits the slave fd as it's stdio.
-    local child = uv.spawn(shell, {
+    local child = assert(uv.spawn(shell, {
       stdio = {slave, slave, slave},
       env = options.env,
       args = options.args,
@@ -515,9 +516,9 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       coroutine.wrap(function ()
         return onExit(unpack(args))
       end)()
-    end)
+    end))
 
-    local pipe = uv.new_pipe(false)
+    local pipe = assert(uv.new_pipe(false))
     pipe:open(master)
     pipe:read_start(function (err, data)
       coroutine.wrap(function ()
@@ -575,12 +576,14 @@ if ffi.os ~= "Windows" then
 
   -- getuser() -> (username: Optional(String))
   function platform.getuser()
-    return platform.user(uv.getuid())
+    return platform.user(assert(uv.getuid()))
   end
 
 end
 
 -- homedir() -> (home: String)
-platform.homedir = uv.os_homedir
+function platform.homedir()
+  return assert(uv.os_homedir())
+end
 
 return platform
