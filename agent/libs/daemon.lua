@@ -233,6 +233,12 @@ if platform.getuser then
   }, platform.getuser))
 end
 
+-- homedir() -> (home: String)
+assert(register("homedir", "Get the user's home directory", {
+}, {
+  {"home", String},
+}, platform.homedir))
+
 local function log(...)
   p("log", ...)
 end

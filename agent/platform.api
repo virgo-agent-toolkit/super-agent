@@ -136,3 +136,5 @@ getenv(name: String) -> (value: Optional(String))
 getos() -> (os: String)
 
 getuser() -> (username: Optional(String))
+
+homedir() -> (home: String)

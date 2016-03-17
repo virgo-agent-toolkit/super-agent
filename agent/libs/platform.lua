@@ -586,4 +586,7 @@ if ffi.os ~= "Windows" then
 
 end
 
+-- homedir() -> (home: String)
+platform.homedir = uv.os_homedir
+
 return platform
