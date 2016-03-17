@@ -30,9 +30,6 @@ body {
 .window.maximized {
   position: static;
 }
-.window.focused {
-  z-index: 10;
-}
 
 .window.light {
   box-shadow: 0 0 7px rgba(0,0,0,0.5);
@@ -58,6 +55,7 @@ body {
 }
 
 .title-bar {
+  white-space: nowrap;
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;

@@ -8,6 +8,8 @@ define('libs/window', function (require) {
       windowHeight = window.innerHeight;
 
   var windows = [];
+  var focused = null;
+  var nextZ = 1;
 
   window.addEventListener('resize', function () {
     var newWidth = window.innerWidth;
@@ -30,10 +32,10 @@ define('libs/window', function (require) {
     var height = app.initialHeight || 200;
     var left = app.initialLeft || ((windowWidth - width) >> 1);
     var top = app.initialTop || ((windowHeight - height) >> 1);
+    var zIndex = nextZ++;
 
     var maximized = false;
     var isDark = false;
-    var focused = false;
 
     var northProps = drag(north);
     var northEastProps = drag(northEast);
@@ -72,7 +74,7 @@ define('libs/window', function (require) {
       ['.resize.sw', southWestProps],
       ['.resize.w', westProps],
       ['.resize.nw', northWestProps],
-      ['.title-bar', titleBarProps, title],
+      ['.title-bar$titleBar', titleBarProps, title],
       ['.max-box$maxBox', {onclick:onMaxClick}],
       ['.close-box', {onclick:onCloseClick},'✖'],
     ], win);
@@ -133,9 +135,11 @@ define('libs/window', function (require) {
         'transform: translate3d(' + left + 'px,' + top + 'px,0);' +
         'webkitTransform: translate3d(' + left + 'px,' + top + 'px,0);'
       );
+      style += 'z-index: ' + zIndex + ';';
       var classes = ['window', isDark ? 'dark' : 'light'];
-      if (focused) { classes.push('focused'); }
-
+      if (focused === win) {
+        classes.push('focused');
+      }
 
       win.maxBox.textContent = maximized ? '▼' : '▲';
       win.el.setAttribute('style', style);
@@ -143,9 +147,16 @@ define('libs/window', function (require) {
       if (win.onResize) {
         win.onResize(width, height);
       }
+      win.titleBar.textContent = title;
     }
 
     function focus() {
+      if (focused === win) { return; }
+      var old = focused;
+      focused = win;
+      zIndex = nextZ++;
+      old.refresh();
+      refresh();
     }
 
     function destroy() {
