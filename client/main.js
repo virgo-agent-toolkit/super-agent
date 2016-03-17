@@ -30,8 +30,6 @@ define('main', function (require) {
   document.body.textContent = '';
 
   runCommand('terminal', '/home/tim/Code/super-agent/agent');
-  runCommand('edit', '/home/tim/Code/super-agent/agent/main.lua');
-  runCommand('edit', '/home/tim/Code/super-agent/client/main.js');
 
   function runCommand(name, ...args) {
     var command = commands[name];

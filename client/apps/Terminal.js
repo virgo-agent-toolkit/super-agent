@@ -4,14 +4,17 @@ define('apps/Terminal', function (require) {
   // Load the terminal emulator library.
   var Term = require('libs/term');
 
+  var charHeight = 16;
+  var charWidth = 8;
+
   Terminal.title = 'Terminal';
   return Terminal;
 
   function* Terminal(call, cwd) {
 
     var clientKey = yield* call('key');
-    app.initialWidth = 682; // Magic width for 80 cols?
-    app.initialHeight = 394; // Magic height for 24 rows?
+    app.initialWidth = 80 * charWidth + 10; // Magic width for 80 cols?
+    app.initialHeight = 24 * charHeight + 10; // Magic height for 24 rows?
     var winsize = getWinsize(app.initialWidth, app.initialHeight);
     var term = new Term({
       cols: winsize[0],
@@ -25,7 +28,7 @@ define('apps/Terminal', function (require) {
       '/bin/bash',
       winsize,
       {
-        args: ['--login'],
+        args: ['-i'],
         cwd: cwd,
         env: [
           'TERM=xterm-256color',
@@ -72,6 +75,7 @@ define('apps/Terminal', function (require) {
 
       win.container.textContent = '';
       win.container.style.backgroundColor = '#000';
+      win.container.style.overflow = 'hidden';
       console.log(win.container);
       term.open(win.container);
 
@@ -84,8 +88,8 @@ define('apps/Terminal', function (require) {
 
     function getWinsize(w, h) {
       return [
-        Math.floor((w - 10) / 8.4),
-        Math.floor((h - 10) / 16)
+        Math.floor((w - 10) / charWidth),
+        Math.floor((h - 10) / charHeight)
       ];
     }
 
@@ -102,5 +106,5 @@ define('apps/Terminal', function (require) {
       term.destroy();
       kill(15);
     }
-  };
+  }
 });

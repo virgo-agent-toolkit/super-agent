@@ -1,8 +1,8 @@
 .terminal {
   float: left;
   border: #000 solid 5px;
-  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
-  font-size: 14px;
+  font-family: "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 16px;
   line-height: 16px;
   color: #f0f0f0;
   background: #000;
