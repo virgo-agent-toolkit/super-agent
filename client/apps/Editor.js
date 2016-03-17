@@ -1,54 +1,64 @@
-define('apps/Editor', function (require) {
+/*global CodeMirror*/
+define('apps/Editor', function () {
   'use strict';
-  var domBuilder = require('libs/dombuilder');
-
   // modes to include for codemirror
   // https://codemirror.net/mode/index.html
-  // - sh
-  // - ruby
-  // - lua
-  // - css
-  // -- html
-  // -- javscript
-  // -- c
-  // -- bat
-  // -- elm
-  // -- rust
-  // -- python
-  // -- php
-  // -- go
-  // -- xml
-  // -- sql
-  // -- nginx
-  // -- dockerfile
-  // -- markdown
-  // -- yaml
-  // -- json
-  // -- toml
-  // -- puppet
-  // -- pgp
-  // -- perl
+
+  var modes = {
+    js: 'javascript',
+    lua: 'lua',
+    html: 'htmlmixed',
+    xml: 'xml',
+    rb: 'ruby',
+    c: 'text/x-c',
+    h: 'text/x-chdr',
+    sh: 'text/x-sh',
+    css: 'text/css',
+    elm: 'text/x-elm',
+    // -- bat
+    rs: 'text/x-rustsrc',
+    py: 'text/x-python',
+    // -- json
+    // -- nginx
+    // -- php
+    // -- go
+    // -- sql
+    // -- dockerfile
+    // -- markdown
+    // -- yaml
+    // -- toml
+    // -- puppet
+    // -- pgp
+    // -- perl
+  };
 
   Editor.title = 'Editor';
   return Editor;
   function* Editor(call, file) {
+    var extension = file.match(/[^.]*$/)[0];
+    var mode = modes[extension] || 'plaintext';
+    console.log(mode);
     var content = yield* call('readfile', file);
-    return function (win) {
-      var root = domBuilder(['textarea', {
-        style: {
-          boxSizing: 'border-box',
-          position: 'absolute',
-          resize: 'none',
-          width: '100%',
-          border: 0,
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }
-      }, content]);
-      win.container.appendChild(root);
+    app.initialWidth = 550;
+    app.initialHeight = 350;
+    return app;
+    function app(win) {
+      var cm = new CodeMirror(win.container, {
+        value: content,
+        mode: mode,
+        theme: 'material',
+        keyMap: 'sublime',
+        lineNumbers: false,
+        rulers: [{ column: 80 }],
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        showCursorWhenSelecting: true,
+        styleActiveLine: true,
+      });
       win.title = file + ' - Editor';
-    };
+      setTimeout(function () {
+        cm.refresh();
+      }, 0);
+    }
   }
 });
