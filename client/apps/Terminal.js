@@ -38,6 +38,7 @@ define('apps/Terminal', function (require) {
         env: [
           'HOME=' + home,
           'USER=' + user,
+          'LC_ALL=en_US.utf8',
           'TERM=xterm-256color',
           'RAX_CLIENT_KEY=' + clientKey
         ]
