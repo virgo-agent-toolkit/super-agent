@@ -6,6 +6,7 @@ define('apps/Terminal', function (require) {
 
   var charHeight = 16;
   var charWidth = 8;
+  var home = '/home/tim'; // TODO: Update before testing.
 
   Terminal.title = 'Terminal';
   return Terminal;
@@ -31,6 +32,7 @@ define('apps/Terminal', function (require) {
         args: ['-i'],
         cwd: cwd,
         env: [
+          'HOME=' + home,
           'TERM=xterm-256color',
           'RAX_CLIENT_KEY=' + clientKey
         ]
