@@ -29,7 +29,7 @@ define('main', function (require) {
 
   document.body.textContent = '';
 
-  runCommand('terminal', '/home/tim/Code/super-agent/agent');
+  runCommand('terminal');
 
   function runCommand(name, ...args) {
     var command = commands[name];

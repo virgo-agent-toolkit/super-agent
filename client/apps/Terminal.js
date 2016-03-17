@@ -33,7 +33,7 @@ define('apps/Terminal', function (require) {
       '/bin/bash',
       winsize,
       {
-        args: [os === 'Linux' ? '-i' : '--login'],
+        args: [os === 'Linux' ? '-i' : '-l'],
         cwd: cwd || home,
         env: [
           'HOME=' + home,

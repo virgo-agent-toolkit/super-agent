@@ -135,7 +135,6 @@ define('libs/rpc', function (require) {
     function write(message) {
       message = freeze(message);
       console.log('-> ' + JSON.stringify(message));
-      console.log(message);
       socket.send(msgpack.encode(message));
     }
 
