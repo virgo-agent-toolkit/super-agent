@@ -69,6 +69,16 @@ return function (call, log, rawRead, rawWrite)
     return write {0,err}
   end
 
+  local nextId = 1
+  local function getId()
+    local id = nextId
+    while idToFn[id] or waiting[id] do
+      id = id + 1
+    end
+    nextId = id + 1
+    return id
+  end
+
   local function readLoop()
     local success, stack = xpcall(function ()
       for message in read do
@@ -115,6 +125,7 @@ return function (call, log, rawRead, rawWrite)
             end
           end
           waiting[id] = nil
+          nextId = id
           local success, err
           if thread then
             success, err = coroutine.resume(thread, unpack(message, 2))
@@ -152,13 +163,10 @@ return function (call, log, rawRead, rawWrite)
     end
   end
 
-  local nextId = 1
-
   local function registerFunction(fn)
     local id = fnToId[fn]
     if id then return id end
-    id = nextId
-    nextId = nextId + 1
+    id = getId()
     fnToId[fn] = id
     idToFn[id] = fn
     return id
@@ -202,8 +210,7 @@ return function (call, log, rawRead, rawWrite)
 
   -- Helper to make remote calls.  Blocks caller waiting for response.
   local function callRemote(name, ...)
-    local id = nextId
-    nextId = nextId + 1
+    local id = getId()
     write {id, name, ...}
     waiting[id] = coroutine.running()
     return coroutine.yield()

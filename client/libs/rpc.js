@@ -25,6 +25,15 @@ define('libs/rpc', function (require) {
       };
     };
 
+    function getId() {
+      var id = nextId;
+      while (fns[id] && waiting[id]) {
+        id++;
+      }
+      nextId = id + 1;
+      return id;
+    }
+
     function onMessage(evt) {
       var message;
       if (typeof evt.data === 'string') {
@@ -45,6 +54,7 @@ define('libs/rpc', function (require) {
         var callback = waiting[id];
         if (callback) {
           delete waiting[id];
+          nextId = id;
           message[0] = null;
           return callback.apply(null, message);
         }
@@ -96,7 +106,7 @@ define('libs/rpc', function (require) {
     function freeze(value) {
       var type = typeof value;
       if (type === 'function') {
-        var id = nextId++;
+        var id = getId();
         fns[id] = value;
         return {'': id};
       }
@@ -130,7 +140,7 @@ define('libs/rpc', function (require) {
     }
 
     function* call(name, ...args) {
-      var id = nextId++;
+      var id = getId();
       return yield function (callback) {
         write([id, name, ...args]);
         waiting[id] = callback;
