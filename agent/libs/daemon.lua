@@ -35,12 +35,6 @@ assert(register("echo", "Echo testing streams", {
   {"data", Any}
 }, platform.echo))
 
-assert(register("getenv", "Get environment variable", {
-  {"name", String}
-}, {
-  {"value", String}
-}, platform.getenv))
-
 assert(register("readstream", "Read a file in 1024 byte chunks", {
   {"path", String},
   {"data", Function},
@@ -219,6 +213,24 @@ if platform.pty then
     }}
   }, platform.pty))
 
+end
+
+assert(register("getenv", "Get environment variable", {
+  {"name", String}
+}, {
+  {"value", String}
+}, platform.getenv))
+
+assert(register("getos", "Get the Operating System", {
+}, {
+  {"os", String}
+}, platform.getos))
+
+if platform.getuser then
+  assert(register("getuser", "Get the username of the agent", {
+  }, {
+    {"username", Optional(String)}
+  }, platform.getuser))
 end
 
 local function log(...)

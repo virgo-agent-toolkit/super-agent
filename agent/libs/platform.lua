@@ -33,10 +33,6 @@ function platform.echo(...)
   return ...
 end
 
-function platform.getenv(name)
-  return os.getenv(name)
-end
-
 -- scandir (
 --   path: String
 --   entry: Emitter(
@@ -562,6 +558,32 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
     return {write, kill, resize}
 
   end
+end
+
+-- getenv(name: String) -> (value: Optional(String))
+function platform.getenv(name)
+  return os.getenv(name)
+end
+
+-- getos() -> (os: String)
+function platform.getos()
+  return ffi.os
+end
+
+
+if ffi.os ~= "Windows" then
+
+  ffi.cdef[[
+    char *cuserid(char *string);
+  ]]
+
+  -- getuser() -> (username: Optional(String))
+  function platform.getuser()
+    local username = ffi.C.cuserid(nil)
+    if username == nil then return nil end
+    return ffi.string(username)
+  end
+
 end
 
 return platform
