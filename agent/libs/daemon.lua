@@ -36,9 +36,9 @@ assert(register("echo", "Echo testing streams", {
 }, platform.echo))
 
 assert(register("getenv", "Get environment variable", {
-  {"data", String}
+  {"name", String}
 }, {
-  {"data", String}
+  {"value", String}
 }, platform.getenv))
 
 assert(register("readstream", "Read a file in 1024 byte chunks", {

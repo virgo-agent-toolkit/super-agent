@@ -1,8 +1,5 @@
 local uv = require('uv')
 local ffi = require('ffi')
-local p = require('pretty-print').prettyPrint
-
--- local p = require('pretty-print').prettyPrint
 
 local pack = table.pack
 
@@ -36,12 +33,8 @@ function platform.echo(...)
   return ...
 end
 
-function platform.getenv(varName)
-  local req = os.getenv(varName)
-  --if not req then
-  --  error('environment variable does not exist'..varName)
-  --end
-  return req
+function platform.getenv(name)
+  return os.getenv(name)
 end
 
 -- scandir (

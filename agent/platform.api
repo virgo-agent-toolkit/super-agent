@@ -131,4 +131,4 @@ pty (
   resize: Emitter(WinSize)
 )
 
-getenv(varName: String) -> (data: Optional(String))
+getenv(name: String) -> (value: Optional(String))
