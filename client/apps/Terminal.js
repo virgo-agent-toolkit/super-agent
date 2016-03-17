@@ -6,7 +6,6 @@ define('apps/Terminal', function (require) {
 
   var charHeight = 16;
   var charWidth = 8;
-  var home = '/home/tim'; // TODO: Update before testing.
 
   Terminal.title = 'Terminal';
   return Terminal;
@@ -15,6 +14,7 @@ define('apps/Terminal', function (require) {
 
     var win;
     var clientKey = yield* call('key');
+    var home = yield* call('getenv', 'HOME');
     app.initialWidth = 80 * charWidth + 10; // Magic width for 80 cols?
     app.initialHeight = 24 * charHeight + 10; // Magic height for 24 rows?
     var winsize = getWinsize(app.initialWidth, app.initialHeight);
@@ -32,7 +32,7 @@ define('apps/Terminal', function (require) {
       winsize,
       {
         args: ['-i'],
-        cwd: cwd,
+        cwd: cwd || home,
         env: [
           'HOME=' + home,
           'TERM=xterm-256color',
