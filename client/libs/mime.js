@@ -55,6 +55,7 @@ define('libs/mime', function () {
     jpeg: 'image/jpeg',
     png: 'image/png',
     gif: 'image/gif',
+    svg: 'image/svg+xml',
     gz: 'application/x-compressed',
     zip: 'application/zip',
     bz: 'application/x-compressed',

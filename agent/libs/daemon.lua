@@ -48,6 +48,12 @@ assert(register("readfile", "Read a file, but buffer all the chunks", {
   {"data", Optional(String)},
 }, platform.readfile))
 
+assert(register("readbinary", "Read a file as a binary blob", {
+  {"path", String},
+}, {
+  {"data", Optional(Any)},
+}, platform.readbinary))
+
 assert(register("readlink", "Read the target of a symlink", {
   {"path", String},
 }, {

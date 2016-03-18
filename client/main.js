@@ -4,6 +4,7 @@ define('main', function (require) {
   var rpc = require('libs/rpc');
   var Terminal = require('apps/Terminal');
   var Editor = require('apps/Editor');
+  var ImageViewer = require('apps/ImageViewer');
   var FileBrowser = require('apps/FileBrowser');
   var run = require('libs/run');
 
@@ -34,6 +35,13 @@ define('main', function (require) {
       for (var file of files) {
         file = yield* expandVars(file);
         var win = yield* launchApp(Editor, file);
+        win.focus();
+      }
+    },
+    'view': function* (...files) {
+      for (var file of files) {
+        file = yield* expandVars(file);
+        var win = yield* launchApp(ImageViewer, file);
         win.focus();
       }
     },

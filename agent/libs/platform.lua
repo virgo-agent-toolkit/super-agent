@@ -88,6 +88,14 @@ function platform.readfile(path)
   return table.concat(chunks)
 end
 
+-- readbinary (path: String) -> (data: Optional(Buffer))
+function platform.readbinary(path)
+  local data = platform.readfile(path)
+  if not data then return nil end
+  return ffi.new('uint8_t[?]', #data, data)
+end
+
+
 -- readlink (path: String) -> (target: Optional(String))
 function platform.readlink(path)
   local err, target = async(uv.fs_readlink, path)

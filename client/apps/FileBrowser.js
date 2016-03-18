@@ -40,6 +40,20 @@ define('apps/FileBrowser', function (require) {
     /^audio\//, 'file-audio',
     /^video\//, 'file-video',
   ];
+  
+  var textIcons = {
+    'doc': true,
+    'doc-text': true,
+    'file-code': true,
+  };
+  
+  function isText(name) {
+    return textIcons[getIcon(name, 'file')];
+  }
+
+  function isImage(name) {
+    return getIcon(name, 'file') === 'file-image';
+  }
 
   function getIcon(name, type) {
     var mime;
@@ -78,7 +92,14 @@ define('apps/FileBrowser', function (require) {
           function go() {
             var path = pathJoin(root, name);
             if (type === 'directory') { navigate(path); }
-            else if (type === 'file') { runCommand('edit', path); }
+            else if (type === 'file') { 
+              if (isText(path)) {
+	            runCommand('edit', path); 
+              }
+              else if (isImage(path)) {
+                runCommand('view', path);
+              }
+            }
           }
         }
       });

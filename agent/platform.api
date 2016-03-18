@@ -13,7 +13,9 @@ readstream (
   data: Emitter(Buffer)
 ) -> (exists: Boolean)
 
-readfile (path: String) -> (data: Optional(Buffer))
+readfile (path: String) -> (data: Optional(String))
+
+readbinary (path: String) -> (data: Optional(Buffer))
 
 readlink (path: String) -> (target: Optional(String))
 
