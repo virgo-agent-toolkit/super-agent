@@ -3,6 +3,8 @@ define('apps/FileBrowser', function (require) {
 
   var domBuilder = require('libs/dombuilder');
   var run = require('libs/run');
+  var pathJoin = require('libs/pathjoin');
+  var guessMime = require('libs/mime');
 
   var typeToName = {
     file: 'doc',
@@ -13,40 +15,40 @@ define('apps/FileBrowser', function (require) {
     char: 'tty',
     block: 'cubes',
   };
-  var extensionToName = {
-    jpg: 'file-image',
-    jpeg: 'file-image',
-    png: 'file-image',
-    gif: 'file-image',
-    js: 'file-code',
-    lua: 'file-code',
-    html: 'file-code',
-    xml: 'file-code',
-    rb: 'file-code',
-    c: 'file-code',
-    h: 'file-code',
-    sh: 'file-code',
-    css: 'file-code',
-    elm: 'file-code',
-    rs: 'file-code',
-    py: 'file-code',
-    gz: 'file-archive',
-    zip: 'file-archive',
-    bz: 'file-archive',
-    tgz: 'file-archive',
-    txt: 'doc-text',
-    wav: 'file-audio',
-    mp3: 'file-audio',
-    aac: 'file-audio',
-    mpg: 'file-video',
-    m4v: 'file-video',
-    fla: 'file-video',
-    swf: 'file-video',
-  };
+
+  // Available icons:
+  //   file-image
+  //   file-archive
+  //   file-audio
+  //   file-video
+  //   file-code
+  //   doc
+  //   doc-text
+  //   folder
+  //   link
+  //   cog
+  //   cubes
+  //   plug
+  //   tty
+  //   box
+
+  var mimeMap = [
+    /^image\//, 'file-image',
+    /compressed$/, 'file-archive',
+    /zip$/, 'file-archive',
+    'text/plain', 'doc-text',
+    /^audio\//, 'file-audio',
+    /^video\//, 'file-video',
+  ];
 
   function getIcon(name, type) {
-    if (type === 'file') {
-      return extensionToName[name.match(/[^.]*$/)[0]] || typeToName.file;
+    var mime;
+    if (type === 'file' && (mime = guessMime(name))) {
+      if (!mime) { return typeToName.file; }
+      for (var i = 0; i < mimeMap.length; i += 2) {
+        if (mime.match(mimeMap[i])) { return mimeMap[i + 1]; }
+      }
+      return 'file-code';
     }
     return typeToName[type] || 'cog';
   }
@@ -69,11 +71,12 @@ define('apps/FileBrowser', function (require) {
         if (root !== '/') { onEntry('..', 'directory'); }
         yield* call('scandir', root, onEntry);
         function onEntry(name, type) {
+          if (name !== '..' && name[0] === '.') { return; }
           $.root.appendChild(domBuilder(
             ['li', {onclick: go}, ['i.icon-' + getIcon(name, type)], name]
           ));
           function go() {
-            var path = root + (root === '/' ? '' : '/') + name;
+            var path = pathJoin(root, name);
             if (type === 'directory') { navigate(path); }
             else if (type === 'file') { runCommand('edit', path); }
           }
