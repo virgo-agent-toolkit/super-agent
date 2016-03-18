@@ -4,7 +4,7 @@ define('libs/rpc', function (require) {
   var msgpack = require('libs/msgpack');
 
   var agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
-  var url = 'ws://localhost:8000/request/' + agentId;
+  var url = 'ws://' + location.hostname + ':8000/request/' + agentId;
 
   return rpc;
 
