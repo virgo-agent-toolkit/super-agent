@@ -582,25 +582,29 @@ if ffi.os ~= "Windows" then
 end
 
 -- homedir() -> (home: String)
-function platform.homedir()
-  return assert(uv.os_homedir())
-end
+platform.homedir = uv.os_homedir
 
-platform.getuid = uv.getuid
-
-platform.getgid = uv.getgid
-
+-- getpid() -> (pid: Integer)
 platform.getpid = uv.getpid
 
+-- getuid() -> (uid: Integer)
+platform.getuid = uv.getuid
+
+-- getgid() -> (gid: Integer)
+platform.getgid = uv.getgid
+
+-- uptime() -> (uptime: Integer)
 platform.uptime = uv.uptime
 
 platform.loadavg = uv.loadavg
 
+-- freemem() -> (freeMemory: Integer)
 platform.freemem = uv.get_free_memory
 
+-- totalmem() -> (totalMemory: Integer)
 platform.totalmem = uv.get_total_memory
 
+-- getrss() -> (rss: Integer)
 platform.getrss = uv.resident_set_memory
-
 
 return platform
