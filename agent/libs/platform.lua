@@ -48,7 +48,7 @@ function platform.scandir(path, onEntry)
     error(err)
   end
   while true do
-    local name, typ = assert(uv.fs_scandir_next(req))
+    local name, typ = uv.fs_scandir_next(req)
     if not name then return true end
     onEntry(name, typ)
   end
@@ -202,7 +202,7 @@ function platform.rm(rootPath, recursive)
           error(err or "Unknown problem scanning " .. path)
         end
         while true do
-          local name, typ = assert(uv.fs_scandir_next(req))
+          local name, typ = uv.fs_scandir_next(req)
           if not name then break end
           local subpath = pathjoin(path, name)
           if typ == "directory" then
@@ -333,7 +333,7 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
         return total
       end
       while true do
-        local name = assert(uv.fs_scandir_next(req))
+        local name = uv.fs_scandir_next(req)
         if not name then break end
         local subpath = pathjoin(path, name)
         local subtotal
