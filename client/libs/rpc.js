@@ -8,7 +8,7 @@ define('libs/rpc', function (require) {
 
   return rpc;
 
-  function* rpc(handleRequest) {
+  function* rpc(runCommand) {
     var socket = new WebSocket(url, ['schema-rpc']);
     socket.binaryType = 'arraybuffer';
     socket.onmessage = onMessage;
@@ -66,7 +66,7 @@ define('libs/rpc', function (require) {
         return;
       }
       if (id > 0) {
-        return handleRequest.apply(null, message.slice(1));
+        return runCommand.apply(null, message.slice(1));
       }
       if (id === 0) {
         write(message);

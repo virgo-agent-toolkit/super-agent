@@ -10,8 +10,12 @@ define('apps/Terminal', function (require) {
   Terminal.title = 'Terminal';
   return Terminal;
 
-  function* Terminal(call, cwd) {
-
+  function* Terminal(call, run, cwd) {
+    console.log({
+      call:call,
+      run:run,
+      cwd:cwd
+    });
     var win;
     var clientKey = yield* call('key');
     var home = yield* call('homedir');

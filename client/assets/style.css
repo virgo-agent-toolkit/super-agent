@@ -90,11 +90,11 @@ body {
   line-height: 32px;
   top: 10px;
   height: 32px;
-  opacity: 0.5;
+  opacity: 0.7;
 }
 
 .focused .max-box, .focused .close-box, .focused .title-bar {
-  opacity: 0.9;
+  opacity: 1.0;
 }
 .close-box:hover, .max-box:hover {
   background-color: #888;

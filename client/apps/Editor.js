@@ -34,7 +34,7 @@ define('apps/Editor', function () {
 
   Editor.title = 'Editor';
   return Editor;
-  function* Editor(call, file) {
+  function* Editor(call, run, file) {
     var extension = file.match(/[^.]*$/)[0];
     var mode = modes[extension] || 'plaintext';
     console.log(mode);
