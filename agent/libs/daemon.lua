@@ -233,6 +233,11 @@ if platform.getuser then
   }, platform.getuser))
 end
 
+assert(register("homedir", "Get the user's home directory", {
+}, {
+  {"home", String},
+}, platform.homedir))
+
 if platform.getuid then
   assert(register("getuid", "Get the userid of the agent", {
   }, {
