@@ -27,9 +27,11 @@ define('main', function (require) {
     },
   };
 
-  document.body.textContent = '';
+  window.onload = function () {
+    document.body.textContent = '';
+    runCommand('terminal');
+  };
 
-  runCommand('terminal');
   // runCommand('edit',
     // '/Users/tim8019/Code/super-agent/client/main.js',
     // '/Users/tim8019/Code/super-agent/client/index.html',
@@ -60,7 +62,7 @@ define('main', function (require) {
   }
 
   function onDone(err) {
-    if (err) { throw err; }
+    if (err) { console.error(err.stack); }
   }
 
 });
