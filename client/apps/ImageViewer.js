@@ -37,6 +37,7 @@ define('apps/ImageViewer', function (require) {
       style.backgroundPosition = 'center center';
       style.backgroundRepeat =  'no-repeat';
       style.backgroundSize = 'contain';
+      style.backdropFilter = 'blur(10px)';
     }  
   }
 });

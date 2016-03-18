@@ -232,6 +232,11 @@ assert(register("getos", "Get the Operating System", {
   {"os", String}
 }, platform.getos))
 
+assert(register("getarch", "Get the System architecture", {
+}, {
+  {"arch", String}
+}, platform.getarch))
+
 if platform.getuser then
   assert(register("getuser", "Get the username of the agent", {
   }, {

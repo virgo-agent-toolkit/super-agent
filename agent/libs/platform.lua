@@ -579,6 +579,11 @@ function platform.getos()
   return ffi.os
 end
 
+-- getarch() -> (arch: String)
+function platform.getarch()
+  return ffi.arch
+end
+
 
 if ffi.os ~= "Windows" then
 
