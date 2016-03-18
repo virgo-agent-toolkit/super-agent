@@ -18,6 +18,7 @@ define('libs/mime', function () {
   var extensions = {
     js: 'application/javascript',
     json: 'application/json',
+    webapp: 'application/json',
     ts: 'application/typescript',
     lua: 'text/x-lua',
     html: 'text/html',
