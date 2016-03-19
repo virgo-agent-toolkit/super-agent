@@ -91,6 +91,19 @@ define('apps/Terminal', function (require) {
       win.container.style.overflow = 'hidden';
       term.open(win.container);
 
+      term.write(
+        'You can send commands to the browser environment via special ' +
+        '\x1b[34mrax\x1b[39m commands:\r\n\n' + [
+          ['terminal', '[cwd]', 'Open a terminal at optional starting path.'],
+          ['browse', 'folder*', 'Open File Browser at given directory paths.'],
+          ['edit', 'file*', 'Open Text Editor at given file paths.'],
+          ['view', 'file*', 'Open Image Viewer at given file paths.'],
+        ].map(function (list) {
+          return '  \x1b[34mrax \x1b[33m' + list[0] +
+            ' \x1b[32m' + list[1] +
+            ' \x1b[39m\r\n    ' + list[2] + '\r\n\n';
+        }).join(''));
+
       // Called when the app's container is resized.
       win.onResize = onResize;
       // Called when the app is closed.

@@ -30,8 +30,8 @@ define('libs/window', function (require) {
 
     var width = app.initialWidth || 320;
     var height = app.initialHeight || 200;
-    var left = Math.floor(Math.random() * (windowWidth - width - 30)) + 5;
-    var top = Math.floor(Math.random() * (windowHeight - height - 62)) + 5;
+    var left = Math.floor(Math.random() * Math.max(windowWidth - width - 30, 0)) + 5;
+    var top = Math.floor(Math.random() * Math.max(windowHeight - height - 62, 0)) + 5;
     var zIndex = nextZ++;
 
     var maximized = false;

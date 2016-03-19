@@ -1,7 +1,6 @@
 define('apps/ImageViewer', function (require) {
   'use strict';
 
-  var run = require('libs/run');
   var guessMime = require('libs/mime');
 
   ImageViewer.title = 'ImageViewer';
@@ -13,7 +12,7 @@ define('apps/ImageViewer', function (require) {
     var imageUrl = urlCreator.createObjectURL( blob );
     var img = document.createElement('img');
     img.setAttribute('src', imageUrl);
-    
+
     yield function (cb) {
       var done = false;
       function once() {
@@ -22,13 +21,23 @@ define('apps/ImageViewer', function (require) {
         return cb();
       }
       img.onload = function() {
-        app.initialWidth = img.width;
-        app.initialHeight = img.height;
+        var width = img.width;
+        var height = img.height;
+        if (width > 720) {
+          height = Math.floor(720*height/width);
+          width = 720;
+        }
+        if (height > 400) {
+          width = Math.floor(400*width/height);
+          height = 400;
+        }
+        app.initialWidth = width;
+        app.initialHeight = height;
         once();
-      }
+      };
       setTimeout(once, 100);
     };
-    
+
     return app;
     function app(win) {
       win.title = file;
@@ -38,6 +47,6 @@ define('apps/ImageViewer', function (require) {
       style.backgroundRepeat =  'no-repeat';
       style.backgroundSize = 'contain';
       style.backdropFilter = 'blur(10px)';
-    }  
+    }
   }
 });
