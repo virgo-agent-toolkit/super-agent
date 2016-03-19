@@ -1,7 +1,7 @@
 return {
-  name = "super-agent/agent",
+  name = "super-agent/rax",
   version = "0.0.1",
-  description = "A super agent",
+  description = "A super agent. Daemon and CLI tool.",
   luvi = {
     version = "2.6.1",
     flavor = "regular",
