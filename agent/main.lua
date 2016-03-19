@@ -12,6 +12,11 @@ end
 
 
 local function parseArgs(command, ...)
+  if not command then
+    print "Usage:"
+    print "\trax command [args...]"
+    os.exit(-1)
+  end
   if command == "serve" then
     return require('daemon')
   end
