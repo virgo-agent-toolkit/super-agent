@@ -1,6 +1,6 @@
 return {
-  name = "super-agent/rax",
-  version = "0.0.1",
+  name = "virgo-agent-toolkit/rax",
+  version = "0.0.3",
   description = "A super agent. Daemon and CLI tool.",
   luvi = {
     version = "2.6.1",

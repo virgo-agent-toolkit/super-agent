@@ -17,8 +17,8 @@ local function parseArgs(command, ...)
     print "\trax command [args...]"
     os.exit(-1)
   end
-  if command == "serve" then
-    return require('daemon')
+  if command == "connect" then
+    return require('daemon')(...)
   end
   local args = table.pack(...)
   for i = 1, args.n do
