@@ -3,8 +3,25 @@ define('libs/rpc', function (require) {
 
   var msgpack = require('libs/msgpack');
 
-  var agentId = 'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
-  var url = 'ws://' + location.hostname + ':8000/request/' + agentId;
+  function getParameterByName(name, url) {
+      if (!url) { url = window.location.href; }
+      url = url.toLowerCase();
+      name = name.replace(/[\[\]]/g, '\\$&').toLowerCase();
+      var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+          results = regex.exec(url);
+      if (!results) { return null; }
+      if (!results[2]) { return ''; }
+      return decodeURIComponent(results[2].replace(/\+/g, ' ').replace(/\/$/,''));
+  }
+
+  var aep = getParameterByName('aep') || (
+    location.protocol.replace('http', 'ws') + '//' + location.host
+  );
+
+  var agentId = getParameterByName('agent') ||
+    'fc1eb9f7-69f0-4079-9e74-25ffd091022a';
+
+  var url = aep + '/request/' + agentId;
 
   return rpc;
 
