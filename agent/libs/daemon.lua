@@ -292,8 +292,8 @@ return function (host, agentId, token)
   }, platform.getrss))
 
   assert(register("loadavg", "Get the average system load", {
-  }, {{"loadavg", {Number, Number, Number}
-}}, platform.loadavg))
+  }, {{"avg", {Number, Number, Number}
+  }}, platform.loadavg))
 
   assert(register("cpuinfo", "Get the average system load", {
   }, {{"info",

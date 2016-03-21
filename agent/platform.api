@@ -157,15 +157,16 @@ getrss() -> (rss: Integer)
 
 uptime() -> (uptime: Integer)
 
-cpuinfo() -> (Array[
-  times: Array[
+cpuinfo() -> (info: {
+  times: {
     irq: Integer
     user: Integer
     idle: Integer
     sys: Integer
-    nice: Integer],
+    nice: Integer
+  },
   model: String,
   speed: Integer
-])
+})
 
-loadavg() -> {Float, Float, Float}
+loadavg() -> (avg: (Number, Number, Number))
