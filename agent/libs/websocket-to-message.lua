@@ -17,10 +17,10 @@ return function (read, write, jsonFirst)
       message = msgpackDecode(frame.payload)
       encode = msgpackEncode
     end
-    --p("<-", message)
+    p("<-", message)
     return message
   end, function (message)
-    --p("->", message)
+    p("->", message)
     if message == nil then
       write {
         opcode = 8,
