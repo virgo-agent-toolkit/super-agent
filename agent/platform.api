@@ -156,3 +156,16 @@ totalmem() -> (totalMemory: Integer)
 getrss() -> (rss: Integer)
 
 uptime() -> (uptime: Integer)
+
+cpuinfo() -> (Array[
+  times: Array[
+    irq: Integer
+    user: Integer
+    idle: Integer
+    sys: Integer
+    nice: Integer],
+  model: String,
+  speed: Integer
+])
+
+loadavg() -> {Float, Float, Float}

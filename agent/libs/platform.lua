@@ -1,6 +1,5 @@
 local uv = require('uv')
 local ffi = require('ffi')
-local p = require('pretty-print').prettyPrints
 
 local pack = table.pack
 
@@ -509,7 +508,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
     local write, kill, resize
 
     -- Spawn the child process that inherits the slave fd as it's stdio.
-    local child = assert(uv.spawn(shell, {
+    local child = uv.spawn(shell, {
       stdio = {slave, slave, slave},
       env = options.env,
       args = options.args,
@@ -524,9 +523,9 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       coroutine.wrap(function ()
         return onExit(unpack(args))
       end)()
-    end))
+    end)
 
-    local pipe = assert(uv.new_pipe(false))
+    local pipe = uv.new_pipe(false)
     pipe:open(master)
     pipe:read_start(function (err, data)
       coroutine.wrap(function ()
@@ -589,7 +588,7 @@ if ffi.os ~= "Windows" then
 
   -- getuser() -> (username: Optional(String))
   function platform.getuser()
-    return platform.user(assert(uv.getuid()))
+    return platform.user(uv.getuid())
   end
 
 end
@@ -597,27 +596,24 @@ end
 -- homedir() -> (home: String)
 platform.homedir = uv.os_homedir
 
--- getpid() -> (pid: Integer)
-platform.getpid = uv.getpid
-
--- getuid() -> (uid: Integer)
 platform.getuid = uv.getuid
 
--- getgid() -> (gid: Integer)
 platform.getgid = uv.getgid
 
--- uptime() -> (uptime: Integer)
+platform.getpid = uv.getpid
+
 platform.uptime = uv.uptime
 
-platform.loadavg = uv.loadavg
+function platform.loadavg()
+  return {uv.loadavg()}
+end
 
--- freemem() -> (freeMemory: Integer)
 platform.freemem = uv.get_free_memory
 
--- totalmem() -> (totalMemory: Integer)
 platform.totalmem = uv.get_total_memory
 
--- getrss() -> (rss: Integer)
 platform.getrss = uv.resident_set_memory
+
+platform.cpuinfo = uv.cpu_info
 
 return platform

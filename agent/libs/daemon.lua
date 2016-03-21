@@ -291,6 +291,25 @@ return function (host, agentId, token)
     {"getrss", Optional(Int)}
   }, platform.getrss))
 
+  assert(register("loadavg", "Get the average system load", {
+  }, {{"loadavg", {Number, Number, Number}
+}}, platform.loadavg))
+
+  assert(register("cpuinfo", "Get the average system load", {
+  }, {{"info",
+       Array
+        {times={
+          irq=Int,
+          user=Int,
+          idle=Int,
+          sys=Int,
+          nice=Int
+        },
+        model=String,
+        speed=Int}
+      }
+  }, platform.cpuinfo))
+
   local function log(...)
     p("log", ...)
   end
