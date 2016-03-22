@@ -32,4 +32,9 @@ require 'weblit-app'
     protocol = "schema-rpc"
   }, require 'handle-agent')
 
+  .route({
+    method = "GET",
+    path = "/request/:agent_id/:args:"
+  }, require 'handle-request')
+
   .start()

@@ -24,10 +24,17 @@ Example:
 ]]
 
 local clientHandlers = {}
+local requestHandlers = {}
 
 local function getClientHandler(agent_id)
   local clientHandler = clientHandlers[agent_id]
   if clientHandler then return clientHandler end
+  return nil, "No such agent: " .. agent_id
+end
+
+local function getRequestHandler(agent_id)
+  local requestHandler = requestHandlers[agent_id]
+  if requestHandler then return requestHandler end
   return nil, "No such agent: " .. agent_id
 end
 
@@ -37,12 +44,22 @@ local function newAgent(agent_id, read, write, socket)
 
   local nextId = 1
   local rmappings = {}
+  local waiting = {}
   local cmappings = setmetatable({}, {
     __mode = "k"
   })
   local clients = setmetatable({}, {
     __mode = "v"
   })
+
+  requestHandlers[agent_id] = function (name, ...)
+    p("Request", name, ...)
+    local id = nextId
+    nextId = nextId + 1
+    waiting[id] = coroutine.running()
+    write{id,name,...}
+    return coroutine.yield()
+  end
 
   clientHandlers[agent_id] = function (cread, cwrite, csocket)
     local caddress = csocket:getpeername()
@@ -107,9 +124,20 @@ local function newAgent(agent_id, read, write, socket)
     local id = message[1]
     if id < 0 then
       id = -id
-      message[1] = -rmappings[id]
-      local cwrite = cmappings[id]
-      cwrite(message)
+      local rmap = rmappings[id]
+      if rmap then
+        message[1] = -rmap
+        local cwrite = cmappings[id]
+        cwrite(message)
+      else
+        local thread = waiting[id]
+        if thread then
+          waiting[id] = nil
+          assert(coroutine.resume(thread, unpack(message, 2)))
+        else
+          print("Unknown response id: " .. id)
+        end
+      end
     elseif id == 0 then
       if message[2] then
         print(message[2])
@@ -132,5 +160,6 @@ end
 
 return {
   getClientHandler = getClientHandler,
+  getRequestHandler = getRequestHandler,
   newAgent = newAgent,
 }
