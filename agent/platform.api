@@ -170,3 +170,5 @@ cpuinfo() -> (info: {
 })
 
 loadavg() -> (avg: (Number, Number, Number))
+
+script(code: String) -> (result: Any)

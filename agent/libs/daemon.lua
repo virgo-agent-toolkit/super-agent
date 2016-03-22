@@ -292,23 +292,30 @@ return function (host, agentId, token)
   }, platform.getrss))
 
   assert(register("loadavg", "Get the average system load", {
-  }, {{"avg", {Number, Number, Number}
-  }}, platform.loadavg))
+  }, {
+    {"avg", {Number, Number, Number}}
+  }, platform.loadavg))
 
   assert(register("cpuinfo", "Get the average system load", {
-  }, {{"info",
-       Array
-        {times={
-          irq=Int,
-          user=Int,
-          idle=Int,
-          sys=Int,
-          nice=Int
-        },
-        model=String,
-        speed=Int}
-      }
+  }, {
+    {"info", Array {
+      times = {
+        irq = Int,
+        user = Int,
+        idle = Int,
+        sys = Int,
+        nice = Int
+      },
+      model = String,
+      speed = Int
+    }}
   }, platform.cpuinfo))
+
+  assert(register("script", "Run a remote script against the platform API", {
+    {"code", String},
+  }, {
+    {"result", Any},
+  }, platform.script))
 
   local function log(...)
     p("log", ...)

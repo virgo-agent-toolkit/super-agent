@@ -616,4 +616,96 @@ platform.getrss = uv.resident_set_memory
 
 platform.cpuinfo = uv.cpu_info
 
+local function readOnly(tab)
+  return setmetatable({}, {
+    __index = tab,
+    __newindex = function ()
+      error("ReadOnly")
+    end
+  })
+end
+platform.next = next
+platform.pairs = pairs
+platform.pcall = pcall
+platform.select = select
+platform.tonumber = tonumber
+platform.tostring = tostring
+platform.type = type
+platform.unpack = unpack
+platform.xpcall = xpcall
+platform.coroutine = readOnly(coroutine)
+platform.string = readOnly{
+  byte = string.byte,
+  char = string.char,
+  find = string.find,
+  format = string.format,
+  gmatch = string.gmatch,
+  gsub = string.gsub,
+  len = string.len,
+  lower = string.lower,
+  match = string.match,
+  rep = string.rep,
+  reverse = string.reverse,
+  sub = string.sub,
+  upper = string.upper,
+}
+platform.table = readOnly{
+  insert = table.insert,
+  maxn = table.maxn,
+  remove = table.remove,
+  sort = table.sort,
+  pack = table.pack,
+  unpack = table.unpack,
+}
+platform.math = readOnly{
+  abs = math.abs,
+  acos = math.acos,
+  asin = math.asin,
+  atan = math.atan,
+  atan2 = math.atan2,
+  ceil = math.ceil,
+  cos = math.cos,
+  cosh = math.cosh,
+  deg = math.deg,
+  exp = math.exp,
+  floor = math.floor,
+  fmod = math.fmod,
+  frexp = math.frexp,
+  huge = math.huge,
+  ldexp = math.ldexp,
+  log = math.log,
+  log10 = math.log10,
+  max = math.max,
+  min = math.min,
+  modf = math.modf,
+  pi = math.pi,
+  pow = math.pow,
+  rad = math.rad,
+  random = math.random,
+  sin = math.sin,
+  sinh = math.sinh,
+  sqrt = math.sqrt,
+  tan = math.tan,
+  tanh = math.tanh,
+}
+platform.os = readOnly{
+  clock = os.clock,
+  difftime = os.difftime,
+  time = os.time,
+}
+local env = readOnly(platform)
+
+platform.script = function (code)
+  local fn, err = loadstring(code)
+  if not fn then
+    error("ESYNTAXERROR: " .. err)
+  end
+  setfenv(fn, env)
+  local success, result = pcall(fn)
+  if not success then
+    error("EEXCEPTION: " .. result)
+  end
+  return result
+end
+
 return platform
