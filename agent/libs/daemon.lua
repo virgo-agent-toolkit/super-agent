@@ -1,17 +1,25 @@
-return function (host, agentId, token)
+return function (standalone, host, agentId, token)
+  local url
   if not host then
-    print("Usage:\n\trax connect wss://localhost:8443 agent_id agent_token\n")
+    print("Usage:\n" ..
+      "\trax connect wss://localhost:8443 agent_id agent_token\n" ..
+      "\trax serve ws://127.0.0.1:7000\n")
     os.exit(-1)
   end
-  if not agentId then agentId = "fc1eb9f7-69f0-4079-9e74-25ffd091022a" end
-  if not token then token = "d8e92bcf-2adf-4bd7-b570-b6548e2f6d5f" end
-  local url = host .. "/enlist/" .. agentId .. "/" .. token
+  if standalone then
+    url = host
+  else
+    if not agentId then agentId = "fc1eb9f7-69f0-4079-9e74-25ffd091022a" end
+    if not token then token = "d8e92bcf-2adf-4bd7-b570-b6548e2f6d5f" end
+    url = host .. "/enlist/" .. agentId .. "/" .. token
+  end
 
   local platform = require('platform')
   local p = require('pretty-print').prettyPrint
 
   local msgpackDecode = require('msgpack').decode
   local wsConnect = require('websocket-client')
+  local wsCreateServer = require('websocket-server')
   local loadResource = require('resource').load
   local makeRpc = require('rpc')
   local codec = require('websocket-to-message')
@@ -228,6 +236,14 @@ return function (host, agentId, token)
 
   end
 
+
+  if platform.hostname then
+    assert(register("hostname", "Get the machine's hostname", {
+    }, {
+      {"host", Optional(String)}
+    }, platform.hostname))
+  end
+
   assert(register("getenv", "Get environment variable", {
     {"name", String}
   }, {
@@ -243,13 +259,6 @@ return function (host, agentId, token)
   }, {
     {"arch", String}
   }, platform.getarch))
-
-  if platform.getuser then
-    assert(register("getuser", "Get the username of the agent", {
-    }, {
-      {"username", Optional(String)}
-    }, platform.getuser))
-  end
 
   assert(register("homedir", "Get the user's home directory", {
   }, {
@@ -343,7 +352,11 @@ return function (host, agentId, token)
       end
       local message = msgpackDecode(data)
       print("Forwarding command from CLI to client: " .. message[1])
-      api.call(unpack(message))
+      if message[1] == '' then
+        api.call(unpack(message, 2))
+      else
+        api.call(unpack(message, 2))
+      end
       write()
     end, debug.traceback)
     if not success then
@@ -352,7 +365,13 @@ return function (host, agentId, token)
 
   end
 
-  coroutine.wrap(function ()
+  local function handleSocket(read, write)
+    print("Starting RPC protocol.")
+    api = makeRpc(registry.call, log, codec(read, write))
+    api.readLoop()
+  end
+
+  local function connect()
     print("Connecting to AEP: " .. url)
     local read, write = assert(wsConnect(
       url ,
@@ -361,16 +380,51 @@ return function (host, agentId, token)
         tls = {ca = assert(loadResource("./../agent-cert/new.cert.cert"))}
       }
       ))
-    read, write = codec(read, write)
     print("Connected!")
-    api = makeRpc(registry.call, log, read, write)
-    print("Binding to local port to receive CLI commands...")
-    createServer({
-      host = "127.0.0.1",
-      port = 13377
-    }, onCLI)
-    print("Starting RPC protocol.")
-    api.readLoop()
+    handleSocket(read, write)
     print("Exiting!")
-  end)()
+  end
+
+  local function listen()
+    local protocol, hostname, port= string.match(url, "^(wss?)://([^:/]+):?(%d*)")
+    local tls
+    if protocol == "ws" then
+      port = tonumber(port) or 80
+    elseif protocol == "wss" then
+      port = tonumber(port) or 443
+      tls = {}
+    else
+      error("Sorry, only ws:// or wss:// protocols supported")
+    end
+
+    wsCreateServer({
+      host = hostname,
+      port = port,
+      tls = tls,
+      protocol = "schema-rpc",
+    }, function (read, write, socket)
+      print("New Client!")
+      handleSocket(read, write)
+      print("Client disconnected!")
+      if not socket:is_closing() then
+        socket:close()
+      end
+    end)
+  end
+
+  if standalone then
+    assert(register("key", "dummy key for direct connection", {
+    }, {
+      {"key", String}
+    }, function () return '' end))
+    listen()
+  else
+    coroutine.wrap(connect)()
+  end
+  print("Binding to local port to receive CLI commands...")
+  createServer({
+    host = "127.0.0.1",
+    port = 13377
+  }, onCLI)
+
 end

@@ -133,13 +133,13 @@ pty (
   resize: Emitter(WinSize)
 )
 
+hostname() -> (host: Optional(String))
+
 getenv(name: String) -> (value: Optional(String))
 
 getos() -> (os: String)
 
 getarch() -> (arch: String)
-
-getuser() -> (username: Optional(String))
 
 homedir() -> (home: String)
 

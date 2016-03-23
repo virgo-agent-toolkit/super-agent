@@ -77,14 +77,18 @@ end
 
 -- readfile (path: String) -> (data: Optional(Buffer))
 function platform.readfile(path)
-  local i = 0
-  local chunks = {}
-  local exists = platform.readstream(path, function (chunk)
-    i = i + 1
-    chunks[i] = chunk
-  end)
-  if not exists then return nil end
-  return table.concat(chunks)
+  local err, fd, stat, data
+  err, fd = async(uv.fs_open, path, "r", 438)
+  if not fd then
+    if not err or err:match("^ENOENT:") then return false end
+    error(err)
+  end
+  err, stat = async(uv.fs_fstat, fd)
+  if stat then
+    err, data = async(uv.fs_read, fd, stat.size, 0)
+  end
+  uv.fs_close(fd)
+  return assert(data, err)
 end
 
 -- readbinary (path: String) -> (data: Optional(Buffer))
@@ -568,6 +572,20 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   end
 end
 
+if ffi.os ~= "Windows" then
+  ffi.cdef[[
+    int gethostname(char *name, size_t len);
+  ]]
+  -- hostname() -> (host: Optional(String))
+  function platform.hostname()
+    local buf = ffi.new("char[256]")
+    if ffi.C.gethostname(buf, 255) == 0 then
+      return ffi.string(buf)
+    end
+    return nil
+  end
+end
+
 -- getenv(name: String) -> (value: Optional(String))
 function platform.getenv(name)
   return os.getenv(name)
@@ -581,16 +599,6 @@ end
 -- getarch() -> (arch: String)
 function platform.getarch()
   return ffi.arch
-end
-
-
-if ffi.os ~= "Windows" then
-
-  -- getuser() -> (username: Optional(String))
-  function platform.getuser()
-    return platform.user(uv.getuid())
-  end
-
 end
 
 -- homedir() -> (home: String)
@@ -717,11 +725,11 @@ platform.script = function (code)
     error("ESYNTAXERROR: " .. err)
   end
   setfenv(fn, env)
-  local success, result = pcall(fn)
-  if not success then
-    error("EEXCEPTION: " .. result)
+  local result = {pcall(fn)}
+  if not result[1] then
+    error("EEXCEPTION: " .. result[2])
   end
-  return result
+  return unpack(result, 2)
 end
 
 return platform

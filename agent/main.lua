@@ -18,7 +18,10 @@ local function parseArgs(command, ...)
     os.exit(-1)
   end
   if command == "connect" then
-    return require('daemon')(...)
+    return require('daemon')(false, ...)
+  end
+  if command == "serve" then
+    return require('daemon')(true, ...)
   end
   local args = table.pack(...)
   for i = 1, args.n do
