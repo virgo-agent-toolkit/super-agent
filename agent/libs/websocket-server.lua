@@ -18,7 +18,10 @@ return function (options, onConnection)
       write(message)
       return write()
     end
-    local req = assert(read())
+    local req = read()
+    if not req then
+      return write()
+    end
     -- look for GET request
     -- with 'Upgrade: websocket'
     -- and 'Connection: Upgrade' headers
