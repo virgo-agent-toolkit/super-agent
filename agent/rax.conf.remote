@@ -1,4 +1,12 @@
------BEGIN CERTIFICATE-----
+-- Sample config for agent that connects out to aep.
+-- This is configured for the aep in the git repo running on localhost.
+
+mode = "remote"
+id = "sample-agent"
+token = "agent-auth-token"
+proxy = "wss://localhost:8433"
+-- Cert used to verify proxy (custom certs are safer than public webtrust)
+cert = [[-----BEGIN CERTIFICATE-----
 MIICtTCCAh4CCQD+rLDBaX/TUDANBgkqhkiG9w0BAQUFADCBnjELMAkGA1UEBhMC
 VVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcTB1Nwb2thbmUxEjAQBgNV
 BAoTCVJhY2tzcGFjZTETMBEGA1UECxMKTW9uaXRvcmluZzETMBEGA1UEAxMKYWdl
@@ -14,4 +22,4 @@ KsbBLNtSJhS5DrLuGCcpDsOOD2x4UG+7KWPH8RztUV0kxzE8C/7IxHOOtJIOE0YR
 uxHWcW85Tav9MXcQjbWFlFCX1E019KX19Y21ne+it0E4ig9+ggjU49Gb5uTnT2qK
 rzQwTfYvgB9ojeIdb5Cuyh1FRn8QgvY2FY4g6BpUSN7G1GnlL9e9yswZ9RCduJ+T
 NcQPRMRNRLeFSlUE4p99xZSb5DyByZ/Aqw==
------END CERTIFICATE-----
+-----END CERTIFICATE-----]]

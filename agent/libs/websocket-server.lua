@@ -1,8 +1,9 @@
-local p = require('pretty-print').prettyPrint
 local createServer = require('coro-net').createServer
 local websocketCodec = require('websocket-codec')
 local wrapIo = require('coro-websocket').wrapIo
 local httpCodec = require('http-codec')
+local base64Decode = require('base64-decode')
+local sha1 = require('sha1')
 
 return function (options, onConnection)
   options.encode = httpCodec.encoder()
@@ -18,7 +19,6 @@ return function (options, onConnection)
       return write()
     end
     local req = assert(read())
-    local chunks = {}
     -- look for GET request
     -- with 'Upgrade: websocket'
     -- and 'Connection: Upgrade' headers
@@ -27,6 +27,35 @@ return function (options, onConnection)
       local key, value = unpack(req[i])
       headers[key:lower()] = value
     end
+
+    -- If there is a list of authorized users, check them using HTTP Basic Auth 
+    local users = options.users
+    if users then
+      local authed = false
+      local auth = headers.authorization
+      if auth then
+        local plain = base64Decode(auth:match("Basic ([^ ]*)"))
+        for i = 1, #users do
+          local type, value = users[i]:match("^([^:]*):(.*)$")
+          if (type == "plain" and value == plain) or
+             (type == "sha1" and value == sha1(plain)) then
+            authed = true
+            break
+          end
+        end
+      end
+      if not authed then
+        local message = "Please enter valid username/password\n"
+        write {
+          code = 401,
+          {"WWW-Authenticate", 'Basic realm="RAX Agent"'},
+          {"Content-Length", #message},
+        }
+        write(message)
+        return
+      end
+    end
+
     local connection = headers.connection
     local upgrade = headers.upgrade
     if not (
@@ -51,7 +80,7 @@ return function (options, onConnection)
         end
       end
       if not foundProtocol then
-        return abort "Only " .. protocol .. " subprotocol allowed\n"
+        return abort("Only " .. protocol .. " subprotocol allowed\n")
       end
     end
 

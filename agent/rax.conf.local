@@ -1,0 +1,9 @@
+-- A standalone agent is a remote and proxy in one.  Clients can connect
+-- directly to it without an intermediate proxy.
+-- This is useful for localhost-only testing on a developer laptop or for quick
+-- testing on remote machines using ssh port forwarding.
+
+-- Local-only agent with no authentication or encryption
+mode = "standalone"
+ip = "127.0.0.1"
+port = 8080

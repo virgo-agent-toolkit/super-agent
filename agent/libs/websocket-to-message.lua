@@ -1,4 +1,4 @@
-local p = require('pretty-print').prettyPrint
+local log = require('log').log
 local jsonDecode = require('json').parse
 local jsonEncode = require('json').stringify
 local msgpackDecode = require('msgpack').decode
@@ -17,10 +17,10 @@ return function (read, write, jsonFirst)
       message = msgpackDecode(frame.payload)
       encode = msgpackEncode
     end
-    p("<-", message)
+    log(5, "<-", message)
     return message
   end, function (message)
-    p("->", message)
+    log(5, "->", message)
     if message == nil then
       write {
         opcode = 8,
