@@ -3,24 +3,20 @@ define('apps/Terminal', function (require) {
 
   // Load the terminal emulator library.
   var Term = require('libs/term');
+  var getEnv = require('libs/agent-env');
 
   var charHeight = 16;
   var charWidth = 8;
+  var clientKey;
 
   Terminal.title = 'Terminal';
   return Terminal;
 
   function* Terminal(call, run, cwd) {
-    console.log({
-      call:call,
-      run:run,
-      cwd:cwd
-    });
+
     var win;
-    var clientKey = yield* call('key');
-    var home = yield* call('homedir');
-    var user = yield* call('getuser');
-    var os = yield* call('getos');
+    clientKey = clientKey === undefined ? (clientKey = yield* call('key')) : clientKey;
+    var env = yield* getEnv();
     app.initialWidth = 80 * charWidth + 10; // Magic width for 80 cols?
     app.initialHeight = 24 * charHeight + 10; // Magic height for 24 rows?
     var winsize = getWinsize(app.initialWidth, app.initialHeight);
@@ -37,11 +33,11 @@ define('apps/Terminal', function (require) {
       '/bin/bash',
       winsize,
       {
-        args: [os === 'Linux' ? '-i' : '-l'],
-        cwd: cwd || home,
+        args: [env.os === 'Linux' ? '-i' : '-l'],
+        cwd: cwd || env.home,
         env: [
-          'HOME=' + home,
-          'USER=' + user,
+          'HOME=' + env.home,
+          'USER=' + env.user,
           'LC_ALL=en_US.utf8',
           'TERM=xterm-256color',
           'RAX_CLIENT_KEY=' + clientKey

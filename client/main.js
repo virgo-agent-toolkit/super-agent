@@ -8,6 +8,7 @@ define('main', function (require) {
   var FileBrowser = require('apps/FileBrowser');
   var domBuilder = require('libs/dombuilder');
   var run = require('libs/run');
+  var getEnv = require('libs/agent-env');
 
   var realCall;
   function* call(...args) {
@@ -17,31 +18,28 @@ define('main', function (require) {
     return yield* realCall(...args);
   }
 
-  var home;
-  function* expandVars(path) {
+  var env;
+  function expandVars(path) {
     if (!path.match(/\$HOME/)) { return path; }
-    if (!home) {
-      home = yield* call('homedir');
-    }
-    return path.replace('$HOME', home);
+    return path.replace('$HOME', env.home);
   }
 
   var commands = {
     'terminal': function* (cwd) {
-      if (cwd) { cwd = yield* expandVars(cwd); }
+      if (cwd) { cwd = expandVars(cwd); }
       var win = yield* launchApp(Terminal, cwd);
       win.focus();
     },
     'edit': function* (...files) {
       for (var file of files) {
-        file = yield* expandVars(file);
+        file = expandVars(file);
         var win = yield* launchApp(Editor, file);
         win.focus();
       }
     },
     'view': function* (...files) {
       for (var file of files) {
-        file = yield* expandVars(file);
+        file = expandVars(file);
         var win = yield* launchApp(ImageViewer, file);
         win.focus();
       }
@@ -56,14 +54,16 @@ define('main', function (require) {
   };
 
   window.onload = function () {
-    document.body.textContent = '';
-    document.body.appendChild(domBuilder([
-      ['button', {onclick: function () {
-        runCommand('terminal');
-      }}, 'New Terminal']
-    ]));
-    runCommand('terminal');
-    runCommand('browse', '$HOME');
+    run(function*() {
+      env = yield* getEnv(call);
+      document.title = env.user + '@' + env.hostname + ' - Super Client';
+      document.body.textContent = '';
+      document.body.appendChild(domBuilder([
+        ['button', {onclick: function () {
+          runCommand('terminal');
+        }}, 'New Terminal']
+      ]));
+    });
     // runCommand('edit',
       // '/Users/tim8019/Code/super-agent/client/main.js',
       // '/Users/tim8019/Code/super-agent/client/index.html',
