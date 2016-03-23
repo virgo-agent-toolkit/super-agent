@@ -300,16 +300,27 @@ return function (host, agentId, token)
   }, {
     {"info", Array {
       times = {
-        irq = Int,
-        user = Int,
-        idle = Int,
-        sys = Int,
-        nice = Int
-      },
-      model = String,
-      speed = Int
-    }}
+          user=Int,
+          idle=Int,
+          sys=Int,
+          nice=Int
+        },
+        model=String,
+        speed=Int}
+      }
   }, platform.cpuinfo))
+
+  assert(register("iaddr","Get network interfaces",{
+  }, {
+    {"interfaces", Array{
+      netmask=String,
+      ip=String,
+      mac=String,
+      internal=Bool,
+      family=String,
+      iname=String}
+    }
+  }, platform.iaddr))
 
   assert(register("script", "Run a remote script against the platform API", {
     {"code", String},

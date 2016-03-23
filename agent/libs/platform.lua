@@ -616,6 +616,22 @@ platform.getrss = uv.resident_set_memory
 
 platform.cpuinfo = uv.cpu_info
 
+function platform.iaddr()
+  local value = uv.interface_addresses()
+  local returnValue = {}
+  local i = 1
+  -- flattening the table
+  for interfaceName, interface in pairs(value) do
+    for j=1, #interface do
+      interface[j]["iname"]=interfaceName
+      returnValue[i] = interface[j]
+      i = i + 1
+    end
+  end
+
+  return returnValue
+end
+
 local function readOnly(tab)
   return setmetatable({}, {
     __index = tab,

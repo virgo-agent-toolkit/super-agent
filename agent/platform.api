@@ -169,6 +169,15 @@ cpuinfo() -> (info: {
   speed: Integer
 })
 
+iaddr() -> (interfaces: {
+  netmask: String,
+  ip: String,
+  mac: String,
+  internal: Bool,
+  family: String,
+  iname: String}
+)
+
 loadavg() -> (avg: (Number, Number, Number))
 
 script(code: String) -> (result: Any)
