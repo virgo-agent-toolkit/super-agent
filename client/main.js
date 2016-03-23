@@ -46,7 +46,7 @@ define('main', function (require) {
     },
     'browse': function* (...folders) {
       for (var folder of folders) {
-        folder = yield* expandVars(folder);
+        folder = expandVars(folder);
         var win = yield* launchApp(FileBrowser, folder);
         win.focus();
       }

@@ -88,7 +88,7 @@ function platform.readfile(path)
     err, data = async(uv.fs_read, fd, stat.size, 0)
   end
   uv.fs_close(fd)
-  return assert(data, err)
+  return (assert(data, err))
 end
 
 -- readbinary (path: String) -> (data: Optional(Buffer))

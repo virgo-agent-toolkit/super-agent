@@ -16,7 +16,7 @@ local cwd = require('uv').cwd()
 local function resolve(path)
   return pathJoin(cwd, path)
 end
--- require('log').level = 4
+require('log').level = 4
 
 local localSock = {
   path = "/tmp/rax.sock"
