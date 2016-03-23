@@ -12,6 +12,7 @@ return {
     "luvit/pretty-print",
     "creationix/msgpack",
     "creationix/schema",
+    "creationix/coro-websocket",
     "creationix/coro-fs",
     "luvit/json",
     "luvit/secure-socket",

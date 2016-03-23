@@ -33,8 +33,8 @@ require 'weblit-app'
   }, require 'handle-agent')
 
   .route({
-    method = "GET",
-    path = "/request/:agent_id/:args:"
+    method = "POST",
+    path = "/request/:agent_id/:name"
   }, require 'handle-request')
 
   .start()
