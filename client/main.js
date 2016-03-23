@@ -6,6 +6,7 @@ define('main', function (require) {
   var Editor = require('apps/Editor');
   var ImageViewer = require('apps/ImageViewer');
   var FileBrowser = require('apps/FileBrowser');
+  var domBuilder = require('libs/dombuilder');
   var run = require('libs/run');
 
   var realCall;
@@ -56,6 +57,11 @@ define('main', function (require) {
 
   window.onload = function () {
     document.body.textContent = '';
+    document.body.appendChild(domBuilder([
+      ['button', {onclick: function () {
+        runCommand('terminal');
+      }}, 'New Terminal']
+    ]));
     runCommand('terminal');
     runCommand('browse', '$HOME');
     // runCommand('edit',
