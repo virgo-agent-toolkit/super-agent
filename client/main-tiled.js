@@ -41,7 +41,7 @@ define('main-tiled', function (require) {
     last = win;
   }
 
-  var windowDragging = false;
+  var windowDragging = null;
   var hoverback = null;
   function selectQuadrant(callback) {
     if (hoverback) {
@@ -58,6 +58,20 @@ define('main-tiled', function (require) {
     cb(null, last);
     setHover(null);
   }
+
+  function onWindowDrop(err, win) {
+    var self = windowDragging;
+    windowDragging = null;
+    if (self.dragging !== win) {
+      self.dragging.parent.remove(self.dragging);
+    }
+    win.add(self);
+    self.dragging = null;
+    self.el.classList.remove('moving');
+    self.el.setAttribute('style', '');
+    onResize();
+  }
+
 
   window.onmouseup = function () {
     if (windowDragging) { doQuadrant(); }
@@ -129,19 +143,11 @@ define('main-tiled', function (require) {
   Window.prototype.onDrag = function (dx, dy) {
     var style = this.el.style;
     if (!this.dragging) {
-      selectQuadrant(function (err, win) {
-        windowDragging = false;
-        self.dragging.parent.remove(self.dragging);
-        win.add(self);
-        self.dragging = null;
-        self.el.classList.remove('moving');
-        self.el.setAttribute('style', '');
-        onResize();
-      });
+      selectQuadrant(onWindowDrop);
+      windowDragging = this;
       this.el.classList.add('moving');
       var empty = new Empty();
       this.dragging = empty;
-      windowDragging = true;
       var rect = this.el.getBoundingClientRect();
       this.x = rect.left;
       this.y = rect.top;
@@ -150,7 +156,6 @@ define('main-tiled', function (require) {
       document.body.appendChild(this.el);
       this.parent.replace(this, empty);
       this.parent = null;
-      var self = this;
       onResize();
     }
     this.x += dx;
@@ -283,6 +288,7 @@ define('main-tiled', function (require) {
     }
   };
   Split.prototype.replace = function (oldChild, newChild) {
+    newChild.parent = this;
     var parentEl;
     if (oldChild === this.first) {
       this.first = newChild;
@@ -296,19 +302,14 @@ define('main-tiled', function (require) {
       parentEl.removeChild(oldChild.el);
     }
     parentEl.appendChild(newChild.el);
-    newChild.parent = this;
   };
 
   Split.prototype.remove = function (child) {
-    var other;
     if (child === this.first) {
-      other = this.second;
+      this.parent.replace(this, this.second);
     }
     else if (child === this.second) {
-      other = this.first;
-    }
-    if (other) {
-      this.parent.replace(this, other);
+      this.parent.replace(this, this.first);
     }
   };
 
