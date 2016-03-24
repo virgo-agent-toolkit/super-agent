@@ -126,8 +126,8 @@ define('main-tiled', function (require) {
     if (!this.dragging) {
       selectQuadrant(function (err, win) {
         windowDragging = false;
-        win.add(self);
         self.dragging.parent.remove(self.dragging);
+        win.add(self);
         self.dragging = null;
         self.el.classList.remove('moving');
         self.el.setAttribute('style', '');
@@ -320,7 +320,9 @@ define('main-tiled', function (require) {
     }
   };
   Desktop.prototype.remove = function (child) {
-    this.el.removeChild(child.el);
+    if (child.el.parentNode === this.el) {
+      this.el.removeChild(child.el);
+    }
     this.child = null;
   };
   Desktop.prototype.replace = function (oldChild, newChild) {
