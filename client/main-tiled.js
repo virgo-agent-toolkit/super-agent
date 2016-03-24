@@ -329,7 +329,10 @@ define('main-tiled', function (require) {
     if (child.el.parentNode === this.el) {
       this.el.removeChild(child.el);
     }
-    this.child = null;
+    var empty = new Empty();
+    this.child = empty;
+    empty.parent = this;
+    this.el.appendChild(empty.el);
   };
   Desktop.prototype.replace = function (oldChild, newChild) {
     var parentEl = this.el;
@@ -393,6 +396,11 @@ define('main-tiled', function (require) {
   function onResize() {
     d.resize(window.innerWidth, window.innerHeight);
   }
+  window.onkeypress = function (evt) {
+    if (evt.key === 'n') {
+      addWindow();
+    }
+  };
 
   var next = 'C'.charCodeAt(0);
   function addWindow() {
