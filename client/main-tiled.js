@@ -20,15 +20,122 @@
 */
 define('main-tiled', function (require) {
   'use strict';
-  var run = require('libs/run');
-  var rpc = require('libs/rpc');
+  // var run = require('libs/run');
+  // var rpc = require('libs/rpc');
   var domBuilder = require('libs/dombuilder');
   var drag = require('libs/drag-helper');
 
-  function Split(parent, first, second, isVertical) {
+  var last = null;
+  function setHover(win) {
+    if (win === last) { return; }
+    if (last) {
+      var style = last.hoverEl.style;
+      style.top = 0;
+      style.left = 0;
+      style.right = 'auto';
+      style.bottom = 'auto';
+      style.width = 0;
+      style.height = 0;
+      last.quadrant = 'none';
+    }
+    last = win;
+  }
+
+  var hoverback = null;
+  function selectQuadrant(callback) {
+    if (hoverback) {
+      throw new Error('already in hover select mode');
+    }
+    hoverback = callback;
+  }
+
+  function Window(title) {
+    this.title = title;
+    this.width = 0;
+    this.height = 0;
+    domBuilder(['.cell.window$el',
+      {
+        onmousemove: this.onMove.bind(this),
+      },
+      ['.title$titleEl', title],
+      ['.close$closeEl', '✖'],
+      ['.content$contentEl'],
+      ['.hover$hoverEl', {
+        onclick: this.onClick.bind(this),
+      }],
+    ], this);
+  }
+  Window.prototype.setTitle = function (title) {
+    if (title === this.title) { return; }
+    this.title = title;
+    this.titleEl.textContent = title;
+  };
+  Window.prototype.resize = function (w, h) {
+    this.width = w;
+    this.height = h;
+    // TODO: forward down to apps
+  };
+  Window.prototype.onMove = function (evt) {
+    if (!hoverback) { return; }
+    setHover(this);
+    var rect = this.el.getBoundingClientRect();
+    var x = (evt.pageX - rect.left) / (rect.right - rect.left),
+        y = (evt.pageY - rect.top) / (rect.bottom - rect.top);
+    var quadrant = (x > (1 - y)) ?
+      ((x > y) ? 'right' : 'bottom') :
+      ((x > y) ? 'top' : 'left');
+    if (quadrant === this.quadrant) { return; }
+    this.quadrant = quadrant;
+    var style = this.hoverEl.style;
+    switch (quadrant) {
+      case 'left':
+        style.left = 0;
+        style.right = 'auto';
+        style.top = 0;
+        style.bottom = 0;
+        style.width = '50%';
+        style.height = 'auto';
+        break;
+      case 'right':
+        style.left = 'auto';
+        style.right = 0;
+        style.top = 0;
+        style.bottom = 0;
+        style.width = '50%';
+        style.height = 'auto';
+        break;
+      case 'top':
+        style.left = 0;
+        style.right = 0;
+        style.top = 0;
+        style.bottom = 'auto';
+        style.width = 'auto';
+        style.height = '50%';
+        break;
+      case 'bottom':
+        style.left = 0;
+        style.right = 0;
+        style.top = 'auto';
+        style.bottom = 0;
+        style.width = 'auto';
+        style.height = '50%';
+        break;
+    }
+  };
+  Window.prototype.onClick = function () {
+    if (!hoverback) { return; }
+    var cb = hoverback;
+    hoverback = null;
+    cb(null, this);
+    setHover(null);
+  };
+
+  function Split(first, second, isVertical) {
     this.first = first;
     this.second = second;
     this.parent = parent;
+    first.parent = this;
+    second.parent = this;
     this.isVertical = isVertical;
     this.width = 0;
     this.height = 0;
@@ -42,7 +149,6 @@ define('main-tiled', function (require) {
   }
 
   Split.prototype.onDrag = function (dx, dy) {
-    console.log(dx, dy);
     this.resize(this.width, this.height, this.firstSize +=
       this.isVertical ? dy : dx);
   };
@@ -78,41 +184,64 @@ define('main-tiled', function (require) {
       this.second.resize(this.width - 10 - this.firstSize, this.height);
     }
   };
-
-  function Window(title) {
-    this.title = title;
-    domBuilder(['.cell.window$el',
-      ['.title$titleEl', title],
-      ['.container$containerEl'],
-    ], this);
-  }
-  Window.prototype.setTitle = function (title) {
-    if (title === this.title) { return; }
-    this.title = title;
-    this.titleEl.textContent = title;
-  };
-  Window.prototype.resize = function (w, h) {
-    // TODO: forward down to apps
-  };
-
-  run(function* () {
-    var call = yield* rpc();
-    console.log(call);
-    console.log();
-    document.body.textContent = '';
-    var a = new Window('Window A');
-    var b = new Window('Window B');
-    var c = new Window('Window C');
-    var d = new Window('Window D');
-    var e = new Split(null, a, b, true);
-    var f = new Split(null, c, d, true);
-    var g = new Split(null, e, f, false);
-    window.onresize = onResize;
-    onResize();
-    document.body.appendChild(g.el);
-    function onResize() {
-      g.resize(window.innerWidth, window.innerHeight);
+  Split.prototype.replace = function (oldChild, newChild) {
+    var parentEl;
+    if (oldChild === this.first) {
+      this.first = newChild;
+      parentEl = this.firstEl;
     }
-  });
+    else if (oldChild === this.second) {
+      this.second = newChild;
+      parentEl = this.secondEl;
+    }
+    // TODO: are there ever cases where we need to remove the old child?
+    parentEl.appendChild(newChild.el);
+    newChild.parent = this;
+  };
+
+  // run(function* () {
+    // var call = yield* rpc();
+    // console.log(call);
+  // });
+
+  document.body.textContent = '';
+  var a = new Window('Window A');
+  var b = new Window('Window B');
+  var s = new Split(a, b, false);
+  a.contentEl.appendChild(domBuilder(['button', {
+    onclick: addWindow
+  }, 'New Window']));
+  window.onresize = onResize;
+  onResize();
+  document.body.appendChild(s.el);
+  function onResize() {
+    s.resize(window.innerWidth, window.innerHeight);
+  }
+
+  var next = 'C'.charCodeAt(0);
+  function addWindow() {
+    selectQuadrant(function (err, win) {
+      var w = new Window('Window ' + String.fromCharCode(next++));
+      // var w2 = new Window('Window ' + String.fromCharCode(next++));
+      var s;
+      var p = win.parent;
+      switch (win.quadrant) {
+        case 'top':
+          s = new Split(w, win, true);
+          break;
+        case 'bottom':
+          s = new Split(win, w, true);
+          break;
+        case 'left':
+          s = new Split(w, win, false);
+          break;
+        case 'right':
+          s = new Split(win, w, false);
+          break;
+      }
+      p.replace(win, s);
+      onResize();
+    });
+  }
 
 });

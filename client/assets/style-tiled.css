@@ -10,8 +10,7 @@ body {
   overflow: hidden;
   margin: 0;
 }
-
-.first, .second, .slider, .cell, .title {
+.first, .second, .slider, .cell, .title, .hover, .close {
   box-sizing: border-box;
   position: absolute;
   overflow: hidden;
@@ -64,25 +63,34 @@ body {
   bottom: 0;
   height: 100%;
 }
-.title {
-  width: 100%;
+.title, .close {
   height: 32px;
-  line-height: 31px;
+  line-height: 32px;
   text-align: center;
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  overflow: hidden;
   background-color: rgba(255, 255, 255, 0.7);
-  border-bottom: 1px solid #777;
+}
+.title {
+  width: 'auto';
+  left: 0;
+  right: 32px;
+  overflow: hidden;
   padding: 0 10px;
   font-family: sans-serif;
   font-size: 12pt;
   text-overflow: ellipsis;
-  cursor: default;
+  cursor: grab;
 }
-.container {
+.close {
+  font-size: 20px;
+  right: 0;
+  width: 32px;
+}
+.close:hover {
+  background-color: rgba(255,100,100,0.8);
+}
+.content {
   background-color: rgba(255,255,255,0.2);
   position: absolute;
   overflow: auto;
@@ -92,4 +100,7 @@ body {
   bottom: 0;
   width: 100%;
   height: 100%;
+}
+.hover {
+  background-color: rgba(255,255,255,0.5);
 }
