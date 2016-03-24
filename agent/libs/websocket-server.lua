@@ -2,7 +2,7 @@ local createServer = require('coro-net').createServer
 local websocketCodec = require('websocket-codec')
 local wrapIo = require('coro-websocket').wrapIo
 local httpCodec = require('http-codec')
-local base64Decode = require('base64-decode')
+local base64Decode = require('base64').decode
 local sha1 = require('sha1')
 
 return function (options, onConnection)
@@ -31,7 +31,7 @@ return function (options, onConnection)
       headers[key:lower()] = value
     end
 
-    -- If there is a list of authorized users, check them using HTTP Basic Auth 
+    -- If there is a list of authorized users, check them using HTTP Basic Auth
     local users = options.users
     if users then
       local authed = false
