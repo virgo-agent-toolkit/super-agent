@@ -58,7 +58,9 @@ define('main-tiled', function (require) {
         onmousemove: this.onMove.bind(this),
       },
       ['.title$titleEl', title],
-      ['.close$closeEl', '✖'],
+      ['.close$closeEl',
+        {onclick:this.onClose.bind(this)},
+        '✖'],
       ['.content$contentEl'],
       ['.hover$hoverEl', {
         onclick: this.onClick.bind(this),
@@ -74,6 +76,11 @@ define('main-tiled', function (require) {
     this.width = w;
     this.height = h;
     // TODO: forward down to apps
+  };
+  Window.prototype.onClose = function (evt) {
+    evt.preventDefault();
+    this.parent.remove(this);
+    onResize();
   };
   Window.prototype.onMove = function (evt) {
     if (!hoverback) { return; }
@@ -154,11 +161,6 @@ define('main-tiled', function (require) {
   };
 
   Split.prototype.resize = function (w, h, firstSize) {
-    // if (w === this.width && h === this.height &&
-    //     (firstSize === undefined || firstSize === this.firstSize)) {
-    //   return;
-    // }
-
     this.firstSize = firstSize === undefined ? (this.firstSize ?
       (this.firstSize /
         (this.isVertical ? this.height : this.width) *
@@ -194,10 +196,50 @@ define('main-tiled', function (require) {
       this.second = newChild;
       parentEl = this.secondEl;
     }
-    // TODO: are there ever cases where we need to remove the old child?
+    if (oldChild.el.parentNode === parentEl) {
+      parentEl.removeChild(oldChild.el);
+    }
     parentEl.appendChild(newChild.el);
     newChild.parent = this;
   };
+
+  Split.prototype.remove = function (child) {
+    var other;
+    if (child === this.first) {
+      other = this.second;
+    }
+    else if (child === this.second) {
+      other = this.first;
+    }
+    this.parent.replace(this, other);
+  };
+
+  function Desktop(child) {
+    this.child = child;
+    child.parent = this;
+    domBuilder(['.desktop$el', child.el], this);
+  }
+  Desktop.prototype.resize = function (w, h) {
+    this.width = w;
+    this.height = h;
+    if (this.child) {
+      this.child.resize(w, h);
+    }
+  };
+  Desktop.prototype.remove = function (child) {
+    this.el.removeChild(child.el);
+    this.child = null;
+  };
+  Desktop.prototype.replace = function (oldChild, newChild) {
+    var parentEl = this.el;
+    if (oldChild.el.parentNode === parentEl) {
+      parentEl.removeChild(oldChild.el);
+    }
+    parentEl.appendChild(newChild.el);
+    newChild.parent = this;
+    this.child = newChild;
+  };
+
 
   // run(function* () {
     // var call = yield* rpc();
@@ -208,21 +250,21 @@ define('main-tiled', function (require) {
   var a = new Window('Window A');
   var b = new Window('Window B');
   var s = new Split(a, b, false);
+  var d = new Desktop(s);
   a.contentEl.appendChild(domBuilder(['button', {
     onclick: addWindow
   }, 'New Window']));
   window.onresize = onResize;
   onResize();
-  document.body.appendChild(s.el);
+  document.body.appendChild(d.el);
   function onResize() {
-    s.resize(window.innerWidth, window.innerHeight);
+    d.resize(window.innerWidth, window.innerHeight);
   }
 
   var next = 'C'.charCodeAt(0);
   function addWindow() {
     selectQuadrant(function (err, win) {
       var w = new Window('Window ' + String.fromCharCode(next++));
-      // var w2 = new Window('Window ' + String.fromCharCode(next++));
       var s;
       var p = win.parent;
       switch (win.quadrant) {

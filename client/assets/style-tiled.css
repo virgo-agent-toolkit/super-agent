@@ -10,10 +10,18 @@ body {
   overflow: hidden;
   margin: 0;
 }
-.first, .second, .slider, .cell, .title, .hover, .close {
+.first, .second, .slider, .cell, .title, .hover, .close, .desktop {
   box-sizing: border-box;
   position: absolute;
   overflow: hidden;
+}
+.desktop {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
 }
 .slider {
   box-shadow: inset 0 0 7px rgba(0,0,0,0.5);
@@ -64,6 +72,7 @@ body {
   height: 100%;
 }
 .title, .close {
+  user-select: none;
   height: 32px;
   line-height: 32px;
   text-align: center;
