@@ -10,12 +10,15 @@ body {
   overflow: hidden;
   margin: 0;
 }
-.first, .second, .slider, .cell, .title, .hover, .close, .desktop {
+.moving {
+  box-shadow: 0 0 14px rgba(0,0,0,0.5);
+}
+.first, .second, .slider, .cell, .title, .hover, .close, .desktop, .empty {
   box-sizing: border-box;
   position: absolute;
   overflow: hidden;
 }
-.desktop {
+.desktop, .empty {
   top: 0;
   bottom: 0;
   left: 0;
@@ -112,4 +115,5 @@ body {
 }
 .hover {
   background-color: rgba(255,255,255,0.5);
+  cursor: cell;
 }

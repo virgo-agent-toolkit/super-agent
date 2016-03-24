@@ -54,17 +54,19 @@ define('main-tiled', function (require) {
     this.width = 0;
     this.height = 0;
     domBuilder(['.cell.window$el',
-      {
-        onmousemove: this.onMove.bind(this),
-      },
-      ['.title$titleEl', title],
+      { onmousemove: this.onMove.bind(this) },
+      ['.title$titleEl',
+        drag(this.onDrag.bind(this)),
+        title],
       ['.close$closeEl',
-        {onclick:this.onClose.bind(this)},
+        { onclick: this.onClose.bind(this) },
         '✖'],
-      ['.content$contentEl'],
-      ['.hover$hoverEl', {
-        onclick: this.onClick.bind(this),
-      }],
+      ['.content$contentEl',
+        ['button',
+          { onclick: addWindow },
+          'New Window']],
+      ['.hover$hoverEl',
+        { onclick: this.onClick.bind(this) }],
     ], this);
   }
   Window.prototype.setTitle = function (title) {
@@ -82,8 +84,37 @@ define('main-tiled', function (require) {
     this.parent.remove(this);
     onResize();
   };
+  Window.prototype.onDrag = function (dx, dy) {
+    var style = this.el.style;
+    if (!this.dragging) {
+      selectQuadrant(function (err, win) {
+        win.add(self);
+        self.dragging.parent.remove(self.dragging);
+        self.dragging = null;
+        self.el.classList.remove('moving');
+        self.el.setAttribute('style', '');
+        onResize();
+      });
+      this.el.classList.add('moving');
+      var empty = new Empty();
+      this.dragging = empty;
+      var rect = this.el.getBoundingClientRect();
+      this.x = rect.left;
+      this.y = rect.top;
+      style.width = (rect.right - rect.left) + 'px';
+      style.height = (rect.bottom - rect.top) + 'px';
+      document.body.appendChild(this.el);
+      this.parent.replace(this, empty);
+      this.parent = null;
+      var self = this;
+    }
+    this.x += dx;
+    this.y += dy;
+    style.top = this.y + 'px';
+    style.left = this.x + 'px';
+  };
   Window.prototype.onMove = function (evt) {
-    if (!hoverback) { return; }
+    if (!hoverback || this.dragging) { return; }
     setHover(this);
     var rect = this.el.getBoundingClientRect();
     var x = (evt.pageX - rect.left) / (rect.right - rect.left),
@@ -135,6 +166,26 @@ define('main-tiled', function (require) {
     hoverback = null;
     cb(null, this);
     setHover(null);
+  };
+  Window.prototype.add = function (other) {
+    var split;
+    var parent = this.parent;
+    switch (this.quadrant) {
+      case 'top':
+        split = new Split(other, this, true);
+        break;
+      case 'bottom':
+        split = new Split(this, other, true);
+        break;
+      case 'left':
+        split = new Split(other, this, false);
+        break;
+      case 'right':
+        split = new Split(this, other, false);
+        break;
+    }
+    parent.replace(this, split);
+
   };
 
   function Split(first, second, isVertical) {
@@ -211,7 +262,9 @@ define('main-tiled', function (require) {
     else if (child === this.second) {
       other = this.first;
     }
-    this.parent.replace(this, other);
+    if (other) {
+      this.parent.replace(this, other);
+    }
   };
 
   function Desktop(child) {
@@ -240,6 +293,39 @@ define('main-tiled', function (require) {
     this.child = newChild;
   };
 
+  function Empty() {
+    domBuilder(['.empty$el',
+      { onmousemove: this.onMove.bind(this) },
+      ['.hover$hoverEl', {
+        onclick: this.onClick.bind(this),
+      }]
+    ], this);
+  }
+
+  Empty.prototype.resize = function () {};
+
+  Empty.prototype.onMove = function () {
+    if (!hoverback) { return; }
+    setHover(this);
+    var style = this.hoverEl.style;
+    style.left = 0;
+    style.right = 0;
+    style.top = 0;
+    style.bottom = 0;
+    style.width = 'auto';
+    style.height = 'auto';
+  };
+  Empty.prototype.add = function (other) {
+    this.parent.replace(this, other);
+  };
+  Empty.prototype.onClick = function () {
+    if (!hoverback) { return; }
+    var cb = hoverback;
+    hoverback = null;
+    cb(null, this);
+    setHover(null);
+  };
+
 
   // run(function* () {
     // var call = yield* rpc();
@@ -251,9 +337,6 @@ define('main-tiled', function (require) {
   var b = new Window('Window B');
   var s = new Split(a, b, false);
   var d = new Desktop(s);
-  a.contentEl.appendChild(domBuilder(['button', {
-    onclick: addWindow
-  }, 'New Window']));
   window.onresize = onResize;
   onResize();
   document.body.appendChild(d.el);
@@ -264,24 +347,7 @@ define('main-tiled', function (require) {
   var next = 'C'.charCodeAt(0);
   function addWindow() {
     selectQuadrant(function (err, win) {
-      var w = new Window('Window ' + String.fromCharCode(next++));
-      var s;
-      var p = win.parent;
-      switch (win.quadrant) {
-        case 'top':
-          s = new Split(w, win, true);
-          break;
-        case 'bottom':
-          s = new Split(win, w, true);
-          break;
-        case 'left':
-          s = new Split(w, win, false);
-          break;
-        case 'right':
-          s = new Split(win, w, false);
-          break;
-      }
-      p.replace(win, s);
+      win.add(new Window('Window ' + String.fromCharCode(next++)));
       onResize();
     });
   }
