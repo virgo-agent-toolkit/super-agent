@@ -105,12 +105,14 @@ define('main-tiled', function (require) {
     var node = find(d, 0, 0);
     if (node && node.onMove) { node.onMove(mx, my); }
   }
+  var focused;
 
   function Window(title) {
     this.title = title;
     this.width = 0;
     this.height = 0;
     domBuilder(['.cell.window$el',
+      { onclick: this.onFocus.bind(this) },
       ['.title$titleEl',
         drag(this.onDrag.bind(this)),
         title],
@@ -125,6 +127,15 @@ define('main-tiled', function (require) {
         { onclick: this.onClick.bind(this) }],
     ], this);
   }
+  Window.prototype.onFocus = function (evt) {
+    if (this === focused) { return; }
+    if (focused) {
+      focused.el.classList.remove('focused');
+    }
+    focused = this;
+    focused.el.classList.add('focused');
+    // TODO: tell app about focus
+  };
   Window.prototype.setTitle = function (title) {
     if (title === this.title) { return; }
     this.title = title;
