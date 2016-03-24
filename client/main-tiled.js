@@ -41,6 +41,7 @@ define('main-tiled', function (require) {
     last = win;
   }
 
+  var windowDragging = false;
   var hoverback = null;
   function selectQuadrant(callback) {
     if (hoverback) {
@@ -49,12 +50,48 @@ define('main-tiled', function (require) {
     hoverback = callback;
   }
 
+  function doQuadrant() {
+    if (!(hoverback && last)) { return; }
+    var cb = hoverback;
+    hoverback = null;
+    cb(null, last);
+    setHover(null);
+  }
+
+  window.onmouseup = function () {
+    if (windowDragging) { doQuadrant(); }
+  };
+
+  window.onmousemove = function (evt) {
+    if (!hoverback) { return; }
+    var x = evt.clientX, y = evt.clientY;
+    function find(node, ox, oy) {
+      if (x < ox ||
+          y < oy ||
+          x > ox + node.width ||
+          y > oy + node.height) {
+        return;
+      }
+      if (node instanceof Split) {
+        return find(node.first, ox, oy) || (node.isVertical ?
+          find(node.second, ox, oy + node.firstSize + 10) :
+          find(node.second, ox + node.firstSize + 10, oy));
+      }
+      if (node instanceof Desktop) {
+        return find(node.child, ox, oy);
+      }
+      return node;
+    }
+    var node = find(d, 0, 0);
+    if (node && node.onMove) { node.onMove(evt); }
+  };
+
+
   function Window(title) {
     this.title = title;
     this.width = 0;
     this.height = 0;
     domBuilder(['.cell.window$el',
-      { onmousemove: this.onMove.bind(this) },
       ['.title$titleEl',
         drag(this.onDrag.bind(this)),
         title],
@@ -88,6 +125,7 @@ define('main-tiled', function (require) {
     var style = this.el.style;
     if (!this.dragging) {
       selectQuadrant(function (err, win) {
+        windowDragging = false;
         win.add(self);
         self.dragging.parent.remove(self.dragging);
         self.dragging = null;
@@ -98,6 +136,7 @@ define('main-tiled', function (require) {
       this.el.classList.add('moving');
       var empty = new Empty();
       this.dragging = empty;
+      windowDragging = true;
       var rect = this.el.getBoundingClientRect();
       this.x = rect.left;
       this.y = rect.top;
@@ -107,6 +146,7 @@ define('main-tiled', function (require) {
       this.parent.replace(this, empty);
       this.parent = null;
       var self = this;
+      onResize();
     }
     this.x += dx;
     this.y += dy;
@@ -160,12 +200,10 @@ define('main-tiled', function (require) {
         break;
     }
   };
-  Window.prototype.onClick = function () {
+  Window.prototype.onClick = function (evt) {
     if (!hoverback) { return; }
-    var cb = hoverback;
-    hoverback = null;
-    cb(null, this);
-    setHover(null);
+    evt.preventDefault();
+    doQuadrant();
   };
   Window.prototype.add = function (other) {
     var split;
@@ -212,6 +250,8 @@ define('main-tiled', function (require) {
   };
 
   Split.prototype.resize = function (w, h, firstSize) {
+    this.width = w;
+    this.height = h;
     this.firstSize = firstSize === undefined ? (this.firstSize ?
       (this.firstSize /
         (this.isVertical ? this.height : this.width) *
@@ -295,14 +335,16 @@ define('main-tiled', function (require) {
 
   function Empty() {
     domBuilder(['.empty$el',
-      { onmousemove: this.onMove.bind(this) },
       ['.hover$hoverEl', {
         onclick: this.onClick.bind(this),
       }]
     ], this);
   }
 
-  Empty.prototype.resize = function () {};
+  Empty.prototype.resize = function (w, h) {
+    this.width = w;
+    this.height = h;
+  };
 
   Empty.prototype.onMove = function () {
     if (!hoverback) { return; }
