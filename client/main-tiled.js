@@ -48,6 +48,7 @@ define('main-tiled', function (require) {
       throw new Error('already in hover select mode');
     }
     hoverback = callback;
+    onMouseMove();
   }
 
   function doQuadrant() {
@@ -62,14 +63,19 @@ define('main-tiled', function (require) {
     if (windowDragging) { doQuadrant(); }
   };
 
-  window.onmousemove = function (evt) {
+  var mx, my;
+  window.onmousemove = onMouseMove;
+  function onMouseMove(evt) {
+    if (evt) {
+      mx = evt.clientX;
+      my = evt.clientY;
+    }
     if (!hoverback) { return; }
-    var x = evt.clientX, y = evt.clientY;
     function find(node, ox, oy) {
-      if (x < ox ||
-          y < oy ||
-          x > ox + node.width ||
-          y > oy + node.height) {
+      if (mx < ox ||
+          my < oy ||
+          mx > ox + node.width ||
+          my > oy + node.height) {
         return;
       }
       if (node instanceof Split) {
@@ -83,9 +89,8 @@ define('main-tiled', function (require) {
       return node;
     }
     var node = find(d, 0, 0);
-    if (node && node.onMove) { node.onMove(evt); }
-  };
-
+    if (node && node.onMove) { node.onMove(mx, my); }
+  }
 
   function Window(title) {
     this.title = title;
@@ -153,12 +158,12 @@ define('main-tiled', function (require) {
     style.top = this.y + 'px';
     style.left = this.x + 'px';
   };
-  Window.prototype.onMove = function (evt) {
+  Window.prototype.onMove = function (mx, my) {
     if (!hoverback || this.dragging) { return; }
     setHover(this);
     var rect = this.el.getBoundingClientRect();
-    var x = (evt.pageX - rect.left) / (rect.right - rect.left),
-        y = (evt.pageY - rect.top) / (rect.bottom - rect.top);
+    var x = (mx - rect.left) / (rect.right - rect.left),
+        y = (my - rect.top) / (rect.bottom - rect.top);
     var quadrant = (x > (1 - y)) ?
       ((x > y) ? 'right' : 'bottom') :
       ((x > y) ? 'top' : 'left');
