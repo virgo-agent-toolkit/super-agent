@@ -55,6 +55,38 @@ define('libs/tiled', function (require) {
     if (windowDragging) { doQuadrant(); }
   }
 
+  function findQuadrant() {
+    var area = 0;
+    var slot = null;
+    function find(node) {
+      if (node instanceof Desktop) {
+        find(node.child);
+      }
+      else if (node instanceof Split) {
+        find(node.first);
+        find(node.second);
+      }
+      else if (node instanceof Window) {
+        var winArea = node.width * node.height / 2;
+        if (winArea > area) {
+          area = winArea;
+          slot = node;
+          node.quadrant = (node.width > node.height) ?
+            'left' : 'top';
+        }
+      }
+      else if (node instanceof Empty) {
+        var newArea = node.width * node.height;
+        if (newArea > area) {
+          area = newArea;
+          slot = node;
+        }
+      }
+    }
+    find(desktop);
+    return slot;
+  }
+
   var mx, my;
   function onMouseMove(evt) {
     if (evt) {
@@ -304,7 +336,6 @@ define('libs/tiled', function (require) {
     domBuilder(['.desktop$el', child.el], this);
   }
   Desktop.prototype.resize = function (w, h) {
-    console.log('resize', w, h);
     if (w && h) {
       this.width = w;
       this.height = h;
@@ -336,7 +367,13 @@ define('libs/tiled', function (require) {
     this.child = newChild;
   };
 
+  Desktop.prototype.newAutoWindow = function (title) {
+    findQuadrant().add(new Window(title));
+    refresh();
+  };
+
   Desktop.prototype.newWindow = function (title, callback) {
+    if (!callback) { return Desktop.prototype.newWindow.bind(this, title); }
     selectQuadrant(function (err, slot) {
       if (err) { return callback(err); }
       var win = new Window(title);

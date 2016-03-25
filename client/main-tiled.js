@@ -9,9 +9,7 @@ define('main-tiled', function (require) {
     if (evt.key !== 'n') { return; }
     evt.stopPropagation();
     var name = 'Window ' + String.fromCharCode(nextChar++);
-    desktop.newWindow(name, function (err, win) {
-      console.log('new window', win);
-    });
+    desktop.newAutoWindow(name);
   };
   // var run = require('libs/run');
   // var rpc = require('libs/rpc');
