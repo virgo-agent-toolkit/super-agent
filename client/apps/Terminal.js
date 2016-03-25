@@ -104,6 +104,9 @@ define('apps/Terminal', function (require) {
       win.onResize = onResize;
       // Called when the app is closed.
       win.onClose = onClose;
+      // Called when the window is focused
+      win.onFocus = onFocus;
+      win.onBlur = onBlur;
     }
 
 
@@ -134,6 +137,13 @@ define('apps/Terminal', function (require) {
       kill(15);
       term.destroy();
       win.destroy();
+    }
+
+    function onFocus() {
+      term.focus();
+    }
+    function onBlur() {
+      term.blur();
     }
   }
 });

@@ -24,8 +24,8 @@ define('libs/window', function (require) {
 
   return makeWindow;
 
-  // app.width - desired initial width
-  // app.height - desired initial height
+  // app.initialWidth - desired initial width
+  // app.initialHeight - desired initial height
   function makeWindow(title, app) {
 
     var width = app.initialWidth || 320;

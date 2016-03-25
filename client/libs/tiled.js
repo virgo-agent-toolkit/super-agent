@@ -4,7 +4,16 @@ define('libs/tiled', function (require) {
   var domBuilder = require('libs/dombuilder');
   var drag = require('libs/drag-helper');
 
-  var last = null;
+  var last = null; // Used to remember the last hover div that was highlighted.
+  var windowDragging = null; // Points to the currently dragging window.
+  var hoverback = null; // Callback for function that queried hover selection.
+  var focused; // Used to remember which window is currently focused.
+
+  // Used to remember the last mouse position.  Needed for syntethic mouse
+  // move events.
+  var mx, my;
+
+  // If there was a hover set already, reset it's state, and remember new hover.
   function setHover(win) {
     if (win === last) { return; }
     if (last) {
@@ -20,16 +29,20 @@ define('libs/tiled', function (require) {
     last = win;
   }
 
-  var windowDragging = null;
-  var hoverback = null;
+  // Async function to query for a drop target.  The callback will be called
+  // with a "slot" which is either a Window with quadrant set or an Empty.
   function selectQuadrant(callback) {
     if (hoverback) {
       throw new Error('already in hover select mode');
     }
+    // Set the global hover selection callback.
     hoverback = callback;
+    // Trigger a syntehetic move to start the highlight right away.
     onMouseMove();
   }
 
+  // This is called when a quadrant is selected either through normal click
+  // or mouse-up when dragging a window.
   function doQuadrant() {
     if (!(hoverback && last)) { return; }
     var cb = hoverback;
@@ -38,10 +51,13 @@ define('libs/tiled', function (require) {
     setHover(null);
   }
 
+  // Called when a window is drag-and-dropped onto a quadrant.
   function onWindowDrop(err, win) {
     var self = windowDragging;
     windowDragging = null;
     if (self.dragging !== win) {
+      // Only explicitly delete the quadrant if it was not the source.
+      // The add call below will replace the target.
       self.dragging.parent.remove(self.dragging);
     }
     win.add(self);
@@ -51,10 +67,12 @@ define('libs/tiled', function (require) {
     refresh();
   }
 
+  // Drop a window if mouse up happens while dragging
   function onMouseUp() {
     if (windowDragging) { doQuadrant(); }
   }
 
+  // Algorithm to find the largest free quadrant.
   function findQuadrant() {
     var area = 0;
     var slot = null;
@@ -72,7 +90,7 @@ define('libs/tiled', function (require) {
           area = winArea;
           slot = node;
           node.quadrant = (node.width > node.height) ?
-            'left' : 'top';
+            'right' : 'bottom';
         }
       }
       else if (node instanceof Empty) {
@@ -87,7 +105,9 @@ define('libs/tiled', function (require) {
     return slot;
   }
 
-  var mx, my;
+  // Mouse move event, used during quadrant selection to update the hover
+  // highlight.  This is done manually at the window level so it works even
+  // when the target windows are covered by the dragging window.
   function onMouseMove(evt) {
     if (evt) {
       mx = evt.clientX;
@@ -114,7 +134,6 @@ define('libs/tiled', function (require) {
     var node = find(desktop, 0, 0);
     if (node && node.onMove) { node.onMove(mx, my); }
   }
-  var focused;
 
   function Window(title) {
     this.title = title;
@@ -137,26 +156,37 @@ define('libs/tiled', function (require) {
     if (this === focused) { return; }
     if (focused) {
       focused.el.classList.remove('focused');
+      if (focused.events.onBlur) {
+        focused.events.onBlur();
+      }
     }
     focused = this;
     focused.el.classList.add('focused');
-    // TODO: tell app about focus
+    if (this.events.onFocus) {
+      this.events.onFocus();
+    }
   };
   Window.prototype.setTitle = function (title) {
-    if (title === this.title) { return; }
+    if (this.title === title) { return; }
     this.title = title;
     this.titleEl.textContent = title;
   };
   Window.prototype.resize = function (w, h) {
     this.width = w;
     this.height = h;
-    // TODO: forward down to apps
+    if (this.events.onResize) {
+      this.events.onResize(w, h - 32);
+    }
   };
   Window.prototype.onClose = function (evt) {
-    evt.preventDefault();
+    if (evt) { evt.preventDefault(); }
     this.parent.remove(this);
     refresh();
+    if (this.events.onClose) {
+      this.events.onClose();
+    }
   };
+  Window.prototype.events = {};
   Window.prototype.onDrag = function (dx, dy) {
     var style = this.el.style;
     if (!this.dragging) {
@@ -368,8 +398,10 @@ define('libs/tiled', function (require) {
   };
 
   Desktop.prototype.newAutoWindow = function (title) {
-    findQuadrant().add(new Window(title));
+    var win = new Window(title);
+    findQuadrant().add(win);
     refresh();
+    return win;
   };
 
   Desktop.prototype.newWindow = function (title, callback) {
@@ -424,10 +456,42 @@ define('libs/tiled', function (require) {
   window.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mouseup', onMouseUp);
 
-  refresh();
   function refresh() {
     desktop.resize(window.innerWidth, window.innerHeight);
   }
+  var initialized = false;
 
-  return desktop;
+  // Adaptor to work the same as the window.js library.
+  return function makeWindow(title, app) {
+    if (!initialized) {
+      initialized = true;
+      refresh();
+      document.body.appendChild(desktop.el);
+    }
+    var win = desktop.newAutoWindow(title);
+    // win.title = newTitle -- Update a window title
+    // win.destroy() -- Close a window
+    // win.focus() -- Steal focus to own window
+    // win.container - container element
+    // win.width - width in pixels of container
+    // win.height - height of container in pixels
+
+    var newWin = {
+      get title() { return win.title; },
+      set title(newTitle) {
+        win.setTitle(newTitle);
+        return newTitle;
+      },
+      destroy: function () { win.onClose(); },
+      focus: function () { win.onFocus(); },
+      get container() { return win.contentEl; },
+      get width() { return win.width; },
+      get height() { return win.height; },
+    };
+    win.events = newWin;
+
+    app(newWin);
+
+    return newWin;
+  };
 });

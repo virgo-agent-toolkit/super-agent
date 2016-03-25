@@ -1,0 +1,120 @@
+.window {
+  position: absolute;
+  overflow: hidden;
+  background: rgba(120,120,120,0.2);
+}
+.window.maximized {
+  position: static;
+}
+
+.window.light {
+  box-shadow: 0 0 7px rgba(0,0,0,0.5);
+}
+.window.dark {
+  box-shadow: 0 0 7px rgba(255,255,255,0.5);
+}
+.light .title-bar, .light .close-box, .light .max-box {
+  background-color: #fff;
+  color: #000;
+}
+.dark .title-bar, .dark .close-box, .dark .max-box {
+  background-color: #000;
+  color: #fff;
+}
+.content {
+  position: absolute;
+  overflow: auto;
+  top: 42px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+}
+
+.title-bar {
+  white-space: nowrap;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  position: absolute;
+  overflow: hidden;
+  left: 10px;
+  right: 74px;
+  text-align: center;
+  font-family: sans-serif;
+  font-size: 12pt;
+  text-overflow: ellipsis;
+  cursor: move;
+}
+.close-box {
+  right: 10px;
+}
+.max-box {
+  right: 42px;
+}
+.max-box, .close-box {
+  font-size: 12pt;
+  -webkit-user-select: none;
+  user-select: none;
+  position: absolute;
+  overflow: hidden;
+  width: 32px;
+  text-align: center;
+  cursor: pointer;
+}
+.max-box, .close-box, .title-bar {
+  line-height: 32px;
+  top: 10px;
+  height: 32px;
+  opacity: 0.7;
+}
+
+.focused .max-box, .focused .close-box, .focused .title-bar {
+  opacity: 1.0;
+}
+.close-box:hover, .max-box:hover {
+  background-color: #888;
+}
+.resize {
+  touch-action: none;
+  position: absolute;
+}
+.light .resize:hover {
+  background-color: rgba(0,0,0,0.2);
+}
+.dark .resize:hover {
+  background-color: rgba(255,255,255,0.2);
+}
+.resize.n, .resize.ne, .resize.nw, .resize.s, .resize.se, .resize.sw {
+  height: 10px;
+}
+.resize.n, .resize.ne, .resize.nw {
+  top: 0;
+}
+.resize.s, .resize.se, .resize.sw {
+  bottom: 0;
+}
+.resize.ne, .resize.e, .resize.se, .resize.sw, .resize.w, .resize.nw {
+  width: 10px;
+}
+.resize.ne, .resize.e, .resize.se {
+  right: 0;
+}
+.resize.sw, .resize.w, .resize.nw {
+  left: 0;
+}
+.resize.n, .resize.s {
+  left: 10px;
+  right: 10px;
+}
+.resize.w, .resize.e {
+  top: 10px;
+  bottom: 10px;
+}
+.resize.n {cursor: n-resize}
+.resize.ne{cursor: ne-resize}
+.resize.e {cursor: e-resize}
+.resize.se{cursor: se-resize}
+.resize.s {cursor: s-resize}
+.resize.sw{cursor: sw-resize}
+.resize.w{cursor: w-resize}
+.resize.nw{cursor: nw-resize}

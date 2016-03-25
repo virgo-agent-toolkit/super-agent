@@ -1,15 +1,4 @@
-html, body {
-  height: 100%;
-}
-body {
-  background-color: #555;
-  background: url("wallpaper.jpg");
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  overflow: hidden;
-  margin: 0;
-}
+
 .moving {
   box-shadow: 0 0 14px rgba(0,0,0,0.5);
 }

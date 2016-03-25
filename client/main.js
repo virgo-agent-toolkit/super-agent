@@ -1,6 +1,6 @@
 define('main', function (require) {
   'use strict';
-  var makeWindow = require('libs/window');
+  var makeWindow = require('libs/tiled');
   var rpc = require('libs/rpc');
   var Terminal = require('apps/Terminal');
   var Editor = require('apps/Editor');
@@ -90,7 +90,9 @@ define('main', function (require) {
   function* launchApp(App, ...args) {
     var app = yield* App(call, runCommand, ...args);
     var win = makeWindow(App.title, app);
-    document.body.appendChild(win.el);
+    if (win.el) {
+      document.body.appendChild(win.el);
+    }
     return win;
   }
 
