@@ -6,4 +6,4 @@
 -- Local-only agent with no authentication or encryption
 mode = "standalone"
 ip = "127.0.0.1"
-port = 8080
+port = 7000
