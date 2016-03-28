@@ -1,6 +1,7 @@
 local uv = require('uv')
 local ffi = require('ffi')
 
+
 local pack = table.pack
 
 -- Function to make it easy to consume callback-based APIs in a coroutine world.
@@ -585,20 +586,19 @@ if ffi.os ~= "Windows" then
     return nil
   end
 else
-  --BOOL WINAPI GetComputerName(
-    --_Out_   LPTSTR  lpBuffer,
-    --_Inout_ LPDWORD lpnSize
-  --);
+ 
+  local lib = ffi.load('ws2_32')
+ 
   ffi.cdef[[
-    bool GetComputerName(char *lpBuffer, size_t lpnSize);
+	int gethostname(char * name, unsigned int namelen);
   ]]
 
   function platform.hostname()
-    local buf = ffi.new("char[256]")
-    if ffi.C.GetComputerName(buf, 256) ~= 0 then
-      return ffi.string(buf)
-    end
-    return nil
+	local maxlen = 255
+	local buf = ffi.new("uint8_t[?]", maxlen)
+	local res = lib.gethostname(buf, maxlen)
+	assert(res == 0)
+	return ffi.string(buf)
   end
 end
 
