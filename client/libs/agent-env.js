@@ -3,7 +3,13 @@ define('libs/agent-env', function () {
   var env;
   return function* (call) {
     return env || (env = yield* call('script',
-      'return {os=getos(),home=homedir(),user=user(getuid()),hostname=hostname()}'
+      'local os = getos() '+
+      'local user = os ~= "Windows" and user(getuid()) '+
+      'return {os=os,'+
+        'home=homedir(),'+
+        'user=user,'+
+        'hostname=hostname()'+
+      '}'
     ));
   };
 });
