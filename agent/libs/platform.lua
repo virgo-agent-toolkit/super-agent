@@ -584,6 +584,22 @@ if ffi.os ~= "Windows" then
     end
     return nil
   end
+else
+  --BOOL WINAPI GetComputerName(
+    --_Out_   LPTSTR  lpBuffer,
+    --_Inout_ LPDWORD lpnSize
+  --);
+  ffi.cdef[[
+    bool GetComputerName(char *lpBuffer, size_t lpnSize);
+  ]]
+
+  function platform.hostname()
+    local buf = ffi.new("char[256]")
+    if ffi.C.GetComputerName(buf, 256) ~= 0 then
+      return ffi.string(buf)
+    end
+    return nil
+  end
 end
 
 -- getenv(name: String) -> (value: Optional(String))
