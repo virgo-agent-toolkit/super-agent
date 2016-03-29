@@ -13,15 +13,18 @@ local pathJoin = require('pathjoin').pathJoin
 local getenv = require('os').getenv
 local fs = require('coro-fs')
 local cwd = require('uv').cwd()
+local ffi = require('ffi')
+
 local function resolve(path)
   return pathJoin(cwd, path)
 end
 require('log').level = 4
 
-local localSock = {
+local localSock = ffi.os == "Windows" and {
+  host = "127.0.0.1",
+  port = 23258
+} or {
   path = "/tmp/rax.sock"
-  -- host = "127.0.0.1",
-  -- port = 2325
 }
 local meta = require('./package')
 local key = getenv('RAX_CLIENT_KEY')

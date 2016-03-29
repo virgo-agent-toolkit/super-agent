@@ -149,6 +149,8 @@ getuid() -> (uid: Integer)
 
 getgid() -> (gid: Integer)
 
+getusername() -> (username: String)
+
 freemem() -> (freeMemory: Integer)
 
 totalmem() -> (totalMemory: Integer)

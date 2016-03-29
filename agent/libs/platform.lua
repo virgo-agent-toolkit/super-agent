@@ -573,33 +573,17 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   end
 end
 
-if ffi.os ~= "Windows" then
-  ffi.cdef[[
-    int gethostname(char *name, size_t len);
-  ]]
-  -- hostname() -> (host: Optional(String))
-  function platform.hostname()
-    local buf = ffi.new("char[256]")
-    if ffi.C.gethostname(buf, 255) == 0 then
-      return ffi.string(buf)
-    end
-    return nil
+ffi.cdef[[
+  int gethostname(char *name, size_t len);
+]]
+-- hostname() -> (host: Optional(String))
+local lib = ffi.os == 'Windows' and ffi.load('ws2_32') or ffi.C
+function platform.hostname()
+  local buf = ffi.new("char[256]")
+  if lib.gethostname(buf, 255) == 0 then
+    return ffi.string(buf)
   end
-else
- 
-  local lib = ffi.load('ws2_32')
- 
-  ffi.cdef[[
-	int gethostname(char * name, unsigned int namelen);
-  ]]
-
-  function platform.hostname()
-	local maxlen = 255
-	local buf = ffi.new("uint8_t[?]", maxlen)
-	local res = lib.gethostname(buf, maxlen)
-	assert(res == 0)
-	return ffi.string(buf)
-  end
+  return nil
 end
 
 -- getenv(name: String) -> (value: Optional(String))
@@ -625,6 +609,27 @@ platform.getuid = uv.getuid
 platform.getgid = uv.getgid
 
 platform.getpid = uv.getpid
+
+if ffi.os == 'Windows' then
+  ffi.cdef[[
+    bool GetUserNameA(
+      char*  lpBuffer,
+      size_t* lpnSize
+    );
+  ]]
+
+  function platform.getusername()
+    local buf = ffi.new('char[256]')
+    local size = ffi.new('size_t[1]', 255)
+    local l = ffi.load('Advapi32.dll')
+    if l.GetUserNameA(buf, size) ~= 0 then
+      return ffi.string(buf, size[0] - 1)
+    end
+    return nil
+  end
+else
+  return platform.user(platform.getuid())
+end
 
 platform.uptime = uv.uptime
 

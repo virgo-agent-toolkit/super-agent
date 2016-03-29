@@ -242,20 +242,31 @@ assert(register("homedir", "Get the user's home directory", {
   {"home", String},
 }, platform.homedir))
 
-assert(register("getuid", "Get the userid of the agent", {
-}, {
-  {"uid", Optional(Int)}
-}, platform.getuid))
+if platform.getuid then
+  assert(register("getuid", "Get the userid of the agent", {
+  }, {
+    {"uid", Optional(Int)}
+  }, platform.getuid))
+end
 
-assert(register("getgid", "Get the groupid of the agent", {
-}, {
-  {"gid", Optional(Int)}
-}, platform.getgid))
+if platform.getgid then
+  assert(register("getgid", "Get the groupid of the agent", {
+  }, {
+    {"gid", Optional(Int)}
+  }, platform.getgid))
+end
 
-assert(register("getpid", "Get the processid of the agent", {
+if platform.getpid then
+  assert(register("getpid", "Get the processid of the agent", {
+  }, {
+    {"pid", Optional(Int)}
+  }, platform.getpid))
+end
+
+assert(register("getusername", "Get username of controlling process", {
 }, {
-  {"pid", Optional(Int)}
-}, platform.getpid))
+  {"username", Optional(String)},
+}, platform.getusername))
 
 assert(register("uptime", "Get system uptime", {
 }, {
