@@ -3,10 +3,8 @@ define('libs/rpc', function (require) {
 
   var msgpack = require('libs/msgpack');
 
-  var url = window.location.href.split('#')[1] || (
-    location.protocol.replace('http', 'ws') + '//' + location.host +
-      '/request/fc1eb9f7-69f0-4079-9e74-25ffd091022a'
-  );
+  var url = window.location.href.split('#')[1] ||
+    (location.protocol.replace('http', 'ws') + '//' + location.host + '/');
 
   return rpc;
 

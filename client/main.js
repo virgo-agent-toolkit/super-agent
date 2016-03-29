@@ -1,6 +1,6 @@
 define('main', function (require) {
   'use strict';
-  var makeWindow = require('libs/tiled');
+  var makeWindow = require('libs/window');
   var rpc = require('libs/rpc');
   var Terminal = require('apps/Terminal');
   var Editor = require('apps/Editor');
