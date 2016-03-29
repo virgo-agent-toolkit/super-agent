@@ -628,7 +628,9 @@ if ffi.os == 'Windows' then
     return nil
   end
 else
-  return platform.user(platform.getuid())
+  function platform.getusername()
+    return platform.user(platform.getuid())
+  end
 end
 
 platform.uptime = uv.uptime
