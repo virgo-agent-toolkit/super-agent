@@ -128,6 +128,11 @@ coroutine.wrap(function ()
           log(3, "listening on public port, but no tls encryption!")
         end
       end
+      if config.webroot then
+        if config.webroot:sub(1,1) ~= '/' then
+          config.webroot = pathJoin(cwd, config.webroot)
+        end
+      end
       require('standalone')(config)
     elseif mode == "remote" then
       if not (type(config.proxy) == 'string' and

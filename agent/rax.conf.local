@@ -7,4 +7,4 @@
 mode = "standalone"
 ip = "127.0.0.1"
 port = 7000
-webroot = "/Users/tim8019/Code/super-agent/client"
+webroot = "../client"

@@ -7,6 +7,10 @@ return {
     flavor = "regular",
   },
   homepage = "https://github.com/virgo-agent-toolkit/super-agent",
+  files = {
+    "**.lua",
+    "platform.api",
+  },
   dependencies = {
     "creationix/websocket-client",
     "creationix/weblit-app",
