@@ -1,4 +1,3 @@
-local createServer = require('websocket-server')
 local registry = require('types')
 local makeRpc = require('rpc')
 local codec = require('websocket-to-message')
@@ -13,13 +12,22 @@ local sha1 = require('sha1')
 -- config.port - the local port to listen on
 return function(config)
 
-  local serverConfig = {
+  require('weblit-websocket')
+  local app = require('weblit-app')
+
+  app.bind {
     host = config.ip,
     port = config.port,
-    users = config.users,
-    tls = config.tls,
-    protocol = "schema-rpc",
+    tls = config.tls
   }
+
+  app.use(require('weblit-logger'))
+  app.use(require('weblit-auto-headers'))
+  app.use(require('weblit-etag-cache'))
+
+  if config.users then
+    app.use(require('basic-auth')(config.users))
+  end
 
   local clients = setmetatable({}, {
     __mode = "k"
@@ -31,7 +39,12 @@ return function(config)
 
   local url = (config.tls and "wss" or "ws") .. "://" .. config.ip .. ":" .. config.port .. '/'
   log(4, "Creating local rpc server", url)
-  createServer(serverConfig, function (read, write, socket)
+
+  app.websocket({
+    path = "/",
+    protocol = "schema-rpc",
+  }, function (req, read, write)
+    local socket = req.socket
     local addr = socket:getpeername()
     local key = sha1(addr.ip .. ':' .. addr.port)
     keyToClient[key] = socket
@@ -69,6 +82,12 @@ return function(config)
     end
     api.call(command, ...)
   end
+
+  if config.webroot then
+    app.use(require('weblit-static')(config.webroot))
+  end
+
+  app.start()
 
   require('command-sock')(config.localSock, onCommand)
 

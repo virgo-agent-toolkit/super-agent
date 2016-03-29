@@ -9,6 +9,12 @@ return {
   homepage = "https://github.com/virgo-agent-toolkit/super-agent",
   dependencies = {
     "creationix/websocket-client",
+    "creationix/weblit-app",
+    "creationix/weblit-auto-headers",
+    "creationix/weblit-logger",
+    "creationix/weblit-etag-cache",
+    "creationix/weblit-static",
+    "creationix/weblit-websocket",
     "luvit/pretty-print",
     "creationix/msgpack",
     "creationix/schema",
