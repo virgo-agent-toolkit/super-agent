@@ -61,7 +61,10 @@ define('main', function (require) {
       document.body.appendChild(domBuilder([
         ['button', {onclick: function () {
           runCommand('terminal');
-        }}, 'New Terminal']
+        }}, 'New Terminal'],
+        ['button', {onclick: function () {
+          runCommand('browse', env.home);
+        }}, 'New File Browser'],
       ]));
     });
     // runCommand('edit',

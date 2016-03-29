@@ -73,7 +73,7 @@ define('libs/mime', function () {
 
   return function (path, defaultMime) {
     return files[path.match(/[^/]*$/)[0]] ||
-      extensions[path.match(/[^/.]*$/)[0]] ||
+      extensions[path.toLowerCase().match(/[^/.]*$/)[0]] ||
       defaultMime;
   };
 });
