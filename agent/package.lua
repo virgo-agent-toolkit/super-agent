@@ -1,6 +1,6 @@
 return {
   name = "virgo-agent-toolkit/rax",
-  version = "0.1.0",
+  version = "0.2.0",
   description = "Remote Agent eXperiment.",
   luvi = {
     version = "2.6.1",
