@@ -23,7 +23,6 @@ return function(config)
 
   app.use(require('weblit-logger'))
   app.use(require('weblit-auto-headers'))
-  app.use(require('weblit-etag-cache'))
 
   if config.users then
     app.use(require('basic-auth')(config.users))
@@ -49,7 +48,6 @@ return function(config)
     local key = sha1(addr.ip .. ':' .. addr.port)
     keyToClient[key] = socket
     log(4, "new client", addr)
-    print("Starting RPC protocol.")
     read, write = codec(read, write)
     local function wrappedRead()
       while true do
@@ -64,9 +62,14 @@ return function(config)
     local api = makeRpc(registry.call, log, wrappedRead, write)
     clients[socket] = api;
     api.readLoop()
-    log(4, "client disconnected", socket:getpeername())
+    log(4, "client disconnected", addr)
     if not socket:is_closing() then socket:close() end
   end)
+
+  if config.webroot then
+    app.use(require('weblit-etag-cache'))
+    app.use(require('weblit-static')(config.webroot))
+  end
 
   local function onCommand(key, command, ...)
     log(5, "got command", key, command, ...)
@@ -83,12 +86,8 @@ return function(config)
     api.call(command, ...)
   end
 
-  if config.webroot then
-    app.use(require('weblit-static')(config.webroot))
-  end
+  require('command-sock')(config.localSock, onCommand)
 
   app.start()
-
-  require('command-sock')(config.localSock, onCommand)
 
 end

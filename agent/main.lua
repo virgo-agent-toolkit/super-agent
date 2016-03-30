@@ -18,7 +18,7 @@ local ffi = require('ffi')
 local function resolve(path)
   return pathJoin(cwd, path)
 end
-require('log').level = 4
+require('log').level = 5
 
 local localSock = ffi.os == "Windows" and {
   host = "127.0.0.1",
