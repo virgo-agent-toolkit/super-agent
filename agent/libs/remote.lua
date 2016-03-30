@@ -21,11 +21,22 @@ return function(config)
   log(4, "connected", socket:getpeername())
 
   read, write = codec(read, write)
+
   local api = makeRpc(registry.call, log, read, write)
+
+  local function onCommand(key, command, ...)
+    log(5, "got command", key, command, ...)
+    api.call(command, ...)
+  end
+
+  require('command-sock')(config.localSock, onCommand)
+
   api.readLoop()
   log(4, "disconnecting...")
   write()
   if not socket:is_closing() then
     socket:close()
   end
+
+
 end
