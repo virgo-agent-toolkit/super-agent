@@ -11,8 +11,8 @@ mode = "standalone"
 users = { "sha1:f88af9b0dd65189104b3cc416616572af8cb27b7" } -- TODO: Change this with your real auth creds.
 ip = "0.0.0.0"
 port = 8443
+webroot = "../client"
 tls = { -- TODO: Change this with your real certs
-  -- http basic auth username:password combos
   key = [[
 -----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQCrD7OzjhmsznD++tEQxCsSI52HG9R0C40HFoEiK9OcWE5/++nW

@@ -116,6 +116,13 @@ coroutine.wrap(function ()
       config.localSock = localSock
     end
 
+    -- Resolve webroot to cwd if not absolute path
+    if config.webroot then
+      if config.webroot:sub(1,1) ~= '/' then
+        config.webroot = pathJoin(cwd, config.webroot)
+      end
+    end
+
     -- Switch behavior based on the mode in the config file
     local mode = config.mode
     if mode == "standalone" then
@@ -129,11 +136,6 @@ coroutine.wrap(function ()
         end
         if not config.tls then
           log(3, "listening on public port, but no tls encryption!")
-        end
-      end
-      if config.webroot then
-        if config.webroot:sub(1,1) ~= '/' then
-          config.webroot = pathJoin(cwd, config.webroot)
         end
       end
       require('standalone')(config)

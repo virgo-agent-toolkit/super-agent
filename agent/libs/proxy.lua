@@ -4,6 +4,10 @@ local log = require('log').log
 
 return function (config)
 
+  local host = config.ip == '0.0.0.0' and 'localhost' or config.ip
+  local prefix = string.format("%s://%s:%d",
+    config.tls and "wss" or "ws", host, config.port)
+
   local clientHandlers = {}
 
   local function getClientHandler(agent_id)
@@ -15,7 +19,8 @@ return function (config)
 
   local function newAgent(agent_id, read, write, socket)
     local address = socket:getpeername()
-    log(4, "new agent", agent_id, address)
+    local agentUrl = prefix .. "/request/" .. agent_id
+    log(4, "new agent", agentUrl, address)
 
     local nextId = 1
     local rmappings = {}
@@ -110,6 +115,7 @@ return function (config)
         end
         break
       elseif id > 0 then
+        log(4, 'message from cli', message)
         local key = message[2]
         local cwrite = clients[key]
         cwrite({id, unpack(message, 3)})
@@ -133,7 +139,6 @@ return function (config)
     port = config.port,
     tls = config.tls
   }
-  local host = config.ip == '0.0.0.0' and 'localhost' or config.ip
 
   app.use(require('weblit-logger'))
   app.use(require('weblit-auto-headers'))
@@ -147,8 +152,7 @@ return function (config)
     read, write = codec(read, write)
     return newAgent(agent_id, read, write, req.socket)
   end)
-  log(4, "agent endpoint", string.format("%s://%s:%d/enlist/:agent_id/:token",
-    config.tls and 'wss' or 'ws', host, config.port))
+  log(4, "agent endpoint", prefix .. "/enlist/:agent_id/:token")
 
   if config.users then
     app.use(require('basic-auth')(config.users))
@@ -163,8 +167,7 @@ return function (config)
     read, write = codec(read, write)
     newClient(read, write, req.socket)
   end)
-  log(4, "client endpoint", string.format("%s://%s:%d/request/:agent_id",
-    config.tls and 'wss://' or 'ws://', host, config.port))
+  log(4, "client endpoint", prefix .. "/request/:agent_id")
 
   if config.webroot then
     app.use(require('weblit-etag-cache'))

@@ -7,16 +7,15 @@ local log = require('log').log
 -- config.id - agent id
 -- config.token - agent auth token
 -- config.proxy - ws(s):// url to proxy server without path
--- config.cert - cert used to verify proxy server (in place of public root certs)
+-- config.ca - cert used to verify proxy server (in place of public root certs)
 return function(config)
   local url = config.proxy .. "/enlist/" .. config.id .. "/" .. config.token
   log(4, "Connecting to aep", url)
   local options = {}
-  if config.cert then
-    log(5, "Using custom cert", options.cert)
-    options.tls = { cert = config.cert }
+  if config.ca then
+    log(5, "Using custom ca cert", options.ca)
+    options.tls = { ca = config.ca }
   end
-  log(5, "options", options)
   local read, write, socket = assert(connect(url, "schema-rpc", options))
   log(4, "connected", socket:getpeername())
 
@@ -26,7 +25,7 @@ return function(config)
 
   local function onCommand(key, command, ...)
     log(5, "got command", key, command, ...)
-    api.call(command, ...)
+    api.call(key, command, ...)
   end
 
   require('command-sock')(config.localSock, onCommand)
@@ -37,6 +36,5 @@ return function(config)
   if not socket:is_closing() then
     socket:close()
   end
-
 
 end

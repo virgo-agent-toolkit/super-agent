@@ -4,9 +4,10 @@
 
 mode = "proxy"
 ip = "0.0.0.0"
-port = 8433
-users = { "username:password" }
-tls = {
+port = 8443
+webroot = "../client"
+users = { "sha1:f88af9b0dd65189104b3cc416616572af8cb27b7" } -- TODO: Change this with your real auth creds.
+tls = { -- TODO: Change this with your real certs
   key = [[
 -----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQCrD7OzjhmsznD++tEQxCsSI52HG9R0C40HFoEiK9OcWE5/++nW
