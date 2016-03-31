@@ -13,7 +13,6 @@ return function(config)
   log(4, "Connecting to aep", url)
   local options = {}
   if config.ca then
-    log(5, "Using custom ca cert", options.ca)
     options.tls = { ca = config.ca }
   end
   local read, write, socket = assert(connect(url, "schema-rpc", options))

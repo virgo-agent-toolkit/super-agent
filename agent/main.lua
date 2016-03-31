@@ -114,6 +114,22 @@ coroutine.wrap(function ()
       _G.setfenv(fn, config)
       fn()
       config.localSock = localSock
+      local function loadCert(tab, prop)
+        if not tab then return end
+        local value = tab[prop]
+        if type(value) ~= "string" then return end
+        if value:match("%-%-%-%-%-BEGIN") then
+          log(5, "Loading " .. prop, configFile)
+          return
+        end
+        local path = pathJoin(configFile, "..", value)
+        log(5, "Loading " .. prop, path)
+        tab[prop] = fs.readFile(path) or value
+      end
+
+      loadCert(config.tls, "key")
+      loadCert(config.tls, "cert")
+      loadCert(config, "ca")
     end
 
     -- Resolve webroot to cwd if not absolute path
