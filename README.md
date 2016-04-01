@@ -338,6 +338,55 @@ proxy agent to the client folder.
 
 Then in a browser (Firefox and Chrome are known to work), load the static file and append the url to the agent in a hash.  For example: `https://myserver.org/#wss://myagent:8443/`
 
+
+## Custom Scripts and Future Features
+
+One of the main goals of this system is to provide a platform for programmers
+of all skill levels to write and share scripts in a portable and controlled
+environment for performing various tasks.  This can mean process automation
+or quick diagnostic scripts, or maintenance tasks.
+
+Currently there is the very beginning.  A `script(code:String)` command that
+runs a lua script in a sandbox where all the platform functions are globally available.
+
+This means that you can do complex tasks such as conditionally search for a file
+containing certain contents and return the path once found, all remotely in the
+agent, without needing to transfer all the intermediate results across the slow
+network connection.
+
+The sample client uses this to quickly query things like operating system,
+username, home directory, etc in a single call so that when the user wants to
+spawn a shell, it knows what the appropriate flags to send to the `pty` function
+are.
+
+In the future, there will be a capabilities based permissions system where
+authenticated users will be authorized to work in specified scopes (much like
+oauth scopes).  For example, you might give read-only access to someone who's
+job is to look in the machine for potential problems, but not actually change
+anything on the system.  The owner would probably want full access.  You could
+restrict filesystem commands to certain system calls or restrict to certain
+folders/files.
+
+There will be a script publishing system where scripts can be written once and
+published.  The system will analyze all the system calls made by the script and
+assign it a default permissions scope.  Administrators can override this to
+require less permissions for specific scripts, trusting in the script itself to
+restrict the user properly (basically like how setuid binaries work in unix).
+
+These scripts can be published and versioned to shared script repositories where
+metadata like rating, usage tags, description, author, etc can be attached.
+
+Some agents can be deployed with restrictive white-lists of pre-approved scripts
+and users can only run those scripts within the parameters set forth in their
+definitions.
+
+Basically this system is aimed at being useful for a wide range of trust use-cases
+from very limited to full access with fine grained control over what is allowed.
+
+Also all actions will be optionally logged for later audits or simply to
+remember what was done.
+
+
 [Luvit]: https://luvit.io/
 [luvi]: https://github.com/luvit/luvi
 [lit]: https://github.com/luvit/lit/blob/master/README.md
