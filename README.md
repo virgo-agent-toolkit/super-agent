@@ -3,7 +3,7 @@
 The Super Agent project is an ambitious project that makes is simple and secure
 to monitor, diagnose, and repair various remote machines.  This also makes for
 a great platform for building your own web based IDE to execute and develop
-code on remove machines.
+code on remote machines.
 
 Wherever possible, the agent is portable to all major platforms, including
 Windows.  Currently the agent is implemented using the [Luvit][] platform.  The
