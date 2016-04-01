@@ -1,6 +1,6 @@
 # Super Agent
 
-The Super Agent project is an ambitious project that makes is simple and secure
+The Super Agent project is an ambitious project that makes it simple and secure
 to monitor, diagnose, and repair various remote machines.  This also makes for
 a great platform for building your own web based IDE to execute and develop
 code on remote machines.
