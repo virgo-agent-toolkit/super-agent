@@ -103,7 +103,7 @@ option.  Simply point your browser (Chrome and Firefox are known to work) to
 and present you with a colorful desktop and two buttons to get started.
 
 You could use this on remote machines if you used ssh port forwarding and you
-were the only user on the remote box, but others options may be better for that.
+were the only user on the remote box, but other options may be better for that.
 
 #### Remote Standalone with Authentication and Encryption
 
