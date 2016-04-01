@@ -212,7 +212,7 @@ lit make lit://creationix/wscat
 
 And then move the generated `wscat` file to somewhere in your path.
 
-To connect to a standalone agent, you only need to connect to it's root url
+To connect to a standalone agent, you only need to connect to its root url
 using the `schema-rpc` subprotocol.
 
 ```sh
@@ -250,7 +250,7 @@ omit an argument or use the wrong type.
 
 The protocol supports serializing callback functions and is used heavily for
 streaming interfaces.  For example, if you want to scan for entries in a directory, you would use
-the `scandir` call.  It's signature is:
+the `scandir` call.  Its signature is:
 
 ```api
 scandir (
@@ -294,7 +294,7 @@ The agent will respond with something like:
 [-1,true]
 ```
 
-Notice that the calls to your serialized function were prefixed with it's ID
+Notice that the calls to your serialized function were prefixed with its ID
 inverted.
 
 The agent can also send your serialized functions. Try it with echo.
@@ -303,14 +303,14 @@ The agent can also send your serialized functions. Try it with echo.
 [1,"echo",{"":2}]
 ```
 
-The agent will respond with it's deserialized version of your function,
+The agent will respond with its deserialized version of your function,
 serialized back into JSON.
 
 ```json
 [-1,{"":4}]
 ```
 
-You can then call this function using the negative of it's ID, passing in as
+You can then call this function using the negative of its ID, passing in as
 many arguments as you want.
 
 ```json
@@ -397,3 +397,4 @@ remember what was done.
 [Msgpack]: http://msgpack.org/
 [platform.api]: https://github.com/virgo-agent-toolkit/super-agent/blob/master/agent/platform.api
 [index.html]: https://github.com/virgo-agent-toolkit/super-agent/blob/master/client/index.html
+[wscat]: https://github.com/creationix/wscat
