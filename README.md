@@ -9,7 +9,7 @@ Wherever possible, the agent is portable to all major platforms, including
 Windows.  Currently the agent is implemented using the [Luvit][] platform.
 [LuaJit][] gives us a very fast, efficient, and easy to use scripting language.
 [libuv][] gives us cross-platform system primitives such as TCP, UDP, timers,
-sockets, file system access, network interfaces, cpu information, etc.
+sockets, file systems, etc.
 
 
 There are currently 3 main components in this project:
