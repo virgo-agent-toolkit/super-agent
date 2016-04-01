@@ -143,14 +143,14 @@ openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -nodes -days 36
 You will need to import the `cert.pem` file into your local cert trust store on
 your machine or the browser will complain the server is not safe.
 
-Also if you use port `443` and have a domain pointing to your box, you can get
-a free certificate from [letsencrypt][] that will be trusted by all major browsers.
+Also if you use port `443` and have a domain pointing to your box, you can get a
+free certificate from [letsencrypt][] that will be trusted by all major
+browsers.
 
 ### Proxy Mode
 
-Sometimes you want to install the agent on something that behind a firewall
-such as a computer on a private network, (such as a [Raspberry PI][] sitting in
-your router closet.)
+Sometimes you want to install the agent on something that is behind a firewall,
+(such as a [Raspberry PI][] sitting in your router closet.)
 
 Also you may simply wish to connect to several agents, but have a single place
 to access them all with the same deployment of TLS/SSL keys and user
@@ -161,7 +161,7 @@ that will be in *remote* mode.  The other will be on some public box listening
 in *proxy* mode.  The remote agents will connect outwards to the proxy node.
 Clients will also connect to the proxy node.
 
-The options are similar to standalone mode since most deals with the listening
+The options are similar to standalone mode since most deal with the listening
 address, authentication and encryption.
 
 ```lua
