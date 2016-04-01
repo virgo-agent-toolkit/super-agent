@@ -6,12 +6,10 @@ a great platform for building your own web based IDE to execute and develop
 code on remote machines.
 
 Wherever possible, the agent is portable to all major platforms, including
-Windows.  Currently the agent is implemented using the [Luvit][] platform.  The
-[LuaJit][] engine gives us a very fast, efficient, and easy to use scripting
-language to develop the agent and write agent scripts to be run in a secure
-sandbox. The [libuv][] library gives us cross-platform system primitives such as
-TCP, UDP, timers, sockets, file system access, network interfaces, cpu
-information, etc.
+Windows.  Currently the agent is implemented using the [Luvit][] platform.
+[LuaJit][] gives us a very fast, efficient, and easy to use scripting language.
+[libuv][] gives us cross-platform system primitives such as TCP, UDP, timers,
+sockets, file system access, network interfaces, cpu information, etc.
 
 
 There are currently 3 main components in this project:
