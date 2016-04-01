@@ -277,7 +277,6 @@ To serialize a function in `wscat`, we use the special encoding `{"":id}`.
 The agent will respond with something like:
 
 ```json
-[1,"scandir","/root",{"":2}]
 [-2,".ash_history","file"]
 [-2,".bash_history","file"]
 [-2,".bashrc","file"]
