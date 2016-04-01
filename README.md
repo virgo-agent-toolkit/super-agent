@@ -53,7 +53,7 @@ in your path to install it.  Probably the same place you installed `lit`.
 The name `rax` stands for Remote Agent eXperiment.  When this project become
 more stable, the name will probably change.
 
-The next 3 subsections describe the various modes the agent can be run.  For all
+The next 3 subsections describe the various modes in which the agent can run.  For all
 of them, you need to write a `rax.conf` file and run the `rax` agent using the file.
 
 You can place the file at `/etc/rax.conf` or in the current working directory when
