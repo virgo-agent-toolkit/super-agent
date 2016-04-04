@@ -1,7 +1,7 @@
 return {
-  name = "virgo-agent-toolkit/rax",
-  version = "0.2.2",
-  description = "Remote Agent eXperiment.",
+  name = "virgo-agent-toolkit/fife",
+  version = "0.3.0",
+  description = "Deputy Fife does exactly what you tell him.",
   luvi = {
     version = "2.6.1",
     flavor = "regular",

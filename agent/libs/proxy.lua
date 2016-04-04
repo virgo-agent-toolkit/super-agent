@@ -17,7 +17,7 @@ return function (config)
   end
 
 
-  local function newAgent(agent_id, read, write, socket)
+  local function newDeputy(agent_id, read, write, socket)
     local address = socket:getpeername()
     local agentUrl = prefix .. "/request/" .. agent_id
     log(4, "new agent", agentUrl, address)
@@ -125,7 +125,7 @@ return function (config)
     log(4, "agent disconnect", agent_id, address)
     for key, cwrite in pairs(clients) do
       log(5, "disconnecting agent", key, cwrite)
-      cwrite {0, "Agent disconnected"}
+      cwrite {0, "Deputy disconnected"}
       cwrite()
     end
   end
@@ -150,7 +150,7 @@ return function (config)
     local agent_id = req.params.agent_id
     -- TODO: authenticate agent to account using provided token
     read, write = codec(read, write)
-    return newAgent(agent_id, read, write, req.socket)
+    return newDeputy(agent_id, read, write, req.socket)
   end)
   log(4, "agent endpoint", prefix .. "/enlist/:agent_id/:token")
 
