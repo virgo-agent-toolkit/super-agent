@@ -40,7 +40,7 @@ define('apps/Terminal', function (require) {
           'USER=' + env.user,
           'LC_ALL=en_US.utf8',
           'TERM=xterm-256color',
-          'RAX_CLIENT_KEY=' + clientKey
+          'FIFE_CLIENT_KEY=' + clientKey
         ]
       },
       onData, onError, onExit
@@ -89,13 +89,13 @@ define('apps/Terminal', function (require) {
 
       term.write(
         'You can send commands to the browser environment via special ' +
-        '\x1b[34mrax\x1b[39m commands:\r\n\n' + [
+        '\x1b[34mfife\x1b[39m commands:\r\n\n' + [
           ['terminal', '[cwd]', 'Open a terminal at optional starting path.'],
           ['browse', 'folder*', 'Open File Browser at given directory paths.'],
           ['edit', 'file*', 'Open Text Editor at given file paths.'],
           ['view', 'file*', 'Open Image Viewer at given file paths.'],
         ].map(function (list) {
-          return '  \x1b[34mrax \x1b[33m' + list[0] +
+          return '  \x1b[34mfife \x1b[33m' + list[0] +
             ' \x1b[32m' + list[1] +
             ' \x1b[39m\r\n    ' + list[2] + '\r\n\n';
         }).join(''));

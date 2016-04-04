@@ -24,10 +24,10 @@ local localSock = ffi.os == "Windows" and {
   host = "127.0.0.1",
   port = 23258
 } or {
-  path = "/tmp/rax.sock"
+  path = "/tmp/fife.sock"
 }
 local meta = require('./package')
-local key = getenv('RAX_CLIENT_KEY')
+local key = getenv('FIFE_CLIENT_KEY')
 local args = table.pack(...)
 local log = require('log').log
 
@@ -37,13 +37,13 @@ coroutine.wrap(function ()
   -- Command mode when running inside agent pty session.
   if key then
     if key == '' then
-      log(5, 'Rax pty session in standalone agent detected')
+      log(5, 'Fife pty session in standalone agent detected')
     else
-      log(5, 'Rax pty session proxied for client ' .. key .. ' detected')
+      log(5, 'Fife pty session proxied for client ' .. key .. ' detected')
     end
     -- Running as client helper inside pty session
     if not args[1] then
-      print("\nUsage:\n\trax command ...args")
+      print("\nUsage:\n\tfife command ...args")
       os.exit(-1)
     end
     log(4, "Connecting to local agent", localSock)
@@ -61,7 +61,7 @@ coroutine.wrap(function ()
     os.exit(0)
   end
 
-  -- Agent mode when running outside in normal environment.
+  -- Deputy mode when running outside in normal environment.
   do
     -- Make sure the agent isn't already running
     do
@@ -72,18 +72,18 @@ coroutine.wrap(function ()
           data = data .. chunk
         end
         local pid = msgpackDecode(data)
-        log(1, "Agent already running at pid", pid)
+        log(1, "Deputy already running at pid", pid)
         write()
         os.exit(-7)
       end
     end
 
-    -- Load rax config
+    -- Load fife config
     local config = {}
     do
       local configFile
       local lua
-      log(4, 'RAX daemon mode detected.')
+      log(4, 'Fife daemon mode detected.')
       if args[1] then
         configFile = resolve(args[1])
         lua = fs.readFile(configFile)
@@ -91,18 +91,18 @@ coroutine.wrap(function ()
           log(3, 'No such file', configFile)
         end
       else
-        configFile = resolve('rax.conf')
+        configFile = resolve('fife.conf')
         lua = fs.readFile(configFile)
         if not lua then
-          configFile = '/etc/rax.conf'
+          configFile = '/etc/fife.conf'
           lua = fs.readFile(configFile)
         end
         if not lua then
-          log(3, "Cannot file rax.conf in " .. cwd .. " or /etc/")
+          log(3, "Cannot file fife.conf in " .. cwd .. " or /etc/")
         end
       end
       if not lua then
-        print("\nUsage:\n\trax path/to/rax.conf")
+        print("\nUsage:\n\tfife path/to/fife.conf")
         os.exit(-2)
       end
       log(5, 'Loading config file', configFile)

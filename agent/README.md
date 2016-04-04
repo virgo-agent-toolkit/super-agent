@@ -1,5 +1,5 @@
 
-# The Agent
+# The Deputy
 
 This will be a single executable built using luvi with luajit and openssl
 embedded.

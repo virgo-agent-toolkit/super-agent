@@ -31,36 +31,36 @@ There are currently 3 main components in this project:
   configuration and management.
 
 
-## The Agent
+## Deputy Fife
 
-The agent is a self-contained executible built as a [luvi][] app and using many
+The deputy is a self-contained executable built as a [luvi][] app and using many
 libraries from the [luvit][] ecosystem.
 
 The easiest way to build the agent is to [install][] [lit][] on your system and run:
 
 ```sh
-lit make lit://virgo-agent-toolkit/rax
+lit make lit://virgo-agent-toolkit/fife
 ```
 
 Running this command will download the source-code to the agent into your local
 lit cache and compile it into a single zip file full of lua bytecode and static
 assets.  It will then download and cache a `luvi` binary for your platform that
 matches the requirements in the agent's manifest file.  The will be combined
-into a single file in your current working directory known as `rax`. (Unless
-you're on windows, in which case it will be `rax.exe`).  Move this to somewhere
+into a single file in your current working directory known as `fife`. (Unless
+you're on windows, in which case it will be `fife.exe`).  Move this to somewhere
 in your path to install it.  Probably the same place you installed `lit`.
 
-The name `rax` stands for Remote Agent eXperiment.  When this project become
+The name `fife` stands for Remote Agent eXperiment.  When this project become
 more stable, the name will probably change.
 
 The next 3 subsections describe the various modes in which the agent can run.  For all
-of them, you need to write a `rax.conf` file and run the `rax` agent using the file.
+of them, you need to write a `fife.conf` file and run the `fife` agent using the file.
 
-You can place the file at `/etc/rax.conf` or in the current working directory when
+You can place the file at `/etc/fife.conf` or in the current working directory when
 running the command, or by passing the path to the conf file.
 
 ```sh
-rax path/to/rax.conf
+fife path/to/fife.conf
 ```
 
 This will run the agent in the foreground with the given configuration.
@@ -80,7 +80,7 @@ For getting started quickly, clone this repo and run the agent from the
 
 ```sh
 cd super-agent/agent
-rax rax.config.local
+fife fife.config.local
 ```
 
 This config file will listen locally without any kind of encryption or
@@ -90,7 +90,7 @@ users!  This is generally meant for quick local testing on a developer's laptop.
 The config file contains something like:
 
 ```lua
--- rax.conf
+-- fife.conf
 mode = "standalone"
 ip = "127.0.0.1"
 port = 7000
@@ -119,7 +119,7 @@ change 3 things.
 A config for this might look like:
 
 ```lua
--- rax.conf
+-- fife.conf
 mode = "standalone"
 ip = "0.0.0.0"
 port = 8443
@@ -165,7 +165,7 @@ The options are similar to standalone mode since most deal with the listening
 address, authentication and encryption.
 
 ```lua
--- rax.conf
+-- fife.conf
 mode = "proxy"
 ip = "0.0.0.0"
 port = 8443
@@ -204,7 +204,7 @@ ca = "/path/to/cert/used/in/proxy/cert.pem"
 For quick testing of the agent, you can use a tool called [wscat][] to connect
 to the agent and issue requests manually.
 
-Building `wscat` is the same as building the `rax` command.
+Building `wscat` is the same as building the `fife` command.
 
 ```sh
 lit make lit://creationix/wscat
@@ -288,7 +288,7 @@ The agent will respond with something like:
 [-2,".vimrc","file"]
 [-2,".wscat_history","file"]
 [-2,"bin","directory"]
-[-2,"rax.conf","file"]
+[-2,"fife.conf","file"]
 [-2,"super-agent","directory"]
 [-1,true]
 ```
