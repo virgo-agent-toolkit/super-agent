@@ -50,9 +50,6 @@ into a single file in your current working directory known as `fife`. (Unless
 you're on windows, in which case it will be `fife.exe`).  Move this to somewhere
 in your path to install it.  Probably the same place you installed `lit`.
 
-The name `fife` stands for Remote Agent eXperiment.  When this project become
-more stable, the name will probably change.
-
 The next 3 subsections describe the various modes in which the agent can run.  For all
 of them, you need to write a `fife.conf` file and run the `fife` agent using the file.
 
