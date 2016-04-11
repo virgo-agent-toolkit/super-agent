@@ -12,7 +12,7 @@ local function async(fn, ...)
   local thread = coroutine.running()
   local args = pack(...)
   args[args.n + 1] = function (...)
-    return assert(coroutine.resume(thread, ...))
+	return assert(coroutine.resume(thread, ...))
   end
   fn(unpack(args))
   return coroutine.yield()
@@ -431,6 +431,108 @@ if ffi.os ~= "Windows" then
 
 end
 
+if ffi.os == "Windows" then
+	local self = {}
+		self.width_needed = 2000
+		self.screen_settings = 'if( $Host -and $Host.UI -and $Host.UI.RawUI ) { $rawUI = $Host.UI.RawUI; $oldSize = $rawUI.BufferSize; $typeName = $oldSize.GetType( ).FullName; $newSize = New-Object $typeName (' .. self.width_needed .. ', $oldSize.Height); $rawUI.BufferSize = $newSize ;} ;'
+		self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
+
+	  
+	local function onExit(code, signal)
+		em.exitCode = code
+		em.signal = signal
+		em:emit('exit', code, signal)
+		maybeClose()
+		em:close()
+	end
+	  
+	  
+	local function createPowershell(shell, size, options, onData, onError, onExit)
+		local write, kill, resize
+		local options = {}
+		local wrapper = self.screen_settings .. "dir" ..self.error_output
+		local stdin = ffi.new("int[1]")
+		local stdout = ffi.new("int[1]")
+		local stderr = ffi.new("int[1]")--I am really not sure that this is correct
+		--local stdin = uv.new_pipe(false)
+		--local stdout = uv.new_pipe(false)
+		--local stderr = uv.new_pipe(false)--I am really not sure that this is correct
+		local child = uv.spawn("powershell.exe", 
+		{stdio = {stdin[0], stdout[0], stderr[0]},cwd="C:\\Users\\Adam", detatched=true}, 
+		--onExit
+		function (...)
+		  write, kill, resize = write, kill, resize
+
+		  local args = {...}
+		  coroutine.wrap(function ()
+			return onExit(unpack(args))
+		  end)()
+		end
+		)
+		print(child)
+		
+		local pipe = uv.new_pipe(false)
+		pipe:open(stdin[0])
+		--pretty sure that this is reading from powershell which isnt giong to give anything back
+		pipe:read_start(function (err,data)
+			--if err then return onError(err)
+			--else return print(data)
+			--end
+			coroutine.wrap(function()
+				if err then
+					return onError(err)
+				else
+					return onData(data)
+				end
+			end)()
+		end)
+		
+		
+		function write(chunk)
+			local err
+			if chunk then
+				--print("chunk",chunk)
+				
+				onData(chunk)
+				err = async(pipe.write, pipe, chunk)
+				
+			else
+				--pipe.shutdown(pipe)
+				err = async(pipe.shutdown, pipe)
+				pipe:close()
+			end
+			
+			if err then
+				onError(err)
+			end
+		end
+		
+		
+		function kill(signal)
+			child:kill(signal)
+		end
+
+		
+		--local size_s = ffi.new("struct winsize")
+		function resize(cols, rows)
+		  --size_s.ws_col, size_s.ws_row = cols, rows
+		  --if ffi.C.ioctl(slave, TIOCSWINSZ, size_s) < 0 then
+			--onError("Problem resizing pty")
+		  --end
+		end
+		
+		
+		
+		return {write, kill, resize}	
+	end
+	
+		
+	function platform.pty(shell, size, options, onData, onError, onExit)
+		
+		return createPowershell(shell, size, options, onData, onError, onExit)
+		
+	end
+end
 if ffi.os == "OSX" or ffi.os == "Linux" then
   -- Define the bits of the system API we need.
   ffi.cdef[[
@@ -501,7 +603,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   -- )
   function platform.pty(shell, size, options, onData, onError, onExit)
     local master, slave = openpty(unpack(size))
-
+	-- so it looks like we might be inheriting file descriptors
     local uid = options.uid
     if options.user then
       uid = platform.uid(options.user)
@@ -535,6 +637,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
     pipe:read_start(function (err, data)
       coroutine.wrap(function ()
         if err then
+		-- probably blocking 
           return onError(err)
         else
           return onData(data)
