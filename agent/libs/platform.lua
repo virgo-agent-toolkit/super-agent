@@ -451,14 +451,15 @@ if ffi.os == "Windows" then
 		local write, kill, resize
 		local options = {}
 		local wrapper = self.screen_settings .. "dir" ..self.error_output
-		local stdin = ffi.new("int[1]")
-		local stdout = ffi.new("int[1]")
-		local stderr = ffi.new("int[1]")--I am really not sure that this is correct
-		--local stdin = uv.new_pipe(false)
-		--local stdout = uv.new_pipe(false)
-		--local stderr = uv.new_pipe(false)--I am really not sure that this is correct
-		local child = uv.spawn("powershell.exe", 
-		{stdio = {stdin[0], stdout[0], stderr[0]},cwd="C:\\Users\\Adam", detatched=true}, 
+		--local stdin = ffi.new("int[1]")
+		--local stdout = ffi.new("int[1]")
+		--local stderr = ffi.new("int[1]")--I am really not sure that this is correct
+		print("before pipes")
+		local stdin = uv.new_pipe(false)
+		local stdout = uv.new_pipe(false)
+		local stderr = uv.new_pipe(false)--I am really not sure that this is correct
+		local child = uv.spawn("cmd.exe", 
+		{stdio = {stdin, stdout, stderr},cwd="C:\\Users\\Adam", detached=true}, 
 		--onExit
 		function (...)
 		  write, kill, resize = write, kill, resize
@@ -471,10 +472,22 @@ if ffi.os == "Windows" then
 		)
 		print(child)
 		
-		local pipe = uv.new_pipe(false)
-		pipe:open(stdin[0])
+		
 		--pretty sure that this is reading from powershell which isnt giong to give anything back
-		pipe:read_start(function (err,data)
+		stdout:read_start(function (err,data)
+			--if err then return onError(err)
+			--else return print(data)
+			--end
+			coroutine.wrap(function()
+				if err then
+					return onError(err)
+				else
+					return onData(data)
+				end
+			end)()
+		end)
+		
+		stderr:read_start(function (err,data)
 			--if err then return onError(err)
 			--else return print(data)
 			--end
@@ -494,12 +507,12 @@ if ffi.os == "Windows" then
 				--print("chunk",chunk)
 				
 				onData(chunk)
-				err = async(pipe.write, pipe, chunk)
+				err = async(stdin.write, stdin, chunk)
 				
 			else
 				--pipe.shutdown(pipe)
-				err = async(pipe.shutdown, pipe)
-				pipe:close()
+				err = async(stdin.shutdown, stdin)
+				stdin:close()
 			end
 			
 			if err then
