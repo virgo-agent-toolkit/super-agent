@@ -388,44 +388,35 @@ local function simpleSpawn(options, onExit)
     gid = options.gid,
     detached = true
   }, function (...)
-    --write, kill, resize = write, kill, resize
 
     local args = {...}
-    --print("in anonymous function")
     coroutine.wrap(function ()
       return onExit(unpack(args))
     end)()
   end)
-  --local write, kill
-print("before stdout:read_start")
-  --because stdin has not been started... master was started I still dont understand how those work together
 
-print("or here")
-local function metaWrite(inStream)
-  local function write(chunk)
-    local err
-    if chunk then
-      err = async(inStream.write, inStream, chunk)
-    else
-      err = async(inStream.shutdown, inStream)
-      inStream:close()
+
+  local function metaWrite(inStream)
+    local function write(chunk)
+      local err
+      if chunk then
+        err = async(inStream.write, inStream, chunk)
+      else
+        err = async(inStream.shutdown, inStream)
+        inStream:close()
+      end
+      -- TODO: handle err in own callback
+      if err then
+        async(stderr.write, stderr, err)
+      end
     end
-    -- TODO: handle err in own callback
-    if err then
-      async(stderr.write, stderr, err)
-      --onStdErr(err)
-    end
+
+    return write
   end
-
-  return write
-end
-
-
 
   local function kill(signal)
     child:kill(signal)
   end
-
 
   return metaWrite, kill
 end
