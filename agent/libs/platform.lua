@@ -375,6 +375,61 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
   return true
 end
 
+
+local function simpleSpawn(options, onExit)
+  local stdin, stdout, stderr = options.stdin, options.stdout, options.stderr
+
+  local child = uv.spawn(options.shell, {
+    stdio = {stdin, options.stdout, stderr},
+    env = options.env,
+    args = options.args,
+    cwd = options.cwd,
+    uid = options.uid,
+    gid = options.gid,
+    detached = true
+  }, function (...)
+    --write, kill, resize = write, kill, resize
+
+    local args = {...}
+    --print("in anonymous function")
+    coroutine.wrap(function ()
+      return onExit(unpack(args))
+    end)()
+  end)
+  --local write, kill
+print("before stdout:read_start")
+  --because stdin has not been started... master was started I still dont understand how those work together
+
+print("or here")
+local function metaWrite(inStream)
+  local function write(chunk)
+    local err
+    if chunk then
+      err = async(inStream.write, inStream, chunk)
+    else
+      err = async(inStream.shutdown, inStream)
+      inStream:close()
+    end
+    -- TODO: handle err in own callback
+    if err then
+      async(stderr.write, stderr, err)
+      --onStdErr(err)
+    end
+  end
+
+  return write
+end
+
+
+
+  local function kill(signal)
+    child:kill(signal)
+  end
+
+
+  return metaWrite, kill
+end
+
 if ffi.os ~= "Windows" then
 
   ffi.cdef[[
@@ -437,42 +492,58 @@ if ffi.os == "Windows" then
 		self.screen_settings = 'if( $Host -and $Host.UI -and $Host.UI.RawUI ) { $rawUI = $Host.UI.RawUI; $oldSize = $rawUI.BufferSize; $typeName = $oldSize.GetType( ).FullName; $newSize = New-Object $typeName (' .. self.width_needed .. ', $oldSize.Height); $rawUI.BufferSize = $newSize ;} ;'
 		self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
 
-	  
-	local function onExit(code, signal)
-		em.exitCode = code
-		em.signal = signal
-		em:emit('exit', code, signal)
-		maybeClose()
-		em:close()
-	end
-	  
-	  
-	local function createPowershell(shell, size, options, onData, onError, onExit)
-		local write, kill, resize
-		local options = {}
+
+	local function createPowershell(shell, options, onData, onError, onExit)
 		local wrapper = self.screen_settings .. "dir" ..self.error_output
-		--local stdin = ffi.new("int[1]")
-		--local stdout = ffi.new("int[1]")
-		--local stderr = ffi.new("int[1]")--I am really not sure that this is correct
-		print("before pipes")
 		local stdin = uv.new_pipe(false)
 		local stdout = uv.new_pipe(false)
-		local stderr = uv.new_pipe(false)--I am really not sure that this is correct
-		local child = uv.spawn("cmd.exe", 
-		{stdio = {stdin, stdout, stderr},cwd="C:\\Users\\Adam", detached=true}, 
-		--onExit
-		function (...)
-		  write, kill, resize = write, kill, resize
+		local stderr = uv.new_pipe(false)
 
-		  local args = {...}
-		  coroutine.wrap(function ()
-			return onExit(unpack(args))
-		  end)()
-		end
-		)
-		print(child)
-		
-		
+    options.shell = shell
+    options.stdin = stdin
+    options.stdout = stdout
+    options.stderr = stderr
+    options.cwd = "C:\\Users\\Adam"
+
+      --env = options.env,
+      --args = options.args,
+      --cwd = options.cwd,
+      --uid = options.uid,
+      --gid = options.gid,
+
+
+    local write, kill = simpleSpawn(options, onExit)
+
+    stdin:read_start(function (err,data)
+      --if err then return onError(err)
+      --else return print(data)
+      --end
+      coroutine.wrap(function()
+        if err then
+          return onError(err)
+        else
+          return onData(data)
+        end
+      end)()
+    end)
+
+    write = write(stdin)
+
+--    local child = uv.spawn("cmd.exe",
+--		{stdio = {stdin, stdout, stderr},cwd="C:\\Users\\Adam", detached=true},
+		--onExit
+		--function (...)
+		--  write, kill, resize = write, kill, resize
+
+		--  local args = {...}
+		--  coroutine.wrap(function ()
+		--	return onExit(unpack(args))
+		--  end)()
+		--end
+		--)
+		--print(child)
+
+
 		--pretty sure that this is reading from powershell which isnt giong to give anything back
 		stdout:read_start(function (err,data)
 			--if err then return onError(err)
@@ -486,7 +557,7 @@ if ffi.os == "Windows" then
 				end
 			end)()
 		end)
-		
+
 		stderr:read_start(function (err,data)
 			--if err then return onError(err)
 			--else return print(data)
@@ -499,51 +570,19 @@ if ffi.os == "Windows" then
 				end
 			end)()
 		end)
-		
-		
-		function write(chunk)
-			local err
-			if chunk then
-				--print("chunk",chunk)
-				
-				onData(chunk)
-				err = async(stdin.write, stdin, chunk)
-				
-			else
-				--pipe.shutdown(pipe)
-				err = async(stdin.shutdown, stdin)
-				stdin:close()
-			end
-			
-			if err then
-				onError(err)
-			end
-		end
-		
-		
-		function kill(signal)
-			child:kill(signal)
-		end
 
-		
-		--local size_s = ffi.new("struct winsize")
-		function resize(cols, rows)
-		  --size_s.ws_col, size_s.ws_row = cols, rows
-		  --if ffi.C.ioctl(slave, TIOCSWINSZ, size_s) < 0 then
-			--onError("Problem resizing pty")
-		  --end
-		end
-		
-		
-		
-		return {write, kill, resize}	
+    local function resize()
+      print("not implemented for windows")
+    end
+
+		return {write, kill, resize}
 	end
-	
-		
+
+
 	function platform.pty(shell, size, options, onData, onError, onExit)
-		
+
 		return createPowershell(shell, size, options, onData, onError, onExit)
-		
+
 	end
 end
 if ffi.os == "OSX" or ffi.os == "Linux" then
@@ -614,73 +653,43 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   --   kill: Emitter(signal: Integer)
   --   resize: Emitter(WinSize)
   -- )
-  function platform.pty(shell, size, options, onData, onError, onExit)
+  function platform.pty(shell, size, options, onStdOut, onStdErr)
     local master, slave = openpty(unpack(size))
-	-- so it looks like we might be inheriting file descriptors
-    local uid = options.uid
+	  -- so it looks like we might be inheriting file descriptors
+    options.shell = shell
     if options.user then
-      uid = platform.uid(options.user)
+      options.uid = platform.uid(options.user)
     end
-    local gid = options.gid
     if options.group then
-      gid = platform.gid(options.group)
+      options.gid = platform.gid(options.group)
     end
-    local write, kill, resize
-
+    local resize
+    options.stdin = slave
+    options.stdout = slave
+    options.stderr = slave
     -- Spawn the child process that inherits the slave fd as it's stdio.
-    local child = uv.spawn(shell, {
-      stdio = {slave, slave, slave},
-      env = options.env,
-      args = options.args,
-      cwd = options.cwd,
-      uid = uid,
-      gid = gid,
-      detached = true
-    }, function (...)
-      write, kill, resize = write, kill, resize
-
-      local args = {...}
-      coroutine.wrap(function ()
-        return onExit(unpack(args))
-      end)()
-    end)
-
     local pipe = uv.new_pipe(false)
     pipe:open(master)
+
     pipe:read_start(function (err, data)
       coroutine.wrap(function ()
         if err then
-		-- probably blocking 
-          return onError(err)
+          -- probably blocking
+          return onStdErr(err)
         else
-          return onData(data)
+          return onStdOut(data)
         end
       end)()
     end)
 
-    function write(chunk)
-      local err
-      if chunk then
-        err = async(pipe.write, pipe, chunk)
-      else
-        err = async(pipe.shutdown, pipe)
-        pipe:close()
-      end
-      -- TODO: handle err in own callback
-      if err then
-        onError(err)
-      end
-    end
+    local write, kill = simpleSpawn(options, onStdErr)
 
-    function kill(signal)
-      child:kill(signal)
-    end
-
+    write = write(pipe)
     local size_s = ffi.new("struct winsize")
     function resize(cols, rows)
       size_s.ws_col, size_s.ws_row = cols, rows
       if ffi.C.ioctl(slave, TIOCSWINSZ, size_s) < 0 then
-        onError("Problem resizing pty")
+        onStdErr("Problem resizing pty")
       end
     end
 
