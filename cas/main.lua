@@ -1,4 +1,5 @@
 local uv = require('uv')
+local getenv = require('os').getenv
 local success, luvi = pcall(require, 'luvi')
 if success then
   loadstring(luvi.bundle.readfile("luvit-loader.lua"), "bundle:luvit-loader.lua")()
@@ -191,6 +192,11 @@ require('weblit-app')
     res.headers["Refresh"] = '/' .. hash
     res.headers["Content-Type"] = 'text/plain'
   end)
+
+  .bind {
+    host = getenv('HOST') or '127.0.0.1',
+    port = getenv('PORT') or 4000
+  }
 
   .start()
 
