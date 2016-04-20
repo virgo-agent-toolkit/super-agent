@@ -13,6 +13,7 @@ return {
     "creationix/weblit-auto-headers@2.0.2",
     "creationix/weblit-logger@2.0.0",
     "creationix/weblit-etag-cache@2.0.0",
+    "creationix/schema@1.0.0",
   },
   files = {
     "*.lua"
