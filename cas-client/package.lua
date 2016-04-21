@@ -8,6 +8,7 @@ return {
     "creationix/msgpack@2",
     "creationix/coro-http@2",
     "creationix/sha1@1",
+    "luvit/secure-socket@1",
   },
   files = {
     "*.lua"
