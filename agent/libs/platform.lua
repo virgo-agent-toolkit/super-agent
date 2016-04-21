@@ -1,5 +1,6 @@
 local uv = require('uv')
 local ffi = require('ffi')
+local p = require("pretty-print").prettyPrint
 
 
 local pack = table.pack
@@ -400,6 +401,9 @@ local function simpleSpawn(options, onExit)
     local function write(chunk)
       local err
       if chunk then
+	  if string.find(chunk, "\r") then
+				chunk = "\r\n"
+			end
         err = async(inStream.write, inStream, chunk)
       else
         err = async(inStream.shutdown, inStream)
@@ -484,13 +488,18 @@ if ffi.os == "Windows" then
 		self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
 
 
-	local function createPowershell(shell, options, onData, onError, onExit)
-		local wrapper = self.screen_settings .. "dir" ..self.error_output
+	function platform.pty(shell, size, options, onStdOut, onStdErr)
+
+	local wrapper = self.screen_settings .. "dir" ..self.error_output
 		local stdin = uv.new_pipe(false)
 		local stdout = uv.new_pipe(false)
 		local stderr = uv.new_pipe(false)
-
-    options.shell = shell
+	
+	
+	
+	
+    --options.shell = shell
+	options.shell = "cmd.exe"
     options.stdin = stdin
     options.stdout = stdout
     options.stderr = stderr
@@ -511,9 +520,9 @@ if ffi.os == "Windows" then
       --end
       coroutine.wrap(function()
         if err then
-          return onError(err)
+          return onStdErr(err)
         else
-          return onData(data)
+          return onStdOut(data)
         end
       end)()
     end)
@@ -542,9 +551,9 @@ if ffi.os == "Windows" then
 			--end
 			coroutine.wrap(function()
 				if err then
-					return onError(err)
+					return onStdErr(err)
 				else
-					return onData(data)
+					return onStdOut(data)
 				end
 			end)()
 		end)
@@ -555,9 +564,9 @@ if ffi.os == "Windows" then
 			--end
 			coroutine.wrap(function()
 				if err then
-					return onError(err)
+					return onStdErr(err)
 				else
-					return onData(data)
+					return onStdOut(data)
 				end
 			end)()
 		end)
@@ -567,13 +576,6 @@ if ffi.os == "Windows" then
     end
 
 		return {write, kill, resize}
-	end
-
-
-	function platform.pty(shell, size, options, onData, onError, onExit)
-
-		return createPowershell(shell, size, options, onData, onError, onExit)
-
 	end
 end
 if ffi.os == "OSX" or ffi.os == "Linux" then
