@@ -1,6 +1,6 @@
 return {
   name = "virgo-agent-toolkit/cas-server",
-  version = "0.0.1",
+  version = "0.0.2",
   luvi = {
     flavor = "tiny",
   },

@@ -164,7 +164,7 @@ require('weblit-app')
     else
       assert(query("set", hash, body))
       res.code = 201
-      temps[hash] = uv.now() + (10 * 1000)
+      temps[hash] = uv.now() + (5 * 60 * 1000)
     end
 
     res.body = nil
