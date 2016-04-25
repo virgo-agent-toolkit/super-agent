@@ -610,7 +610,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
       end
     end
 
-    return {write, kill, resize}
+    return write, kill, resize
 
   end
 end
