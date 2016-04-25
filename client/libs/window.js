@@ -181,26 +181,40 @@ define('libs/window', function (require) {
 
     }
 
-    function focus() {
-      if (focused === win) { return; }
-      var old = focused;
-      focused = win;
-      zIndex = nextZ++;
-      if (old) { old.refresh(); }
-      refresh();
+    function focus(evt) {
+      if (focused !== win) {
+        if (evt) {
+          evt.stopPropagation();
+          evt.preventDefault();
+        }
+        var old = focused;
+        focused = win;
+        zIndex = nextZ++;
+        if (old) {
+          if (old.onBlur) {
+            old.onBlur();
+          }
+          old.refresh();
+        }
+        refresh();
+      }
+      if (win.onFocus) {
+        win.onFocus();
+      }
     }
 
     var destroyed;
     function destroy() {
       if (destroyed) { return; }
       destroyed = true;
-      if (app.onClose) { app.onClose(); }
+      if (win.onClose) { win.onClose(); }
       windows.splice(windows.indexOf(win), 1);
       win.el.parentElement.removeChild(win.el);
     }
 
     function onMaxClick(evt) {
       evt.stopPropagation();
+      evt.preventDefault();
       maximized = !maximized;
       refresh();
       focus();
@@ -208,6 +222,7 @@ define('libs/window', function (require) {
 
     function onCloseClick(evt) {
       evt.stopPropagation();
+      evt.preventDefault();
       destroy();
     }
 
