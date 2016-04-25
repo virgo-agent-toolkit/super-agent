@@ -2,7 +2,6 @@ local uv = require('uv')
 local ffi = require('ffi')
 local p = require("pretty-print").prettyPrint
 
-
 local pack = table.pack
 
 -- Function to make it easy to consume callback-based APIs in a coroutine world.
@@ -13,7 +12,7 @@ local function async(fn, ...)
   local thread = coroutine.running()
   local args = pack(...)
   args[args.n + 1] = function (...)
-	return assert(coroutine.resume(thread, ...))
+	  return assert(coroutine.resume(thread, ...))
   end
   fn(unpack(args))
   return coroutine.yield()
@@ -376,55 +375,6 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
   return true
 end
 
-
-local function simpleSpawn(options, onExit)
-  local stdin, stdout, stderr = options.stdin, options.stdout, options.stderr
-
-  local child = uv.spawn(options.shell, {
-    stdio = {stdin, options.stdout, stderr},
-    env = options.env,
-    args = options.args,
-    cwd = options.cwd,
-    uid = options.uid,
-    gid = options.gid,
-    detached = true
-  }, function (...)
-
-    local args = {...}
-    coroutine.wrap(function ()
-      return onExit(unpack(args))
-    end)()
-  end)
-
-
-  local function metaWrite(inStream)
-    local function write(chunk)
-      local err
-      if chunk then
-	  if string.find(chunk, "\r") then
-				chunk = "\r\n"
-			end
-        err = async(inStream.write, inStream, chunk)
-      else
-        err = async(inStream.shutdown, inStream)
-        inStream:close()
-      end
-      -- TODO: handle err in own callback
-      if err then
-        async(stderr.write, stderr, err)
-      end
-    end
-
-    return write
-  end
-
-  local function kill(signal)
-    child:kill(signal)
-  end
-
-  return metaWrite, kill
-end
-
 if ffi.os ~= "Windows" then
 
   ffi.cdef[[
@@ -481,103 +431,73 @@ if ffi.os ~= "Windows" then
 
 end
 
-if ffi.os == "Windows" then
-	local self = {}
-		self.width_needed = 2000
-		self.screen_settings = 'if( $Host -and $Host.UI -and $Host.UI.RawUI ) { $rawUI = $Host.UI.RawUI; $oldSize = $rawUI.BufferSize; $typeName = $oldSize.GetType( ).FullName; $newSize = New-Object $typeName (' .. self.width_needed .. ', $oldSize.Height); $rawUI.BufferSize = $newSize ;} ;'
-		self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
 
-
-	function platform.pty(shell, size, options, onStdOut, onStdErr)
-
-	local wrapper = self.screen_settings .. "dir" ..self.error_output
-		local stdin = uv.new_pipe(false)
-		local stdout = uv.new_pipe(false)
-		local stderr = uv.new_pipe(false)
-	
-	
-	
-	
-    --options.shell = shell
-	options.shell = "cmd.exe"
-    options.stdin = stdin
-    options.stdout = stdout
-    options.stderr = stderr
-    options.cwd = "C:\\Users\\Adam"
-
-      --env = options.env,
-      --args = options.args,
-      --cwd = options.cwd,
-      --uid = options.uid,
-      --gid = options.gid,
-
-
-    local write, kill = simpleSpawn(options, onExit)
-
-    stdin:read_start(function (err,data)
-      --if err then return onError(err)
-      --else return print(data)
-      --end
-      coroutine.wrap(function()
-        if err then
-          return onStdErr(err)
-        else
-          return onStdOut(data)
-        end
-      end)()
-    end)
-
-    write = write(stdin)
-
---    local child = uv.spawn("cmd.exe",
---		{stdio = {stdin, stdout, stderr},cwd="C:\\Users\\Adam", detached=true},
-		--onExit
-		--function (...)
-		--  write, kill, resize = write, kill, resize
-
-		--  local args = {...}
-		--  coroutine.wrap(function ()
-		--	return onExit(unpack(args))
-		--  end)()
-		--end
-		--)
-		--print(child)
-
-
-		--pretty sure that this is reading from powershell which isnt giong to give anything back
-		stdout:read_start(function (err,data)
-			--if err then return onError(err)
-			--else return print(data)
-			--end
-			coroutine.wrap(function()
-				if err then
-					return onStdErr(err)
-				else
-					return onStdOut(data)
-				end
-			end)()
-		end)
-
-		stderr:read_start(function (err,data)
-			--if err then return onError(err)
-			--else return print(data)
-			--end
-			coroutine.wrap(function()
-				if err then
-					return onStdErr(err)
-				else
-					return onStdOut(data)
-				end
-			end)()
-		end)
-
-    local function resize()
-      print("not implemented for windows")
-    end
-
-		return {write, kill, resize}
-	end
+local function attachReader(stream, onData, onError)
+  local function onEvent(err, data)
+    return coroutine.wrap(function()
+      if err then
+        return onError(err)
+      end
+      stream:read_stop()
+      onData(data)
+      stream:read_start(onEvent)
+    end)()
+  end
+  stream:read_start(onEvent)
 end
+
+local function makeWriter(stream, onError)
+  return function (chunk)
+    local err
+    if chunk then
+      err = async(stream.write, stream, chunk)
+    else
+      err = async(stream.shutdown, stream)
+      if not stream:is_closing() then
+        stream:close()
+      end
+    end
+    if err then
+      onError(err)
+    end
+  end
+end
+
+local function makeKiller(child, handles)
+  return function (signal)
+    child:kill(signal)
+    if not child:is_closing() then
+      child:close()
+    end
+    for i = 1, #handles do
+      if not handles[i]:is_closing() then
+        handles[i]:close()
+      end
+    end
+  end
+end
+
+function platform.spawn(command, options, onStdout, onStderr, onError, onExit)
+
+  local stdin = uv.new_pipe(false)
+	local stdout = uv.new_pipe(false)
+	local stderr = uv.new_pipe(false)
+  options.stdio = {stdin, stdout, stderr}
+
+  local child = uv.spawn(command, options, function (...)
+    local args = {...}
+    return coroutine.wrap(function ()
+      return onExit(unpack(args))
+    end)()
+  end)
+
+  attachReader(stdout, onStdout, onError)
+  attachReader(stderr, onStderr, onError)
+
+  return makeWriter(stdin, onError),
+         makeKiller(child, {stdin, stderr, stdout})
+end
+
 if ffi.os == "OSX" or ffi.os == "Linux" then
   -- Define the bits of the system API we need.
   ffi.cdef[[
@@ -646,43 +566,47 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   --   kill: Emitter(signal: Integer)
   --   resize: Emitter(WinSize)
   -- )
-  function platform.pty(shell, size, options, onStdOut, onStdErr)
+  function platform.pty(shell, size, options, onData, onError, onExit)
     local master, slave = openpty(unpack(size))
-	  -- so it looks like we might be inheriting file descriptors
-    options.shell = shell
-    if options.user then
-      options.uid = platform.uid(options.user)
-    end
-    if options.group then
-      options.gid = platform.gid(options.group)
-    end
-    local resize
-    options.stdin = slave
-    options.stdout = slave
-    options.stderr = slave
-    -- Spawn the child process that inherits the slave fd as it's stdio.
-    local pipe = uv.new_pipe(false)
-    pipe:open(master)
 
-    pipe:read_start(function (err, data)
+    local uid = options.uid
+    if options.user then
+      uid = platform.uid(options.user)
+    end
+    local gid = options.gid
+    if options.group then
+      gid = platform.gid(options.group)
+    end
+    local write, kill, resize
+
+    -- Spawn the child process that inherits the slave fd as it's stdio.
+    local child = uv.spawn(shell, {
+      stdio = {slave, slave, slave},
+      env = options.env,
+      args = options.args,
+      cwd = options.cwd,
+      uid = uid,
+      gid = gid,
+      -- detached = true
+    }, function (...)
+      local args = {...}
       coroutine.wrap(function ()
-        if err then
-          -- probably blocking
-          return onStdErr(err)
-        else
-          return onStdOut(data)
-        end
+        return onExit(unpack(args))
       end)()
     end)
 
-    local write, kill = simpleSpawn(options, onStdErr)
+    local pipe = uv.new_pipe(false)
+    pipe:open(master)
+    attachReader(pipe, onData, onError)
 
-    write = write(pipe)
+    write = makeWriter(pipe, onError)
+    kill = makeKiller(child, {pipe})
+
     local size_s = ffi.new("struct winsize")
     function resize(cols, rows)
       size_s.ws_col, size_s.ws_row = cols, rows
       if ffi.C.ioctl(slave, TIOCSWINSZ, size_s) < 0 then
-        onStdErr("Problem resizing pty")
+        onError("Problem resizing pty")
       end
     end
 
