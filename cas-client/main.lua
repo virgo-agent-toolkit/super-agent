@@ -32,8 +32,27 @@ end
 -- module.file is a string that gets converted to a sha1
 --
 local function publish(module)
+
   if module.code then
     module.code = upload(module.code)
+  end
+  if module.docs then
+    module.docs = upload(module.docs)
+  end
+  if module.dependencies then
+    for i = 1, #module.dependencies do
+      module.dependencies[i][2] = upload(module.dependencies[i][2])
+    end
+  end
+  if module.assets then
+    for i = 1, #module.assets do
+      module.assets[i][2] = upload(module.assets[i][2])
+    end
+  end
+  if module.tests then
+    for i = 1, #module.tests do
+      module.tests[i][2] = upload(module.tests[i][2])
+    end
   end
   p(module)
   local encoded = msgpack.encode(module)
@@ -49,18 +68,39 @@ end
 
 coroutine.wrap(function ()
   publish {
+    name = "addem",
+    description = "Adds two values together, even strings!",
+    docs = [[
+      This simple module lets you add two non-nil values together.
+      If either one is detected to be a string, they will be concatenated.
+    ]],
     code = [[
       return function (a, b)
-        if type(a) == "string" then
+        if type(a) == "string" or type(b) == "string" then
           return a .. b
         else
           return a + b
         end
       end
     ]],
-    name = "addem",
-    description = "Adds two values together, even strings!",
+    tests = {
+      {"adds number", [[
+        assert(self(1, 2) == 3)
+      ]]},
+      {"adds strings", [[
+        assert(self("1", "2") == "12")
+      ]]},
+      {"adds mixed", [[
+        assert(self("1", 2) == "12")
+        assert(self(1, "2") == "12")
+      ]]},
+      {"nil should fail", [[
+        assert(not pcall(self, nil, 42))
+      ]]},
+    },
+    owners = { "tim@creationix.com" },
     tags = {"add", "concat"},
+    license = "Public Domain"
   }
 end)()
 
