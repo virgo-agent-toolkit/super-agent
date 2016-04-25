@@ -11,7 +11,7 @@ define('apps/Console', function (require) {
   var configs = {
     OSX: ['/bin/bash', '-l'],
     Linux: ['/bin/bash', '-i'],
-    Windows: ['cmd.exe'],
+    Windows: ['cmd.exe', "/Q"],
   };
 
   Console.title = 'Console';
@@ -52,24 +52,24 @@ define('apps/Console', function (require) {
       win.container.scrollTop = win.container.scrollHeight;
     }
 
-    function prompt() {
-      win.container.appendChild(domBuilder(['form$form',
-        {onsubmit: onSubmit},
-        ['input.command$input'],
-      ], ui));
-      ui.input.focus();
-      scroll();
-    }
-
     function command(line) {
       if (ui.form) {
         win.container.removeChild(ui.form);
         ui.form = null;
       }
+      if (line) {
+        win.container.appendChild(domBuilder([
+          ['pre.command', line],
+        ], ui));
+      }
       win.container.appendChild(domBuilder([
-        ['pre.command', line],
         ['pre.output$out'],
+        ['form$form',
+          {onsubmit: onSubmit},
+          ['input.command$input'],
+        ]
       ], ui));
+      ui.input.focus();
       scroll();
     }
 
@@ -78,8 +78,7 @@ define('apps/Console', function (require) {
       var value = ui.input.value;
       if (!value) { return; }
       command(value);
-      write(ui.input.value + lineEnd);
-      prompt();
+      write(value + lineEnd);
     }
 
     function onData(chunk) {
@@ -117,7 +116,7 @@ define('apps/Console', function (require) {
       win.container.style.backgroundColor = '#000';
       win.container.style.color = '#fff';
       win.container.style.overflow = 'auto';
-      prompt();
+      command();
 
       // Called when the app is closed.
       win.onClose = onClose;
