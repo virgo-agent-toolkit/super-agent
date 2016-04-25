@@ -86,13 +86,13 @@ local publish = assert(addSchema("publish", {
   {"message", {
     name = String, -- single word name
     code = Hash, -- Source code to module as a single file.
-    description = Optional(String), -- single-line description
+    description = String, -- single-line description
     interface = Optional(Type), -- type signature of module's exports.
-    docs = Optional(Hash), -- Markdown document with full documentation
+    docs = Hash, -- Markdown document with full documentation
     dependencies = Optional(Array({String,Hash})), -- Mapping from local aliases to hash.
     assets = Optional(Array({String,Hash})), -- Mapping from name to binary data.
-    tests = Optional(Array({String, Hash})), -- Unit tests as array of named files.
-    owners = Optional(Array(Email)), -- List of users authorized to publish updates
+    tests = Array({String, Hash}), -- Unit tests as array of named files.
+    owners = Array(Email), -- List of users authorized to publish updates
     changes = Optional{ -- Fine grained data about change history
       parent = Hash, -- Parent module
       level = Optional(Int), -- 0 - metadata-only, 1 - backwards-compat, 2 - breaking
@@ -101,7 +101,7 @@ local publish = assert(addSchema("publish", {
       additions = Optional(Array(String)), -- New features
       changes = Optional(Array(String)), -- breaking changes
     },
-    license = Optional(String)
+    license = String
   }},
 }, {
   {"hash", Hash},
