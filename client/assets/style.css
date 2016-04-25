@@ -57,9 +57,15 @@ pre.command, pre.output, input.command {
   margin: 0;
   box-sizing: border-box;
 }
+pre.output .stdout {
+  color: #fff;
+}
+pre.output .stderr {
+  color: #faa;
+}
 pre.command, input.command {
-  color: #edf;
-  background-color: #333;
+  color: #abf;
+  background-color: #222;
 }
 input.command {
   border: 0;

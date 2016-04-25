@@ -40,11 +40,17 @@ define('apps/Console', function (require) {
           'FIFE_CLIENT_KEY=' + clientKey
         ]
       },
-      onData, onData, onError, onExit
+      onStdout, onStderr, onError, onExit
     );
 
     var write = out[0];
-    var kill = out[1];
+    var realKill = out[1];
+    var dead = false;
+    function kill(signal) {
+      if (dead) { return; }
+      dead = true;
+      return realKill(signal);
+    }
 
     var ui = {};
 
@@ -81,9 +87,24 @@ define('apps/Console', function (require) {
       write(value + lineEnd);
     }
 
+    function wrap(c, text) {
+      if (!text) { return; }
+      var div = document.createElement(div);
+      div.textContent = text;
+      return '<span class="' + c + '">' + div.innerHTML + '</span>';
+    }
+
+    function onStdout(chunk) {
+      return onData(wrap('stdout', chunk));
+    }
+
+    function onStderr(chunk) {
+      return onData(wrap('stderr', chunk));
+    }
+
     function onData(chunk) {
       if (chunk !== undefined) {
-        ui.out.textContent += chunk;
+        ui.out.innerHTML += chunk;
         scroll();
       }
       else {
