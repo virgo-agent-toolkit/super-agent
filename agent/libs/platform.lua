@@ -1,7 +1,5 @@
 local uv = require('uv')
 local ffi = require('ffi')
-local p = require("pretty-print").prettyPrint
-
 
 local pack = table.pack
 
@@ -13,7 +11,7 @@ local function async(fn, ...)
   local thread = coroutine.running()
   local args = pack(...)
   args[args.n + 1] = function (...)
-	return assert(coroutine.resume(thread, ...))
+    return assert(coroutine.resume(thread, ...))
   end
   fn(unpack(args))
   return coroutine.yield()
@@ -264,7 +262,7 @@ function platform.lstat(path)
     stat.uid,
     stat.gid
   }
- end
+end
 
 -- chmod (
 --   path: String
@@ -387,7 +385,6 @@ local function simpleSpawn(options, onExit)
     cwd = options.cwd,
     uid = options.uid,
     gid = options.gid,
-    detached = true
   }, function (...)
 
     local args = {...}
@@ -401,9 +398,9 @@ local function simpleSpawn(options, onExit)
     local function write(chunk)
       local err
       if chunk then
-	  if string.find(chunk, "\r") then
-				chunk = "\r\n"
-			end
+        if string.find(chunk, "\r") then
+          chunk = "\r\n"
+        end
         err = async(inStream.write, inStream, chunk)
       else
         err = async(inStream.shutdown, inStream)
@@ -428,27 +425,27 @@ end
 if ffi.os ~= "Windows" then
 
   ffi.cdef[[
-    typedef int uid_t;
-    typedef int gid_t;
-    struct passwd {
-      char   *pw_name;
-      char   *pw_passwd;
-      uid_t   pw_uid;
-      gid_t   pw_gid;
-      char   *pw_gecos;
-      char   *pw_dir;
-      char   *pw_shell;
-    };
-    struct group {
-      char   *gr_name;
-      char   *gr_passwd;
-      gid_t   gr_gid;
-      char  **gr_mem;
-    };
-    struct passwd *getpwnam(const char *name);
-    struct passwd *getpwuid(uid_t uid);
-    struct group *getgrnam(const char *name);
-    struct group *getgrgid(gid_t gid);
+  typedef int uid_t;
+  typedef int gid_t;
+  struct passwd {
+    char   *pw_name;
+    char   *pw_passwd;
+    uid_t   pw_uid;
+    gid_t   pw_gid;
+    char   *pw_gecos;
+    char   *pw_dir;
+    char   *pw_shell;
+  };
+  struct group {
+    char   *gr_name;
+    char   *gr_passwd;
+    gid_t   gr_gid;
+    char  **gr_mem;
+  };
+  struct passwd *getpwnam(const char *name);
+  struct passwd *getpwuid(uid_t uid);
+  struct group *getgrnam(const char *name);
+  struct group *getgrgid(gid_t gid);
   ]]
 
   -- user (uid: Integer) -> (username: Optional(String))
@@ -482,34 +479,34 @@ if ffi.os ~= "Windows" then
 end
 
 if ffi.os == "Windows" then
-	local self = {}
-		self.width_needed = 2000
-		self.screen_settings = 'if( $Host -and $Host.UI -and $Host.UI.RawUI ) { $rawUI = $Host.UI.RawUI; $oldSize = $rawUI.BufferSize; $typeName = $oldSize.GetType( ).FullName; $newSize = New-Object $typeName (' .. self.width_needed .. ', $oldSize.Height); $rawUI.BufferSize = $newSize ;} ;'
-		self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
+  local self = {}
+  self.width_needed = 2000
+  self.screen_settings = 'if( $Host -and $Host.UI -and $Host.UI.RawUI ) { $rawUI = $Host.UI.RawUI; $oldSize = $rawUI.BufferSize; $typeName = $oldSize.GetType( ).FullName; $newSize = New-Object $typeName (' .. self.width_needed .. ', $oldSize.Height); $rawUI.BufferSize = $newSize ;} ;'
+  self.error_output = ' ; if ($virgo_err[0]) { $virgo_err[0] | Select @{name="Name";expression={"__VIRGO_ERROR"}}, @{name="Value";expression={$_.Exception}}, @{name="Type";expression={"string"}} | ConvertTo-CSV }'
 
 
-	function platform.pty(shell, size, options, onStdOut, onStdErr)
+  function platform.pty(shell, size, options, onStdOut, onStdErr)
 
-	local wrapper = self.screen_settings .. "dir" ..self.error_output
-		local stdin = uv.new_pipe(false)
-		local stdout = uv.new_pipe(false)
-		local stderr = uv.new_pipe(false)
-	
-	
-	
-	
+    local wrapper = self.screen_settings .. "dir" ..self.error_output
+    local stdin = uv.new_pipe(false)
+    local stdout = uv.new_pipe(false)
+    local stderr = uv.new_pipe(false)
+
+
+
+
     --options.shell = shell
-	options.shell = "cmd.exe"
+    options.shell = "cmd.exe"
     options.stdin = stdin
     options.stdout = stdout
     options.stderr = stderr
     options.cwd = "C:\\Users\\Adam"
 
-      --env = options.env,
-      --args = options.args,
-      --cwd = options.cwd,
-      --uid = options.uid,
-      --gid = options.gid,
+    --env = options.env,
+    --args = options.args,
+    --cwd = options.cwd,
+    --uid = options.uid,
+    --gid = options.gid,
 
 
     local write, kill = simpleSpawn(options, onExit)
@@ -529,67 +526,49 @@ if ffi.os == "Windows" then
 
     write = write(stdin)
 
---    local child = uv.spawn("cmd.exe",
---		{stdio = {stdin, stdout, stderr},cwd="C:\\Users\\Adam", detached=true},
-		--onExit
-		--function (...)
-		--  write, kill, resize = write, kill, resize
+    --pretty sure that this is reading from powershell which isnt giong to give anything back
+    stdout:read_start(function (err,data)
+      coroutine.wrap(function()
+        if err then
+          return onStdErr(err)
+        else
+          return onStdOut(data)
+        end
+      end)()
+    end)
 
-		--  local args = {...}
-		--  coroutine.wrap(function ()
-		--	return onExit(unpack(args))
-		--  end)()
-		--end
-		--)
-		--print(child)
-
-
-		--pretty sure that this is reading from powershell which isnt giong to give anything back
-		stdout:read_start(function (err,data)
-			--if err then return onError(err)
-			--else return print(data)
-			--end
-			coroutine.wrap(function()
-				if err then
-					return onStdErr(err)
-				else
-					return onStdOut(data)
-				end
-			end)()
-		end)
-
-		stderr:read_start(function (err,data)
-			--if err then return onError(err)
-			--else return print(data)
-			--end
-			coroutine.wrap(function()
-				if err then
-					return onStdErr(err)
-				else
-					return onStdOut(data)
-				end
-			end)()
-		end)
+    stderr:read_start(function (err,data)
+      --if err then return onError(err)
+      --else return print(data)
+      --end
+      coroutine.wrap(function()
+        if err then
+          return onStdErr(err)
+        else
+          return onStdOut(data)
+        end
+      end)()
+    end)
 
     local function resize()
       print("not implemented for windows")
     end
 
-		return {write, kill, resize}
-	end
+    return {write, kill, resize}
+  end
 end
 if ffi.os == "OSX" or ffi.os == "Linux" then
   -- Define the bits of the system API we need.
   ffi.cdef[[
-    struct winsize {
-      unsigned short ws_row;
-      unsigned short ws_col;
-      unsigned short ws_xpixel;
-      unsigned short ws_ypixel;
-    };
-    int openpty(int *amaster, int *aslave, char *name,
-      void *termp, const struct winsize *winp);
-    int ioctl(int fd, unsigned long request, struct winsize* size);
+  struct winsize {
+    unsigned short ws_row;
+    unsigned short ws_col;
+    unsigned short ws_xpixel;
+    unsigned short ws_ypixel;
+  };
+  int openpty(int *amaster, int *aslave, char *name,
+  void *termp, const struct winsize *winp);
+  int ioctl(int fd, unsigned long request, struct winsize* size);
   ]]
   local TIOCSWINSZ
   if ffi.os == "OSX" then
@@ -648,7 +627,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
   -- )
   function platform.pty(shell, size, options, onStdOut, onStdErr)
     local master, slave = openpty(unpack(size))
-	  -- so it looks like we might be inheriting file descriptors
+    -- so it looks like we might be inheriting file descriptors
     options.shell = shell
     if options.user then
       options.uid = platform.uid(options.user)
@@ -692,7 +671,7 @@ if ffi.os == "OSX" or ffi.os == "Linux" then
 end
 
 ffi.cdef[[
-  int gethostname(char *name, size_t len);
+int gethostname(char *name, size_t len);
 ]]
 -- hostname() -> (host: Optional(String))
 local lib = ffi.os == 'Windows' and ffi.load('ws2_32') or ffi.C
@@ -730,10 +709,10 @@ platform.getpid = uv.getpid
 
 if ffi.os == 'Windows' then
   ffi.cdef[[
-    bool GetUserNameA(
-      char*  lpBuffer,
-      size_t* lpnSize
-    );
+  bool GetUserNameA(
+  char*  lpBuffer,
+  size_t* lpnSize
+  );
   ]]
 
   function platform.getusername()

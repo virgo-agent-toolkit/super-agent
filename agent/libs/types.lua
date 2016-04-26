@@ -180,16 +180,29 @@ if platform.gid then
   }, platform.gid))
 end
 
+local SpawnOptions = assert(alias("SpawnOptions", "Options for spawning child processes", {
+  args = Optional(Array(String)),
+  env = Optional(Array(String)),
+  cwd = Optional(String),
+  uid = Optional(Int),
+  gid = Optional(Int),
+  user = Optional(String),
+  group = Optional(String),
+}))
+
+assert(register("spawn", "spawn an arbitrary child process with streaming pipes", {
+  {"command", String},
+  {"options", SpawnOptions},
+  {"stdout", Function},
+  {"stderr", Function},
+  {"error", Function},
+  {"exit", Function},
+}, {
+  {"data", Function},
+  {"kill", Function},
+}, platform.spawn))
+
 if platform.pty then
-  local SpawnOptions = assert(alias("SpawnOptions", "Options for spawning child processes", {
-    args = Optional(Array(String)),
-    env = Optional(Array(String)),
-    cwd = Optional(String),
-    uid = Optional(Int),
-    gid = Optional(Int),
-    user = Optional(String),
-    group = Optional(String),
-  }))
 
   local WinSize = assert(alias("WinSize", "Cols/Rows pair for pty window size", NamedTuple {
     {"cols", Int},
@@ -204,11 +217,9 @@ if platform.pty then
     {"error", Function},
     {"exit", Function},
   }, {
-    {"child", NamedTuple {
-      {"write", Function},
-      {"kill", Function},
-      {"resize", Function},
-    }}
+    {"write", Function},
+    {"kill", Function},
+    {"resize", Function},
   }, platform.pty))
 
 end
