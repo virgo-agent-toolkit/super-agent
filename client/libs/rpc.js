@@ -142,7 +142,15 @@ define('libs/rpc', function (require) {
       var id = getId();
       return yield function (callback) {
         write([id, name, ...args]);
-        waiting[id] = callback;
+        waiting[id] = function (err, ...args) {
+          if (args.length === 0) {
+            return callback(err);
+          }
+          else if (args.length === 1) {
+            return callback(err, args[0]);
+          }
+          return callback(err, args);
+        };
       };
     }
   }

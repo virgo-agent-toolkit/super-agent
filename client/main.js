@@ -3,6 +3,7 @@ define('main', function (require) {
   var makeWindow = require('libs/window');
   var rpc = require('libs/rpc');
   var Terminal = require('apps/Terminal');
+  var Console = require('apps/Console');
   var Editor = require('apps/Editor');
   var ImageViewer = require('apps/ImageViewer');
   var FileBrowser = require('apps/FileBrowser');
@@ -28,6 +29,11 @@ define('main', function (require) {
     'terminal': function* (cwd) {
       if (cwd) { cwd = expandVars(cwd); }
       var win = yield* launchApp(Terminal, cwd);
+      win.focus();
+    },
+    'console': function* (cwd) {
+      if (cwd) { cwd = expandVars(cwd); }
+      var win = yield* launchApp(Console, cwd);
       win.focus();
     },
     'edit': function* (...files) {
@@ -62,6 +68,9 @@ define('main', function (require) {
         ['button', {onclick: function () {
           runCommand('terminal');
         }}, 'New Terminal'],
+        ['button', {onclick: function () {
+          runCommand('console');
+        }}, 'New Console'],
         ['button', {onclick: function () {
           runCommand('browse', env.home);
         }}, 'New File Browser'],

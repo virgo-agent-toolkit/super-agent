@@ -102,6 +102,7 @@ uid (username: String) -> (uid: Optional(Integer))
 
 gid(groupname: String) -> (gid: Optional(Integer))
 
+
 type SpawnOptions = {
   args: Optional(Array(String))
   env: Optional(Array(String))
@@ -111,6 +112,21 @@ type SpawnOptions = {
   user: Optional(String)
   group: Optional(String)
 }
+
+spawn(
+  command: String,
+  options: SpawnOptions,
+  stdout: Emitter(chunk: Optional(Buffer)),
+  stderr: Emitter(chunk: Optional(Buffer)),
+  error: Emitter(err: String),
+  exit: Emitter(
+    code: Integer
+    signal: Integer
+  )
+) -> (
+  data: Emitter(chunk: Optional(Buffer))
+  kill: Emitter(signal: Integer)
+)
 
 type WinSize = (
   cols: Integer
