@@ -26,7 +26,10 @@ local function pathjoin(path, name)
   return path .. (path:match("\\") and  "\\" or "/") .. name
 end
 
-local platform = {}
+local custom = {}
+local platform = setmetatable({}, {
+  __index = custom
+})
 
 -- echo returns whatever it was given
 function platform.echo(...)
@@ -783,7 +786,7 @@ platform.os = readOnly{
 local env = readOnly(platform)
 
 platform.script = function (code)
-  local fn, err = loadstring(code)
+  local fn, err = loadstring(code, "<inline-script>")
   if not fn then
     error("ESYNTAXERROR: " .. err)
   end
@@ -793,6 +796,37 @@ platform.script = function (code)
     error("EEXCEPTION: " .. result[2])
   end
   return unpack(result, 2)
+end
+
+-- register(name: String, code: String) -> (success: Bool)
+function platform.register(name, code)
+  local registry = platform.registry
+  local register = registry.register
+  local Array = registry.Array
+  local String = registry.String
+  local Function = registry.Function
+
+  local fn, err = loadstring(code, name)
+  if not fn then
+    error("ESYNTAXERROR: " .. err)
+  end
+  setfenv(fn, env)
+  local mod = fn()
+  if type(mod) ~= "function" then
+    error("ETYPEERROR: User code does not return a function")
+  end
+  -- Expose to other scripts
+  custom[name] = mod
+  print("register", name)
+  assert(register(name, "Custom user defined function", {
+    {"render", Function},
+    {"remove", Function},
+    {"register", Function},
+  }, {
+    {"handlers", Array{String,Function}}
+  }, mod))
+
+  return true
 end
 
 return platform

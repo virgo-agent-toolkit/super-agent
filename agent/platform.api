@@ -199,3 +199,5 @@ iaddr() -> (interfaces: {
 loadavg() -> (avg: (Number, Number, Number))
 
 script(code: String) -> (result: Any)
+
+register(name: String, code: String) -> (success: Bool)

@@ -2,6 +2,7 @@
 
 local platform = require('platform')
 local registry = require('registry')()
+platform.registry = registry
 local register = registry.register
 local alias = registry.alias
 local String = registry.String
@@ -335,5 +336,12 @@ assert(register("script", "Run a remote script against the platform API", {
 }, {
   {"result", Any},
 }, platform.script))
+
+assert(register("register", "Register an ad-hoc script to be run multiple times", {
+  {"name", String},
+  {"code", String},
+}, {
+  {"success", Bool}
+}, platform.register))
 
 return registry
