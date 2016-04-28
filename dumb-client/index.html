@@ -1,0 +1,41 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <script src="super-agent.js"></script>
+  <style>
+  #target {
+    border: 1px solid #ddd;
+  }
+  </style>
+</head>
+<body>
+  <h1>Embedding Demo</h1>
+  <p>Before</p>
+  <div id="target">
+  </div>
+  <p>After</p>
+  <script name="test" type="application/lua">
+  return function(render, remove, register)
+    register("onEntry", [[
+      console.log(evt, $);
+      $.onClick(1, 2, 3);
+    ]])
+    render {"ul$list"}
+    scandir("/Users/tim8019/ujkl", function (name, type)
+      render({"li", {onclick="onEntry"},
+        {"span.name",name},
+        {"span.type",type},
+      }, "list")
+    end)
+    return {
+      {"onClick", function (...)
+      end}
+    }
+  end
+  </script>
+  <script>
+    var domContainer = document.getElementById("target");
+    var agentConfig = "ws://localhost:7000/";
+    SuperAgent(domContainer, agentConfig, "test");
+  </script>
+</body>
