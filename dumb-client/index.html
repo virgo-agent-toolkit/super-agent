@@ -25,7 +25,7 @@
   end
 
   function exports.read(name, callback)
-    callback(readbinary(root .. "/" .. name))
+    callback(readfile(root .. "/" .. name))
   end
 
   -- Some browser-side css styling for the widget
@@ -35,6 +35,9 @@
     li:hover { background-color: #f95; }
     .name { font-weight: bold;}
     .type { opacity: 0.5; padding: 0 1em;}
+    .title { margin: 0.5em; font-size: 2em; }
+    .code { font-size: 16px; padding: 1em; font-family: "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;}
+
   ]]
 
   -- The main app in JS
@@ -42,14 +45,20 @@
     console.log(agent);
     var $ = {};
 
-    agent.container.appendChild(domBuilder(
-      ["ul$list", {onclick: onClick}], $));
+    agent.container.appendChild(domBuilder([
+      ["ul$list", {onclick: onClick}],
+      [".title$name"],
+      [".code$data"]
+    ], $));
 
     agent.scan(onEntry);
 
     function onEntry(name, type) {
       $.list.appendChild(domBuilder(
-        ["li", {"data-id": name},
+        ["li", {
+          "data-name": name,
+          "data-type": type,
+        },
           ["span.name",name],
           ["span.type",type],
         ], $));
@@ -61,10 +70,20 @@
         target = target.parentNode;
         if (!target) { return; }
       }
-      var name = target.dataset.id;
-      agent.read(name, function (data) {
-        console.log(name, data);
-      });
+      var name = target.dataset.name;
+      var type = target.dataset.type;
+      if (type === "file") {
+        agent.read(name, function (data) {
+          $.name.textContent = name;
+          $.data.textContent = "";
+          $.data.appendChild(domBuilder(
+            ["pre",
+              ["code", data]
+            ]
+          ));
+          // console.log(name, data);
+        });
+      }
     }
   ]]
 
