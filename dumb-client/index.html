@@ -30,8 +30,11 @@
 
   -- Some browser-side css styling for the widget
   exports.css = [[
-    li { list-style-type: none; }
-    li:hover { background-color: #abf; }
+    ul { padding: 0; margin: 0; }
+    li { list-style-type: none; font-family: sans-serif; padding: 0 1em; line-height: 2em;}
+    li:hover { background-color: #f95; }
+    .name { font-weight: bold;}
+    .type { opacity: 0.5; padding: 0 1em;}
   ]]
 
   -- The main app in JS
