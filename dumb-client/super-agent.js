@@ -5,50 +5,80 @@ SuperAgent = (function () {
 
   var scripts = {};
 
+  function noop($) {}
+
+  function getCode(name, type) {
+    var query = "script[name='" + name + "." + type + "'][type='application/super-agent']";
+    var tag = document.querySelector(query);
+    return tag && tag.textContent;
+  }
+
   function SuperAgent(domContainer, agentUrl, name) {
     run(function* () {
       var call = yield* rpc(agentUrl, {});
+      var klass = "Z" + (Math.random()* 0x100000000000000).toString(16);
+      var scope = domContainer.tagName.toLowerCase() + "." + klass + " ";
+      domContainer.setAttribute('class', klass);
 
       var script = scripts[name];
       if (!script) {
-        var query = "script[name=" + name + "][type='application/lua']";
-        var code = document.querySelector(query).textContent;
-        scripts[name] = yield* call("register", name, code);
-      }
-      var $ = {};
-      (yield* call(name,
-        render,
-        remove,
-        register
-      )).forEach(function (pair) {
-        $[pair[0]] = pair[1];
-      });
+        // Register lua code with agent
+        var lua = getCode(name, "lua");
+        if (!lua) { throw new Error("Missing lua part of widget"); }
+        if (!(yield* call("register", name, lua))) {
+          throw new Error("Failed to register lua script in agent");
+        }
 
-      function render(tree, target) {
-        target = target ? $[target] : domContainer;
-        target.appendChild(domBuilder(tree, $, wrapEvent));
+        // Register css with browser
+        var css = getCode(name, "css");
+        if (css) {
+          css = css.split(/\n/).map(function (line) {
+            line = line.trim();
+            if (!line) return line;
+            console.log([line]);
+            return scope + line;
+          }).join("\n");
+          var tag = document.createElement('style');
+          tag.textContent = css;
+          document.head.appendChild(tag);
+        }
+
+        // Remember JS for each instance.
+        var js = getCode(name, "js");
+        script = scripts[name] = js ?
+          new Function("$", "domBuilder", "msgpack", "run", "call", js) :
+          noop;
       }
-      function remove(target) {
-        if (target) {
-          var elem = $[target];
-          elem.parentNode.removeChild(elem);
+
+      var $ = {};
+      script($, domBuilder, msgpack, run, call);
+
+      yield* call(name,
+        update,
+        register
+      );
+
+      function register(name, fn) {
+        $[name] = fn;
+      }
+
+      function update(target, tree) {
+        target = target ? $[target] : domContainer;
+        if (tree) {
+          target.appendChild(domBuilder(tree, $, wrapEvent));
         }
         else {
-          domContainer.textContent = "";
+          target.textContent = "";
         }
       }
-      function register(name, js) {
-        $[name] = new Function("evt", "$", js);
-      }
+
       function wrapEvent(type, fn) {
+        if (typeof(fn) === "string") {
+          return $[fn];
+        }
         return function (evt) {
-          if (typeof(fn) === "string") {
-            $[fn](evt, $);
-          }
-          else {
-            // TODO: add data according to type
-            fn();
-          }
+          // TODO: add data according to type
+          fn();
         };
       }
     });

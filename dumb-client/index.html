@@ -14,25 +14,37 @@
   <div id="target">
   </div>
   <p>After</p>
-  <script name="test" type="application/lua">
-  return function(render, remove, register)
-    register("onEntry", [[
-      console.log(evt, $);
-      $.onClick(1, 2, 3);
-    ]])
-    render {"ul$list"}
+
+  <script name="test.js" type="application/super-agent">
+    $.onEntry = function (evt) {
+      var target = evt.target;
+      while (target.tagName !== 'LI') {
+        target = target.parentNode;
+        if (!target) { return; }
+      }
+      $.onClick(target.dataset.id);
+    };
+  </script>
+
+  <script name="test.css" type="application/super-agent">
+    li { list-style-type: none; }
+    li:hover { background-color: #abf; }
+  </script>
+
+  <script name="test.lua" type="application/super-agent">
+  return function (update, register)
+    register("onClick", function (...)
+    end)
+    update(nil, {"ul$list", {onclick="onEntry"}})
     scandir("/Users/tim8019/ujkl", function (name, type)
-      render({"li", {onclick="onEntry"},
+      update("list", {"li", {["data-id"]=name},
         {"span.name",name},
         {"span.type",type},
-      }, "list")
+      })
     end)
-    return {
-      {"onClick", function (...)
-      end}
-    }
   end
   </script>
+
   <script>
     var domContainer = document.getElementById("target");
     var agentConfig = "ws://localhost:7000/";

@@ -802,8 +802,7 @@ end
 function platform.register(name, code)
   local registry = platform.registry
   local register = registry.register
-  local Array = registry.Array
-  local String = registry.String
+  local Any = registry.Any
   local Function = registry.Function
 
   local fn, err = loadstring(code, name)
@@ -819,11 +818,9 @@ function platform.register(name, code)
   custom[name] = mod
   print("register", name)
   assert(register(name, "Custom user defined function", {
-    {"render", Function},
-    {"remove", Function},
+    {"update", Function},
     {"register", Function},
   }, {
-    {"handlers", Array{String,Function}}
   }, mod))
 
   return true
