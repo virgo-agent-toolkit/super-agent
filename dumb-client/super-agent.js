@@ -7,79 +7,46 @@ SuperAgent = (function () {
 
   function noop($) {}
 
-  function getCode(name, type) {
-    var query = "script[name='" + name + "." + type + "'][type='application/super-agent']";
-    var tag = document.querySelector(query);
-    return tag && tag.textContent;
-  }
-
   function SuperAgent(domContainer, agentUrl, name) {
     run(function* () {
       var call = yield* rpc(agentUrl, {});
-      var klass = "Z" + (Math.random()* 0x100000000000000).toString(16);
-      var scope = domContainer.tagName.toLowerCase() + "." + klass + " ";
-      domContainer.setAttribute('class', klass);
 
       var script = scripts[name];
       if (!script) {
         // Register lua code with agent
-        var lua = getCode(name, "lua");
-        if (!lua) { throw new Error("Missing lua part of widget"); }
+        var query = "script[name='" + name + "'][type='application/lua']";
+        var tag = document.querySelector(query);
+        if (!tag) throw new Error("No such script tag: " + name);
+        var lua = tag.textContent;
         if (!(yield* call("register", name, lua))) {
           throw new Error("Failed to register lua script in agent");
         }
+        scripts[name] = true;
+      }
+      var agent = yield* call(name);
 
-        // Register css with browser
-        var css = getCode(name, "css");
-        if (css) {
-          css = css.split(/\n/).map(function (line) {
-            line = line.trim();
-            if (!line) return line;
-            console.log([line]);
-            return scope + line;
-          }).join("\n");
-          var tag = document.createElement('style');
-          tag.textContent = css;
-          document.head.appendChild(tag);
-        }
-
-        // Remember JS for each instance.
-        var js = getCode(name, "js");
-        script = scripts[name] = js ?
-          new Function("$", "domBuilder", "msgpack", "run", "call", js) :
-          noop;
+      if (agent.css) {
+        var klass = "Z" + (Math.random()* 0x100000000000000).toString(16);
+        var scope = domContainer.tagName.toLowerCase() + "." + klass + " ";
+        domContainer.setAttribute('class', klass);
+        var css = agent.css.split(/\n/).map(function (line) {
+          line = line.trim();
+          if (!line) return line;
+          console.log([line]);
+          return scope + line;
+        }).join("\n");
+        var style = document.createElement('style');
+        style.textContent = css;
+        delete agent.css;
+        document.head.appendChild(style);
       }
 
-      var $ = {};
-      script($, domBuilder, msgpack, run, call);
-
-      yield* call(name,
-        update,
-        register
-      );
-
-      function register(name, fn) {
-        $[name] = fn;
-      }
-
-      function update(target, tree) {
-        target = target ? $[target] : domContainer;
-        if (tree) {
-          target.appendChild(domBuilder(tree, $, wrapEvent));
-        }
-        else {
-          target.textContent = "";
-        }
-      }
-
-      function wrapEvent(type, fn) {
-        if (typeof(fn) === "string") {
-          return $[fn];
-        }
-        return function (evt) {
-          // TODO: add data according to type
-          fn();
-        };
+      // If there is js, run it in a generator body.
+      if (agent.js) {
+        var js = "return function* " + name + "() {" + agent.js + "}";
+        delete agent.js;
+        agent.container = domContainer;
+        var fn = run(new Function("agent","run","call","domBuilder", js)(agent, run, call, domBuilder));
       }
     });
   }

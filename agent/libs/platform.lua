@@ -803,25 +803,20 @@ function platform.register(name, code)
   local registry = platform.registry
   local register = registry.register
   local Any = registry.Any
-  local Function = registry.Function
 
   local fn, err = loadstring(code, name)
   if not fn then
     error("ESYNTAXERROR: " .. err)
   end
   setfenv(fn, env)
-  local mod = fn()
-  if type(mod) ~= "function" then
-    error("ETYPEERROR: User code does not return a function")
-  end
+
   -- Expose to other scripts
-  custom[name] = mod
+  custom[name] = fn
   print("register", name)
   assert(register(name, "Custom user defined function", {
-    {"update", Function},
-    {"register", Function},
   }, {
-  }, mod))
+    {"exports", Any},
+  }, fn))
 
   return true
 end

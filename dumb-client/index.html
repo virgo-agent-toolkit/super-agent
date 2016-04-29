@@ -15,34 +15,57 @@
   </div>
   <p>After</p>
 
-  <script name="test.js" type="application/super-agent">
-    $.onEntry = function (evt) {
+  <script name="test" type="application/lua">
+  local root = "."
+  local exports = {}
+
+  -- some sample lua functions using callbacks to return values
+  function exports.scan(callback)
+    scandir(root, callback)
+  end
+
+  function exports.read(name, callback)
+    callback(readbinary(root .. "/" .. name))
+  end
+
+  -- Some browser-side css styling for the widget
+  exports.css = [[
+    li { list-style-type: none; }
+    li:hover { background-color: #abf; }
+  ]]
+
+  -- The main app in JS
+  exports.js = [[
+    console.log(agent);
+    var $ = {};
+
+    agent.container.appendChild(domBuilder(
+      ["ul$list", {onclick: onClick}], $));
+
+    agent.scan(onEntry);
+
+    function onEntry(name, type) {
+      $.list.appendChild(domBuilder(
+        ["li", {"data-id": name},
+          ["span.name",name],
+          ["span.type",type],
+        ], $));
+    }
+
+    function onClick(evt) {
       var target = evt.target;
       while (target.tagName !== 'LI') {
         target = target.parentNode;
         if (!target) { return; }
       }
-      $.onClick(target.dataset.id);
-    };
-  </script>
+      var name = target.dataset.id;
+      agent.read(name, function (data) {
+        console.log(name, data);
+      });
+    }
+  ]]
 
-  <script name="test.css" type="application/super-agent">
-    li { list-style-type: none; }
-    li:hover { background-color: #abf; }
-  </script>
-
-  <script name="test.lua" type="application/super-agent">
-  return function (update, register)
-    register("onClick", function (...)
-    end)
-    update(nil, {"ul$list", {onclick="onEntry"}})
-    scandir("/Users/tim8019/ujkl", function (name, type)
-      update("list", {"li", {["data-id"]=name},
-        {"span.name",name},
-        {"span.type",type},
-      })
-    end)
-  end
+  return exports
   </script>
 
   <script>
