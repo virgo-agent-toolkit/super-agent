@@ -54,7 +54,7 @@ local function freeAddress(address, agentName, isAgent)
     for client in pairs(clientLists[address]) do
       local clientWrite = writeFunctions[client]
       if clientWrite then
-        clientWrite{client,address,false}
+        clientWrite{client, address, false}
         clientWrite()
       end
     end
@@ -63,7 +63,7 @@ local function freeAddress(address, agentName, isAgent)
     local agent = clientTargets[address]
     local agentWrite = writeFunctions[agent]
     if agentWrite then
-      agentWrite{agent,address,false}
+      agentWrite{agent,address,0}
     end
     clientTargets[address] = nil
   end
@@ -116,14 +116,14 @@ require('weblit-app')
 
   .websocket({
     path = "/agent/:uuid",
-    protocol = "schema-rpc",
+    protocol = "schema-rpc-tunnel",
   }, function (req, read, write)
     return handle(read, write, req.socket, req.params.uuid, false)
   end)
 
   .websocket({
     path = "/enlist/:uuid",
-    protocol = "schema-rpc",
+    protocol = "schema-rpc-tunnel",
   }, function (req, read, write)
     return handle(read, write, req.socket, req.params.uuid, true)
   end)
