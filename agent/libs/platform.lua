@@ -317,8 +317,9 @@ function platform.realpath(path)
   return path
 end
 
-function platform.largefiles(rootPath, limit, onError)
+function platform.largefiles(rootPath, limit, minSize, onError, onUpdate)
   onError = onError.emit or onError
+  onUpdate = onUpdate.emit or onUpdate
   local biggest = {}
   local len = 0
 
@@ -341,6 +342,7 @@ function platform.largefiles(rootPath, limit, onError)
       if size > biggest[i][2] then
         insert(biggest, i, {name, size})
         len = len + 1
+        onUpdate(biggest)
         break
       end
       i = i + 1
@@ -370,7 +372,7 @@ function platform.largefiles(rootPath, limit, onError)
       if stat then
         if stat.type == "directory" then
           search(subpath)
-        else
+        elseif stat.size >= minSize then
           store(subpath, stat.size)
         end
       else

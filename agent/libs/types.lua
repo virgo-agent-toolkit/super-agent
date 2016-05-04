@@ -143,7 +143,9 @@ assert(register("realpath", "Gets the realpath by resolving symlinks", {
 assert(register("largefiles", "Find the largest files in a filesystem", {
   {"rootPath", String},
   {"limit", Int},
+  {"minSize", Int},
   {"onError", Function},
+  {"onUpdate", Function}
 }, {
   {"biggest", Array{String,Int}}
 }, platform.largefiles))
