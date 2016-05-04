@@ -59,7 +59,12 @@ return function(config)
         end
       end
     end
-    local api = makeRpc(registry.call, log, wrappedRead, write)
+    local readLoop, callRemote, close = makeRpc(registry.call, log, wrappedRead, write)
+    local api = {
+      readLoop = readLoop,
+      call = callRemote,
+      close = close
+    }
     clients[socket] = api;
     api.readLoop()
     log(4, "client disconnected", addr)
