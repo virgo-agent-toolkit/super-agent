@@ -140,6 +140,15 @@ assert(register("realpath", "Gets the realpath by resolving symlinks", {
   {"fullPath", String}
 }, platform.realpath))
 
+assert(register("largefiles", "Find the largest files in a filesystem", {
+  {"rootPath", String},
+  {"limit", Int},
+  {"onError", Function},
+}, {
+  {"biggest", Array{String,Int}}
+}, platform.largefiles))
+
+
 assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
   {"path", String},
   {"depth", Int},
@@ -336,6 +345,13 @@ assert(register("script", "Run a remote script against the platform API", {
 }, {
   {"result", Any},
 }, platform.script))
+
+assert(register("eval", "Turn a piece of lua into a callable function", {
+  {"name", String},
+  {"code", String},
+}, {
+  {"fn", Function}
+}, platform.eval))
 
 assert(register("register", "Register an ad-hoc script to be run multiple times", {
   {"name", String},
