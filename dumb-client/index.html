@@ -7,6 +7,8 @@
   <script>
     var domContainer = document.getElementById("target");
     var agentConfig = "ws://localhost:7000/";
-    SuperAgent(domContainer, agentConfig, "33f272d53d40ee5485bbbdff22111c9c");
+    var gist = window.location.search.match(/\?(.*)/);
+    gist = gist ? gist[1] : "33f272d53d40ee5485bbbdff22111c9c";
+    SuperAgent(domContainer, agentConfig, gist);
   </script>
 </body>
