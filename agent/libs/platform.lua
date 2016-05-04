@@ -1,5 +1,6 @@
 local uv = require('uv')
 local ffi = require('ffi')
+local p = require('pretty-print').prettyPrint
 
 local pack = table.pack
 
@@ -26,10 +27,7 @@ local function pathjoin(path, name)
   return path .. (path:match("\\") and  "\\" or "/") .. name
 end
 
-local custom = {}
-local platform = setmetatable({}, {
-  __index = custom
-})
+local platform = {}
 
 -- echo returns whatever it was given
 function platform.echo(...)
@@ -479,6 +477,79 @@ local function makeKiller(child, handles)
   end
 end
 
+function platform.exec(command, spawnOptions, stdin)
+
+  local stdinpipe = uv.new_pipe(true)
+  local stdoutpipe = uv.new_pipe(true)
+  local stderrpipe = uv.new_pipe(true)
+
+  local child
+  local thread = coroutine.running()
+  local stdout, stderr, exitCode, signal
+  local function check()
+    if stdout and stderr and exitCode and signal then
+      if not stdinpipe:is_closing() then
+        stdinpipe:close()
+      end
+      if not stderrpipe:is_closing() then
+        stderrpipe:close()
+      end
+      if not stdoutpipe:is_closing() then
+        stdoutpipe:close()
+      end
+      if not child:is_closing() then
+        child:close()
+      end
+      assert(coroutine.resume(thread, stdout, stderr, exitCode, signal))
+    end
+  end
+
+
+  spawnOptions.stdio = {stdinpipe, stdoutpipe, stderrpipe}
+
+  child = uv.spawn(command, spawnOptions, function (code, sig)
+    exitCode = code
+    signal = sig
+    check()
+  end)
+
+
+  if stdin then
+    stdinpipe:write(stdin)
+  end
+  stdinpipe:shutdown()
+
+  local outTable = {}
+  stdoutpipe:read_start(function (err, data)
+    if err then
+      return assert(coroutine.resume(thread, nil, err))
+    end
+
+    if data then
+      outTable[#outTable+1] = data
+    else
+      stdout = table.concat(outTable)
+      check()
+    end
+  end)
+
+  local errTable = {}
+  stderrpipe:read_start(function (err, data)
+    if err then
+      return assert(coroutine.resume(thread, nil, err))
+    end
+
+    if data then
+      errTable[#errTable+1] = data
+    else
+      stderr = table.concat(errTable)
+      check()
+    end
+  end)
+
+  return coroutine.yield()
+end
+
 function platform.spawn(command, options, onStdout, onStderr, onError, onExit)
 
   local stdin = uv.new_pipe(false)
@@ -786,7 +857,7 @@ platform.os = readOnly{
 local env = readOnly(platform)
 
 platform.script = function (code)
-  local fn, err = loadstring(code, "<inline-script>")
+  local fn, err = loadstring(code)
   if not fn then
     error("ESYNTAXERROR: " .. err)
   end

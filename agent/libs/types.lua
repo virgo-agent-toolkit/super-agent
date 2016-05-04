@@ -344,4 +344,15 @@ assert(register("register", "Register an ad-hoc script to be run multiple times"
   {"success", Bool}
 }, platform.register))
 
+assert(register("exec", "Semantic sugar around spawn", {
+  {"command", String},
+  {"spawnOptions", SpawnOptions},
+  {"stdin", String}
+}, {
+  {"stdout", String},
+  {"stderr", String},
+  {"code", Int},
+  {"signal", Int}
+}, platform.exec))
+
 return registry
