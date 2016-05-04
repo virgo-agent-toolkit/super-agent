@@ -2,96 +2,11 @@
 <head>
   <meta charset="utf-8">
   <script src="super-agent.js"></script>
-  <style>
-  #target {
-    border: 1px solid #ddd;
-  }
-  </style>
 </head>
-<body>
-  <h1>Embedding Demo</h1>
-  <p>Before</p>
-  <div id="target">
-  </div>
-  <p>After</p>
-
-  <script name="test" type="application/lua">
-  local root = "."
-  local exports = {}
-
-  -- some sample lua functions using callbacks to return values
-  function exports.scan(callback)
-    scandir(root, callback)
-  end
-
-  function exports.read(name, callback)
-    callback(readfile(root .. "/" .. name))
-  end
-
-  -- Some browser-side css styling for the widget
-  exports.css = [[
-    ul { padding: 0; margin: 0; }
-    li { list-style-type: none; font-family: sans-serif; padding: 0 1em; line-height: 2em;}
-    li:hover { background-color: #f95; }
-    .name { font-weight: bold;}
-    .type { opacity: 0.5; padding: 0 1em;}
-    .title { margin: 0.5em; font-size: 2em; }
-    .code { font-size: 16px; padding: 1em; font-family: "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;}
-  ]]
-
-  -- The main app in JS
-  exports.js = [[
-    console.log(agent);
-    var $ = {};
-
-    agent.container.appendChild(domBuilder([
-      ["ul$list", {onclick: onClick}],
-      [".title$name"],
-      [".code$data"]
-    ], $));
-
-    agent.scan(onEntry);
-
-    function onEntry(name, type) {
-      $.list.appendChild(domBuilder(
-        ["li", {
-          "data-name": name,
-          "data-type": type,
-        },
-          ["span.name",name],
-          ["span.type",type],
-        ], $));
-    }
-
-    function onClick(evt) {
-      var target = evt.target;
-      while (target.tagName !== 'LI') {
-        target = target.parentNode;
-        if (!target) { return; }
-      }
-      var name = target.dataset.name;
-      var type = target.dataset.type;
-      if (type === "file") {
-        agent.read(name, function (data) {
-          $.name.textContent = name;
-          $.data.textContent = "";
-          $.data.appendChild(domBuilder(
-            ["pre",
-              ["code", data]
-            ]
-          ));
-          // console.log(name, data);
-        });
-      }
-    }
-  ]]
-
-  return exports
-  </script>
-
+<body id="target">
   <script>
     var domContainer = document.getElementById("target");
     var agentConfig = "ws://localhost:7000/";
-    SuperAgent(domContainer, agentConfig, "test");
+    SuperAgent(domContainer, agentConfig, "33f272d53d40ee5485bbbdff22111c9c");
   </script>
 </body>

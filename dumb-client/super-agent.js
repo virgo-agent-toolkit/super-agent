@@ -3,36 +3,48 @@
 SuperAgent = (function () {
   "use strict";
 
-  var scripts = {};
-
   function noop($) {}
 
   function SuperAgent(domContainer, agentUrl, name) {
-    run(function* () {
-      var call = yield* rpc(agentUrl, {});
+    var call, files;
 
-      var script = scripts[name];
-      if (!script) {
-        // Register lua code with agent
-        var query = "script[name='" + name + "'][type='application/lua']";
-        var tag = document.querySelector(query);
-        if (!tag) throw new Error("No such script tag: " + name);
-        var lua = tag.textContent;
-        if (!(yield* call("register", name, lua))) {
-          throw new Error("Failed to register lua script in agent");
-        }
-        scripts[name] = true;
+    var req = new XMLHttpRequest();
+    req.open("GET", "https://api.github.com/gists/" + name);
+    req.onload = onLoad;
+    req.send();
+
+    function onLoad(evt) {
+      files = JSON.parse(req.responseText).files;
+      rpc(agentUrl, {}, onConnect);
+    }
+
+    function onConnect(err, callValue) {
+      if (err) { throw(err); }
+      call = callValue;
+      // Register lua code with agent
+      var lua = files["lua.lua"].content;
+      call("register", name, lua)(onRegister);
+    }
+
+    function onRegister(err, success) {
+      if (err) { throw err; }
+      if (!success) {
+        throw new Error("Failed to register lua script in agent");
       }
-      var agent = yield* call(name);
+      call(name)(onAgent);
+    }
 
-      if (agent.css) {
+    function onAgent(err, agent) {
+      if (err) { throw err; }
+
+      if (files["css.css"]) {
+        var css = files["css.css"].content;
         var klass = "Z" + (Math.random()* 0x100000000000000).toString(16);
+        domContainer.setAttribute("class", klass);
         var scope = domContainer.tagName.toLowerCase() + "." + klass + " ";
-        domContainer.setAttribute('class', klass);
-        var css = agent.css.split(/\n/).map(function (line) {
+        css = css.split(/\n/).map(function (line) {
           line = line.trim();
           if (!line) return line;
-          console.log([line]);
           return scope + line;
         }).join("\n");
         var style = document.createElement('style');
@@ -41,14 +53,14 @@ SuperAgent = (function () {
         document.head.appendChild(style);
       }
 
-      // If there is js, run it in a generator body.
-      if (agent.js) {
-        var js = "return function* " + name + "() {" + agent.js + "}";
-        delete agent.js;
+      if (files["js.js"]) {
+        var js = files["js.js"].content;
         agent.container = domContainer;
-        var fn = run(new Function("agent","run","call","domBuilder", js)(agent, run, call, domBuilder));
+        /*jshint evil:true*/
+        var fn = new Function("agent","run","call","domBuilder", js);
+        fn(agent, run, call, domBuilder);
       }
-    });
+    }
   }
 
   var domBuilder = function () {
@@ -106,7 +118,7 @@ SuperAgent = (function () {
         }
 
         // Except the first item if it's an attribute object
-        if (first && typeof part === 'object' && part.constructor === Object) {
+        if (first && part && typeof part === 'object' && part.constructor === Object) {
           setAttrs(node, part, wrapEvent);
         } else {
           node.appendChild(domBuilder(part, refs, wrapEvent));
@@ -928,7 +940,9 @@ SuperAgent = (function () {
 
     return rpc;
 
-    function* rpc(url, runCommand) {
+    function rpc(url, runCommand, callback) {
+      if (!callback) { return rpc.bind(null, url, runCommand); }
+
       var socket = new WebSocket(url, ['schema-rpc']);
       socket.binaryType = 'arraybuffer';
       socket.onmessage = onMessage;
@@ -936,13 +950,12 @@ SuperAgent = (function () {
       var fns = {};
       var nextId = 1;
       var waiting = {};
-      return yield function (callback) {
-        socket.onopen = function () {
-          callback(null, call);
-        };
-        socket.onerror = function () {
-          callback('Connection error');
-        };
+
+      socket.onopen = function () {
+        callback(null, call);
+      };
+      socket.onerror = function () {
+        callback('Connection error');
       };
 
       function getId() {
@@ -986,6 +999,24 @@ SuperAgent = (function () {
           return;
         }
         if (id > 0) {
+          if (typeof message[1] === "number") {
+            var fn = fns[message[1]];
+            if (!fn) {
+              console.error('Unknown function id received', id);
+              return;
+            }
+            var res;
+            try {
+              res = fn.apply(null, message.slice(2));
+            }
+            catch (err) {
+              return write([-id,0,err]);
+            }
+            if (res === undefined) {
+              return write([-id]);
+            }
+            return write([-id, res]);
+          }
           return runCommand.apply(null, message.slice(1));
         }
         if (id === 0) {
@@ -1010,10 +1041,14 @@ SuperAgent = (function () {
         var keys = Object.keys(value);
         var l = keys.length;
         if (l === 1 && keys[0] === '') {
-          var id = -value[''];
-          return function (...args) {
-            write([id, ...args]);
+          var id = value[''];
+          var fn = function (...args) {
+            return call(id, ...args);
           };
+          fn.emit = function (...args) {
+            return write([-id, ...args]);
+          };
+          return fn;
         }
         var copy = {};
         for (var i = 0; i < l; ++i) {
@@ -1058,9 +1093,9 @@ SuperAgent = (function () {
         socket.send(msgpack.encode(message));
       }
 
-      function* call(name, ...args) {
+      function call(name, ...args) {
         var id = getId();
-        return yield function (callback) {
+        return function (callback) {
           write([id, name, ...args]);
           waiting[id] = function (err, ...args) {
             if (args.length === 0) {
