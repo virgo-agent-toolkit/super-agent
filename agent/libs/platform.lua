@@ -1,6 +1,5 @@
 local uv = require('uv')
 local ffi = require('ffi')
-local p = require('pretty-print').prettyPrint
 
 local pack = table.pack
 
@@ -27,7 +26,10 @@ local function pathjoin(path, name)
   return path .. (path:match("\\") and  "\\" or "/") .. name
 end
 
-local platform = {}
+local custom = {}
+local platform = setmetatable({}, {
+  __index = custom
+})
 
 -- echo returns whatever it was given
 function platform.echo(...)
@@ -857,7 +859,7 @@ platform.os = readOnly{
 local env = readOnly(platform)
 
 platform.script = function (code)
-  local fn, err = loadstring(code)
+  local fn, err = loadstring(code, "<inline-script>")
   if not fn then
     error("ESYNTAXERROR: " .. err)
   end
