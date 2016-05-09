@@ -5,17 +5,19 @@ SuperAgent = (function () {
 
   function noop($) {}
 
-  function SuperAgent(domContainer, agentUrl, name) {
+  // options.gist - the github gist hash to use as script.
+  // options.agent - the websocket url for the agent.
+  function SuperAgent(domContainer, options) {
     var call, files;
 
     var req = new XMLHttpRequest();
-    req.open("GET", "https://api.github.com/gists/" + name);
+    req.open("GET", "https://api.github.com/gists/" + options.gist);
     req.onload = onLoad;
     req.send();
 
     function onLoad(evt) {
       files = JSON.parse(req.responseText).files;
-      rpc(agentUrl, {}, onConnect);
+      rpc(options.agent, {}, onConnect);
     }
 
     function onConnect(err, callValue) {
@@ -23,7 +25,7 @@ SuperAgent = (function () {
       call = callValue;
       // Register lua code with agent
       var lua = files["lua.lua"].content;
-      call("register", name, lua)(onRegister);
+      call("register", options.gist, lua)(onRegister);
     }
 
     function onRegister(err, success) {
@@ -31,7 +33,7 @@ SuperAgent = (function () {
       if (!success) {
         throw new Error("Failed to register lua script in agent");
       }
-      call(name)(onAgent);
+      call(options.gist)(onAgent);
     }
 
     function onAgent(err, agent) {
