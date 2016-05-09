@@ -82,6 +82,7 @@ realpath (path: String) -> (fullPath: String)
 diskusage (
   path: String
   depth: Integer
+  minSize: Integer
   onEntry: Emitter(
     path: String
     size: Integer

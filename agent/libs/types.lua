@@ -154,6 +154,7 @@ assert(register("largefiles", "Find the largest files in a filesystem", {
 assert(register("diskusage", "Calculate diskusage of folders and subfolders", {
   {"path", String},
   {"depth", Int},
+  {"minSize", Int},
   {"onEntry", Function},
   {"onError", Function}
 }, {

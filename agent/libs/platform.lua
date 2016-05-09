@@ -372,7 +372,7 @@ function platform.largefiles(rootPath, limit, minSize, onError, onUpdate)
       if stat then
         if stat.type == "directory" then
           search(subpath)
-        elseif stat.size >= minSize then
+        elseif stat.size >= minSize and stat.blocks ~= 0 then
           store(subpath, stat.size)
         end
       else
@@ -387,6 +387,7 @@ end
 -- diskusage (
 --   path: String
 --   depth: Integer
+--   minSize: Integer
 --   onEntry: Emitter(
 --     path: String
 --     size: Integer
@@ -396,7 +397,7 @@ end
 --     error: String
 --   )
 -- ) -> (exists: Bool)
-function platform.diskusage(rootPath, maxDepth, onEntry, onError)
+function platform.diskusage(rootPath, maxDepth, minSize, onEntry, onError)
   onEntry = onEntry.emit or onEntry
   onError = onError.emit or onError
   local function scan(path, depth)
@@ -432,8 +433,10 @@ function platform.diskusage(rootPath, maxDepth, onEntry, onError)
           error("Unknown problem scanning " .. subpath)
         end
       end
+    elseif stat.type == "file" and stat.blocks == 0 then
+      total = 0
     end
-    if depth >= 0 then
+    if depth >= 0 and total >= minSize then
       onEntry(path, total)
     end
     return total
