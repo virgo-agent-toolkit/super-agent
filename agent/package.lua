@@ -1,6 +1,6 @@
 return {
   name = "virgo-agent-toolkit/fife",
-  version = "0.3.0",
+  version = "0.4.1",
   description = "Deputy Fife does exactly what you tell him.",
   luvi = {
     version = "2.6.1",
