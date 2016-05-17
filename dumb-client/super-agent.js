@@ -1047,9 +1047,6 @@ SuperAgent = (function () {
           var fn = function (...args) {
             return call(id, ...args);
           };
-          fn.emit = function (...args) {
-            return write([-id, ...args]);
-          };
           return fn;
         }
         var copy = {};
@@ -1096,8 +1093,11 @@ SuperAgent = (function () {
       }
 
       function call(name, ...args) {
-        var id = getId();
         return function (callback) {
+          if (!callback && typeof name === "number") {
+            return write([-name, ...args]);
+          }
+          var id = getId();
           write([id, name, ...args]);
           waiting[id] = function (err, ...args) {
             if (args.length === 0) {
