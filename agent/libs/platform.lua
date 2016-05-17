@@ -1,5 +1,7 @@
 local uv = require('uv')
 local ffi = require('ffi')
+local p = require('pretty-print').prettyPrint
+local log = require('log').log
 
 local pack = table.pack
 
@@ -869,6 +871,9 @@ local function readOnly(tab)
     end
   })
 end
+platform.print = print
+platform.p = p
+platform.log = log
 platform.next = next
 platform.pairs = pairs
 platform.pcall = pcall
