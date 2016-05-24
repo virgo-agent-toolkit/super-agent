@@ -36,7 +36,9 @@ SuperAgent = (function () {
         var klass = "Z" + (Math.random()* 0x100000000000000).toString(16);
         domContainer.setAttribute("class", klass);
         var scope = domContainer.tagName.toLowerCase() + "." + klass + " ";
-        css = options.css.split(/\n/).map(function (line) {
+        css = options.css.replace(/\{[^}]*\}/g, function (block) {
+          return block.replace(/\s*\n\s*/g, ' ');
+        }).split(/\n/).map(function (line) {
           line = line.trim();
           if (!line) return line;
           return scope + line;
