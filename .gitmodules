@@ -1,3 +1,6 @@
 [submodule "client/CodeMirror"]
 	path = client/CodeMirror
 	url = https://github.com/codemirror/CodeMirror.git
+[submodule "dumb-client-ide/codemirror"]
+	path = dumb-client-ide/codemirror
+	url = https://github.com/codemirror/CodeMirror.git

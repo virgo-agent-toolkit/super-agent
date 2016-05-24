@@ -1,0 +1,70 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <link href="codemirror/lib/codemirror.css" rel="stylesheet">
+  <link href="codemirror/theme/material.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono" rel="stylesheet">
+  <style>
+    .CodeMirror {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    #lua, #js, #css, #target {
+      position: absolute;
+      overflow: auto;
+      box-sizing: border-box;
+      border: 1px solid #000;
+    }
+    #lua, #js, #css {
+      left: 0;
+      width: 50%;
+      font-family: "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", monospace;
+      font-size: 16px;
+      line-height: 16px;
+      color: #f0f0f0;
+      background: #000;
+    }
+    #lua {
+      top: 0;
+      height: 33%;
+    }
+    #js {
+      top: 33%;
+      bottom: 33%;
+    }
+    #css {
+      height: 33%;
+      bottom: 0;
+    }
+    #target {
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div id="lua"></div>
+  <div id="js"></div>
+  <div id="css"></div>
+  <div id="toolbar"></div>
+  <div id="target"></div>
+  <script src="super-agent.js"></script>
+  <script src="codemirror/lib/codemirror.js"></script>
+  <script src="codemirror/addon/edit/closebrackets.js"></script>
+  <script src="codemirror/addon/mode/simple.js"></script>
+  <script src="codemirror/addon/edit/matchbrackets.js"></script>
+  <script src="codemirror/addon/comment/comment.js"></script>
+  <script src="codemirror/keymap/sublime.js"></script>
+  <script src="codemirror/mode/lua/lua.js"></script>
+  <script src="codemirror/mode/javascript/javascript.js"></script>
+  <script src="codemirror/mode/css/css.js"></script>
+  <script src="app.js"></script>
+</body>
