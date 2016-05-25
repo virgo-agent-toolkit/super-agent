@@ -62,5 +62,21 @@ function run() {
   if (!options.agent) {
     options.agent = "ws://localhost:7000/";
   }
+  if (options.gist) {
+    var req = new XMLHttpRequest();
+    req.open("GET", "https://api.github.com/gists/" + options.gist);
+    req.onload = onLoad;
+    return req.send();
+  }
+
+  function onLoad(evt) {
+    var files = JSON.parse(req.responseText).files;
+    values.css = files["css.css"] && files["css.css"].content;
+    values.js = files["js.js"] && files["js.js"].content;
+    values.lua = files["lua.lua"] && files["lua.lua"].content;
+    window.location.search = "?agent=" + options.agent;
+  }
+
+
   SuperAgent(domContainer, options);
 }
