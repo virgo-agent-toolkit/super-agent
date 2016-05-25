@@ -13,7 +13,7 @@ run();
 
 function editor(id) {
   var container = document.getElementById(id);
-  var cm = new CodeMirror(container, {
+  var options = {
     value: values[id] || "",
     mode: mimes[id],
     theme: 'material',
@@ -24,7 +24,13 @@ function editor(id) {
     matchBrackets: true,
     showCursorWhenSelecting: true,
     styleActiveLine: true,
-  });
+  };
+  if (id === 'js') {
+    options.lint = true;
+    options.gutters = ["CodeMirror-lint-markers"];
+  }
+
+  var cm = new CodeMirror(container, options);
   cm.on('change', function () {
     values[id] = cm.getDoc().getValue();
   });
@@ -53,9 +59,8 @@ function run() {
       options[pair[0]] = pair[1];
     });
   }
-    if (!options.agent) {
+  if (!options.agent) {
     options.agent = "ws://localhost:7000/";
   }
-  console.log(options);
   SuperAgent(domContainer, options);
 }
