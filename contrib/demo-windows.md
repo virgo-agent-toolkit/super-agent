@@ -6,27 +6,47 @@ Here is the quick instruction for anyone who wants to check out the remote execu
 
 You don't need to have knowledge of the technology behind super agent. But you need to have basic knowledge of Microsoft Remote Desktop, Powershell command in Windows and know how to use a browser.
 
-## Connect to windows server and set up Chrome browser
+You may use the Quick install script to start the setup of the Super Agent or follow the Step by Step guide below.
+
+## Quick Installation (using a script)
+
+The Quick Install uses a powershell script [Deploy-SuperAgent.sp1](https://github.com/virgo-agent-toolkit/super-agent/blob/9998d87a45488a99f9363d2cb839ec41ff0d7977/contrib/Deploy-SuperAgent.ps1)
+
+To execute the script, run this command below from either a command line windows or a Powershell command line.
+
+```
+powershell.exe -NoProfile -NoLogo -InputFormat None -ExecutionPolicy Bypass -Command "iex(New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/virgo-agent-toolkit/super-agent/9998d87a45488a99f9363d2cb839ec41ff0d7977/contrib/Deploy-SuperAgent.ps1')"
+```
+
+It will download and start the Super Agent for you. 
+Last, you must open Google Chrome, which the script installs. While in Google Chrome, browse `http://127.0.0.1:7000` to access the Super Agent. 
+
+
+## Step by Step Installation
+
+
+### Connect to windows server and set up Chrome browser
 
 Use Microsoft Remote Desktop to connect to the windows server.  If you are using Mac, you need to install the Remote Desktop here: https://itunes.apple.com/us/app/microsoft-remote-desktop/id715768417?mt=12
 
 The demo only works with Chrome or Firefox. Install Chrome browser <https://www.google.com/chrome/browser/desktop/>
 
-## Install Luvi and Lit
+### Install Luvi and Lit
 
 Download the Powershell script here and run it: <https://github.com/luvit/lit/blob/master/get-lit.ps1>
 
-## Install Luvit and Fife
+### Install Luvit and Fife
 
 Now that we have lit installed, we can use it to automatically download and build any published app.
 
 Let's install fife, the super-agent.
+
 ```
 Set-ExecutionPolicy Unrestricted
 .\lit.exe make lit://virgo-agent-toolkit/fife fife.exe
 ```
 
-## Configure Fife
+### Configure Fife
 
 We'll configure fife for local-only access to keep things simple and secure.
 
@@ -39,7 +59,7 @@ port = 7000
 webroot = "./super-agent"
 ```
 
-## Download the client
+### Download the client
 
 If you don't have git, download and install git from here <https://git-scm.com/download/win>
 
@@ -49,7 +69,7 @@ Clone the super-agent repo recursivly from the same directory where `fife.exe` f
 git clone --recursive https://github.com/virgo-agent-toolkit/super-agent.git
 ```
 
-## Start fife
+### Start fife
 
 Run `.\fife.exe` in current directory
 
@@ -65,7 +85,7 @@ listening on local socket for cli clients { host = '127.0.0.1', isTcp = true, po
 HTTP server listening at http://127.0.0.1:7000/
 ```
 
-## Run the Demo Script
+### Run the Demo Script
 
 The quick way is to run the demo script that will scan the system and look for files using the most disk space.
 
@@ -73,7 +93,7 @@ To do that, point your browser to the following URL and see the agent returning 
 
 <http://localhost:7000/dumb-client/index.html?gist=9906c50ab7276a7bbae778db942d6142&agent=ws://localhost:7000>
 
-## Modify the Demo Script
+### Modify the Demo Script
 
 You can modify the demo script to your liking and get a feel of writing script for agent to execute. To do that, point your browser to the following URL:
 
@@ -81,13 +101,13 @@ You can modify the demo script to your liking and get a feel of writing script f
 
 After you modify the script, simply reload the page to have the script executed.
 
-## Play with the Terminal
+### Play with the Terminal
 
 For demo purpose, there is a terminal client that allows you to run random commands. This is the best way to explore the power of the super agent.
 
 <http://localhost:7000/client/?agent=ws://localhost:7000>
 
-## What next?
+### What next?
 
 Like it? What more? Super agent is developed in the open.  Please visit the project page and submit issues for anything on your mind: 
 
