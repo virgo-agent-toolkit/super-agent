@@ -11,6 +11,17 @@ Windows.  Currently the agent is implemented using the [Luvit][] platform.
 [libuv][] gives us cross-platform system primitives such as TCP, UDP, timers,
 sockets, file systems, etc.
 
+**WARNING** This project is still in the prototype stage.  Do not deploy to
+production systems.  Care has been taken to provide default configs that should
+be reasonably secure for development and test systems,  but as is typical with
+open source projects:
+
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 There are currently 3 main components in this project:
 
